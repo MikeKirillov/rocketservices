@@ -5,6 +5,7 @@ package inventory.v1;
 option go_package = "github.com/MikeKirillov/rocketservices/shared/pkg/proto/inventory/v1;inventoryv1";
 
 import "google/protobuf/timestamp.proto";
+// import "google/protobuf/wrappers.proto";
 
 // InventoryService управляет каталогом деталей для космических кораблей
 service InventoryService {
@@ -76,6 +77,7 @@ message ListPartsRequest {
 
   // Опционально: конкретные UUID (приоритет над part_type)
   repeated string uuids = 2;
+  // repeated string uuids = 2; // repeated google.protobuf.StringValue uuids = 2; // или использовать тип 'optional string ...'
 }
 
 // Ответ на запрос для получения списка деталей
