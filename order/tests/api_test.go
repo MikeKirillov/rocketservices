@@ -587,7 +587,6 @@ func TestOrder_Create_Success_MinimalParts(t *testing.T) {
 	req := &CreateOrderRequest{
 		HullUUID:   HullAluminumUUID,
 		EngineUUID: EngineIonCUUID,
-		//!!!!!! TODO
 	}
 
 	result, resp := createOrder(t, req)
