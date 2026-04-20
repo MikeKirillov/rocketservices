@@ -281,7 +281,7 @@ type ListPartsRequest struct {
 	// Фильтр по типу (UNSPECIFIED = все детали)
 	PartType PartType `protobuf:"varint,1,opt,name=part_type,json=partType,proto3,enum=inventory.v1.PartType" json:"part_type,omitempty"`
 	// Опционально: конкретные UUID (приоритет над part_type)
-	Uuids         []string `protobuf:"bytes,2,rep,name=uuids,proto3" json:"uuids,omitempty"`
+	Uuids         []string `protobuf:"bytes,2,rep,name=uuids,proto3" json:"uuids,omitempty"` // repeated string uuids = 2; // repeated google.protobuf.StringValue uuids = 2; // или использовать тип 'optional string ...'
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
