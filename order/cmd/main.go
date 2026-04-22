@@ -53,7 +53,7 @@ func main() {
 		}))
 	if err != nil {
 		slog.Error("не удалось подключиться к gRPC: InventoryService", "error", err)
-		return
+		os.Exit(1)
 	}
 
 	// Создать gRPC клиент PaymentService
@@ -66,11 +66,14 @@ func main() {
 		}))
 	if err != nil {
 		slog.Error("не удалось подключиться к gRPC: PaymentService", "error", err)
-		return
+		os.Exit(1)
 	}
 
 	defer func() {
-		if err1, err2 := inventoryConn.Close(), paymentConn.Close(); err1 != nil || err2 != nil {
+		if err = inventoryConn.Close(); err != nil {
+			slog.Error("ошибка закрытия gRPC соединения", "error", err)
+		}
+		if err = paymentConn.Close(); err != nil {
 			slog.Error("ошибка закрытия gRPC соединения", "error", err)
 		}
 	}()

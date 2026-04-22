@@ -2,6 +2,7 @@ package handler
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log/slog"
 	"net/http"
@@ -171,23 +172,12 @@ func (h *OrderHandler) CreateOrder(ctx context.Context, req *orderv1.CreateOrder
 		}, nil
 	}
 
-	// Собираю все UUID в один слайс для дальнейшей проверки на формат UUID и передачи в запрос по gRPC
-	rqParts := []string{req.GetHullUUID().String(), req.GetEngineUUID().String()}
-	if req.GetShieldUUID().IsSet() && !req.GetShieldUUID().IsNull() {
-		rqParts = append(rqParts, req.GetShieldUUID().Value.String())
-	}
-	if req.GetWeaponUUID().IsSet() && !req.GetWeaponUUID().IsNull() {
-		rqParts = append(rqParts, req.GetWeaponUUID().Value.String())
-	}
-	grpcRqParts := make([]string, len(rqParts))
-	for i, p := range rqParts {
-		if err := validateUUID(p); err != nil {
-			return &orderv1.CreateOrderBadRequest{
-				Code:    http.StatusBadRequest,
-				Message: err.Error(),
-			}, nil
-		}
-		grpcRqParts[i] = p
+	grpcRqParts, err := collectUUIDSlice(req)
+	if err != nil {
+		return &orderv1.CreateOrderBadRequest{
+			Code:    http.StatusBadRequest,
+			Message: err.Error(),
+		}, nil
 	}
 
 	// ПАТТЕРН 1: Контекст с таймаутом
@@ -218,13 +208,13 @@ func (h *OrderHandler) CreateOrder(ctx context.Context, req *orderv1.CreateOrder
 
 	// 3. Проверить stock_quantity > 0
 	// 4. Вычислить total_price
-	var totalPrince int64
+	var totalPrice int64
 	for _, p := range parts.GetParts() {
 		if p.GetStockQuantity() <= 0 {
 			msg := fmt.Sprintf("количество деталей на складе для %s: %d", p.GetName(), p.GetStockQuantity())
 			return &orderv1.CreateOrderConflict{Code: http.StatusConflict, Message: msg}, nil
 		}
-		totalPrince += p.GetPrice()
+		totalPrice += p.GetPrice()
 	}
 
 	// 5. Сгенерировать order_uuid (UUID v4)
@@ -235,7 +225,7 @@ func (h *OrderHandler) CreateOrder(ctx context.Context, req *orderv1.CreateOrder
 		OrderUUID:  orderUUID,
 		HullUUID:   req.GetHullUUID(),
 		EngineUUID: req.GetEngineUUID(),
-		TotalPrice: totalPrince,
+		TotalPrice: totalPrice,
 		Status:     string(pendingPayment),
 		CreatedAt:  time.Now(),
 	}
@@ -254,17 +244,37 @@ func (h *OrderHandler) CreateOrder(ctx context.Context, req *orderv1.CreateOrder
 	// 8. Вернуть order_uuid и total_price
 	return &orderv1.CreateOrderResponse{
 		OrderUUID:  orderUUID,
-		TotalPrice: totalPrince,
+		TotalPrice: totalPrice,
 	}, nil
+}
+
+// Собирает все UUID из запроса в один слайс для дальнейшей проверки
+// на формат UUID и передачи в запрос по gRPC.
+func collectUUIDSlice(req *orderv1.CreateOrderRequest) ([]string, error) {
+	rqParts := []string{req.GetHullUUID().String(), req.GetEngineUUID().String()}
+	if req.GetShieldUUID().IsSet() && !req.GetShieldUUID().IsNull() {
+		rqParts = append(rqParts, req.GetShieldUUID().Value.String())
+	}
+	if req.GetWeaponUUID().IsSet() && !req.GetWeaponUUID().IsNull() {
+		rqParts = append(rqParts, req.GetWeaponUUID().Value.String())
+	}
+	grpcRqParts := make([]string, len(rqParts))
+	for i, p := range rqParts {
+		if err := validateUUID(p); err != nil {
+			return nil, err
+		}
+		grpcRqParts[i] = p
+	}
+	return grpcRqParts, nil
 }
 
 // PayOrder реализует операцию payOrder.
 // POST /api/v1/orders/{order_uuid}/pay.
 func (h *OrderHandler) PayOrder(ctx context.Context, req *orderv1.PayOrderRequest, params orderv1.PayOrderParams) (orderv1.PayOrderRes, error) {
 	// 1. Найти заказ в store
-	h.store.mu.Lock()
+	h.store.mu.RLock()
 	order, ok := h.store.orders[params.OrderUUID]
-	defer h.store.mu.Unlock()
+	h.store.mu.RUnlock()
 
 	if !ok {
 		return &orderv1.PayOrderNotFound{
@@ -286,10 +296,18 @@ func (h *OrderHandler) PayOrder(ctx context.Context, req *orderv1.PayOrderReques
 	ctx, cancel := context.WithTimeout(ctx, grpcCallTimeout)
 	defer cancel()
 
+	grpcPayment, err := mapGRPCPayment(req.GetPaymentMethod())
+	if err != nil {
+		return &orderv1.PayOrderBadRequest{
+			Code:    http.StatusBadRequest,
+			Message: err.Error(),
+		}, nil
+	}
+
 	// 3. Вызвать h.paymentClient.PayOrder для обработки платежа
 	rs, err := h.paymentClient.PayOrder(ctx, &paymentv1.PayOrderRequest{
 		OrderUuid:     params.OrderUUID.String(),
-		PaymentMethod: mapGRPCPayment(req.GetPaymentMethod()),
+		PaymentMethod: grpcPayment,
 	})
 	if err != nil {
 		// ПАТТЕРН 2: Обработка gRPC ошибок
@@ -317,7 +335,10 @@ func (h *OrderHandler) PayOrder(ctx context.Context, req *orderv1.PayOrderReques
 	order.TransactionUUID = &transactionUUID
 	order.PaymentMethod = new(string(req.PaymentMethod))
 	order.Status = string(paid)
+
+	h.store.mu.Lock()
 	h.store.orders[order.OrderUUID] = order
+	h.store.mu.Unlock()
 
 	// 5. Вернуть transaction_uuid
 	return &orderv1.PayOrderResponse{TransactionUUID: transactionUUID}, nil
@@ -397,17 +418,17 @@ func handleGRPCError(err error) (code int, message string) {
 	}
 }
 
-func mapGRPCPayment(p orderv1.PaymentMethod) paymentv1.PaymentMethod {
+func mapGRPCPayment(p orderv1.PaymentMethod) (paymentv1.PaymentMethod, error) {
 	switch p {
 	case orderv1.PaymentMethodCARD:
-		return paymentv1.PaymentMethod_PAYMENT_METHOD_CARD
+		return paymentv1.PaymentMethod_PAYMENT_METHOD_CARD, nil
 	case orderv1.PaymentMethodSBP:
-		return paymentv1.PaymentMethod_PAYMENT_METHOD_SBP
+		return paymentv1.PaymentMethod_PAYMENT_METHOD_SBP, nil
 	case orderv1.PaymentMethodCREDITCARD:
-		return paymentv1.PaymentMethod_PAYMENT_METHOD_CREDIT_CARD
+		return paymentv1.PaymentMethod_PAYMENT_METHOD_CREDIT_CARD, nil
 	case orderv1.PaymentMethodINVESTORMONEY:
-		return paymentv1.PaymentMethod_PAYMENT_METHOD_INVESTOR_MONEY
+		return paymentv1.PaymentMethod_PAYMENT_METHOD_INVESTOR_MONEY, nil
 	default:
-		return paymentv1.PaymentMethod_PAYMENT_METHOD_UNSPECIFIED
+		return paymentv1.PaymentMethod_PAYMENT_METHOD_UNSPECIFIED, errors.New("неизвестный способ оплаты")
 	}
 }
