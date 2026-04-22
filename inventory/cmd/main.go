@@ -12,8 +12,8 @@ import (
 	"google.golang.org/grpc/keepalive"
 	"google.golang.org/grpc/reflection"
 
-	"github.com/MikeKirillov/rocketservices/inventory/internal/interceptor"
 	svc "github.com/MikeKirillov/rocketservices/inventory/pkg/service"
+	"github.com/MikeKirillov/rocketservices/shared/interceptor"
 	inventoryv1 "github.com/MikeKirillov/rocketservices/shared/pkg/proto/inventory/v1"
 )
 
@@ -30,10 +30,11 @@ const (
 )
 
 func main() {
+	//nolint:noctx // Контекст здесь не нужен: GracefulStop() сам закроет listener и прервёт Accept()
 	lis, err := net.Listen("tcp", grpcAddress)
 	if err != nil {
 		slog.Error("не удалось создать listener", "error", err)
-		return
+		os.Exit(1)
 	}
 
 	// Настроить gRPC сервер с параметрами keepalive

@@ -1,7 +1,6 @@
 package service
 
 import (
-	"cmp"
 	"context"
 	"slices"
 	"strings"
@@ -9,7 +8,6 @@ import (
 	"github.com/google/uuid"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
-	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	inventoryv1 "github.com/MikeKirillov/rocketservices/shared/pkg/proto/inventory/v1"
@@ -134,11 +132,7 @@ func (s *InventoryServer) GetPart(
 	rsPart := mapPartToRsGRPC(part)
 
 	// 6. Вернуть деталь
-	return &inventoryv1.GetPartResponse{
-		// proto.Clone создаёт глубокую копию, чтобы клиент не получил указатель
-		// на объект в хранилище — иначе gRPC может читать его параллельно с записью (data race).
-		Part: proto.Clone(rsPart).(*inventoryv1.Part),
-	}, nil
+	return &inventoryv1.GetPartResponse{Part: rsPart}, nil
 }
 
 // ListParts возвращает список деталей с опциональной фильтрацией по типу.
@@ -151,9 +145,7 @@ func (s *InventoryServer) ListParts(
 	// 1. Если передан список uuids → найти детали по UUID (сохраняя порядок запроса)
 	rqUuids := req.GetUuids()
 	if rqUuids != nil {
-		priority := make(map[string]int)
-
-		for i, val := range rqUuids {
+		for _, val := range rqUuids {
 			//    - Проверить формат каждого UUID → INVALID_ARGUMENT
 			rqUuid, err := uuid.Parse(val)
 			if err != nil {
@@ -165,18 +157,8 @@ func (s *InventoryServer) ListParts(
 				return nil, status.Errorf(codes.NotFound, "деталь %s не найдена", val)
 			}
 			parts = append(parts, mapPartToRsGRPC(part))
-			priority[val] = i
 		}
-		// сохранем порядок запроса
-		if parts != nil {
-			slices.SortFunc(parts, func(a, b *inventoryv1.Part) int {
-				return cmp.Compare(priority[a.GetUuid()], priority[b.GetUuid()])
-			})
-		}
-
-		return &inventoryv1.ListPartsResponse{
-			Parts: parts,
-		}, nil
+		return &inventoryv1.ListPartsResponse{Parts: parts}, nil
 	}
 
 	// 2. Иначе если part_type == UNSPECIFIED → вернуть все детали
@@ -199,9 +181,7 @@ func (s *InventoryServer) ListParts(
 		})
 	}
 
-	return &inventoryv1.ListPartsResponse{
-		Parts: parts,
-	}, nil
+	return &inventoryv1.ListPartsResponse{Parts: parts}, nil
 }
 
 func mapPartToRsGRPC(part Part) *inventoryv1.Part {
