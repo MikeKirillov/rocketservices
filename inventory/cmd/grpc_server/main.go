@@ -12,9 +12,8 @@ import (
 	"google.golang.org/grpc/keepalive"
 	"google.golang.org/grpc/reflection"
 
-	svc "github.com/MikeKirillov/rocketservices/inventory/pkg/service"
+	invApp "github.com/MikeKirillov/rocketservices/inventory/pkg/app"
 	"github.com/MikeKirillov/rocketservices/shared/interceptor"
-	inventoryv1 "github.com/MikeKirillov/rocketservices/shared/pkg/proto/inventory/v1"
 )
 
 const (
@@ -58,7 +57,9 @@ func main() {
 			interceptor.LoggerInterceptor(),
 		),
 	)
-	inventoryv1.RegisterInventoryServiceServer(grpcServer, svc.NewInventoryServer())
+
+	// Регистрируем наш сервис
+	invApp.RegisterServices(grpcServer)
 
 	// Включаем reflection для postman/grpcurl
 	reflection.Register(grpcServer)

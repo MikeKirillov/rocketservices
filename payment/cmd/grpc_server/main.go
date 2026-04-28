@@ -12,9 +12,8 @@ import (
 	"google.golang.org/grpc/keepalive"
 	"google.golang.org/grpc/reflection"
 
-	svc "github.com/MikeKirillov/rocketservices/payment/pkg/service"
+	payApp "github.com/MikeKirillov/rocketservices/payment/pkg/app"
 	"github.com/MikeKirillov/rocketservices/shared/interceptor"
-	paymentv1 "github.com/MikeKirillov/rocketservices/shared/pkg/proto/payment/v1"
 )
 
 const (
@@ -56,8 +55,11 @@ func main() {
 		grpc.ChainUnaryInterceptor(
 			interceptor.RecoveryInterceptor(),
 			interceptor.LoggerInterceptor(),
-		))
-	paymentv1.RegisterPaymentServiceServer(grpcServer, &svc.PaymentServer{})
+		),
+	)
+
+	// Регистрируем наш сервис
+	payApp.RegisterServices(grpcServer)
 
 	// Включаем reflection для postman/grpcurl
 	reflection.Register(grpcServer)
