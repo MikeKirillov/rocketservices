@@ -15,7 +15,7 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/keepalive"
 
-	orderHandler "github.com/MikeKirillov/rocketservices/order/pkg/handler"
+	"github.com/MikeKirillov/rocketservices/order/pkg/app"
 	inventoryv1 "github.com/MikeKirillov/rocketservices/shared/pkg/proto/inventory/v1"
 	paymentv1 "github.com/MikeKirillov/rocketservices/shared/pkg/proto/payment/v1"
 )
@@ -55,6 +55,7 @@ func main() {
 		slog.Error("не удалось подключиться к gRPC: InventoryService", "error", err)
 		os.Exit(1)
 	}
+	inventoryGRPCClient := inventoryv1.NewInventoryServiceClient(inventoryConn)
 
 	// Создать gRPC клиент PaymentService
 	paymentConn, err := grpc.NewClient(paymentServiceAddress,
@@ -68,6 +69,7 @@ func main() {
 		slog.Error("не удалось подключиться к gRPC: PaymentService", "error", err)
 		os.Exit(1)
 	}
+	paymentGRPCClient := paymentv1.NewPaymentServiceClient(paymentConn)
 
 	defer func() {
 		if err = inventoryConn.Close(); err != nil {
@@ -78,26 +80,20 @@ func main() {
 		}
 	}()
 
-	// Создаём хранилище и обработчик
-	store := orderHandler.NewOrderStore()
-	h := orderHandler.NewOrderHandler(
-		inventoryv1.NewInventoryServiceClient(inventoryConn),
-		paymentv1.NewPaymentServiceClient(paymentConn),
-		store,
-	)
-
-	router, err := orderHandler.SetupRouter(h, middlewareTimeout)
+	// Создаём хранилище, сервис и обработчик
+	handler, err := app.NewHTTPHandler(inventoryGRPCClient, paymentGRPCClient)
 	if err != nil {
-		slog.Error("ошибка при создании роутера", "error", err)
+		slog.Error("ошибка создания обработчика HTTP-запросов", "error", err)
 		return
 	}
+	handler = http.TimeoutHandler(handler, middlewareTimeout, "таймаут при обработке запроса к серверу")
 
 	// Настроить HTTP сервер с таймаутами
 	// Подумайте, какие таймауты стоит задать для production-ready сервера
 	// См. examples/week_1/HTTP_SERVER.md
 	server := &http.Server{
 		Addr:              net.JoinHostPort("localhost", httpPort),
-		Handler:           router,
+		Handler:           handler,
 		ReadHeaderTimeout: readHeaderTimeout, // Защита от Slowloris атаки
 		ReadTimeout:       readTimeout,       // Лимит на чтение всего запроса
 		WriteTimeout:      writeTimeout,      // Лимит на запись ответа

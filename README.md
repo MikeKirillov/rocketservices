@@ -1,6 +1,15 @@
+<!-- TODO: Замени YOUR_USERNAME на свой GitHub username и YOUR_GIST_ID на ID своего gist для coverage badge -->
+![Coverage](https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/YOUR_USERNAME/YOUR_GIST_ID/raw/coverage.json)
+
 # server calls examples
 
 ## payment
+
+### server start
+```
+$ go run payment/cmd/grpc_server/main.go
+```
+
 ### провести оплату
 ```
 $ grpcurl -plaintext -d '{
@@ -10,6 +19,12 @@ $ grpcurl -plaintext -d '{
 ```
 
 ## inventory
+
+### server start
+```
+$ go run inventory/cmd/grpc_server/main.go
+```
+
 ### получить все детали
 ```
 $ grpcurl -plaintext -d '{}' localhost:50051 inventory.v1.InventoryService/ListParts
@@ -31,6 +46,11 @@ $ grpcurl -plaintext -d '{"uuid": "550e8400-e29b-41d4-a716-446655440001"}' local
 ```
 
 ## order
+
+### server start
+```
+$ go run order/cmd/main.go
+```
 
 ### создание заказа
 ```
