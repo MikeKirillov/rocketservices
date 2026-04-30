@@ -14,6 +14,7 @@ import (
 
 	invApp "github.com/MikeKirillov/rocketservices/inventory/pkg/app"
 	"github.com/MikeKirillov/rocketservices/shared/interceptor"
+	sharedErrs "github.com/MikeKirillov/rocketservices/shared/pkg/errors"
 )
 
 const (
@@ -55,6 +56,7 @@ func main() {
 		grpc.ChainUnaryInterceptor(
 			interceptor.RecoveryInterceptor(),
 			interceptor.LoggerInterceptor(),
+			sharedErrs.UnaryErrorInterceptor(slog.Default()),
 		),
 	)
 

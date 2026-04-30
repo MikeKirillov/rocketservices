@@ -38,6 +38,24 @@ type Order struct {
 	CreatedAt       time.Time
 }
 
+func (o *Order) SetTransaction(id string) {
+	if id != "" {
+		o.TransactionUUID = &id
+	}
+}
+
+func (o *Order) SetPaymentMethod(payment *PaymentMethod) {
+	if payment != nil {
+		o.PaymentMethod = payment
+	}
+}
+
+func (o *Order) SetStatus(status OrderStatus) {
+	if status != "" {
+		o.Status = status
+	}
+}
+
 type CreateOrderRq struct {
 	HullUUID   string
 	EngineUUID string

@@ -110,12 +110,16 @@ func paymentMethodToModel(payment orderv1.PaymentMethod) (model.PaymentMethod, e
 	switch payment {
 	case orderv1.PaymentMethodCARD:
 		return model.PaymentMethodCard, nil
+
 	case orderv1.PaymentMethodSBP:
 		return model.PaymentMethodSbp, nil
+
 	case orderv1.PaymentMethodCREDITCARD:
 		return model.PaymentMethodCreditCard, nil
+
 	case orderv1.PaymentMethodINVESTORMONEY:
 		return model.PaymentMethodInvestorMoney, nil
+
 	default:
 		return model.PaymentMethodUnspecified, errs.ErrInvalidPaymentMethod
 	}

@@ -15,7 +15,12 @@ import (
 // паники в обработчиках и конвертирует их в gRPC ошибку Internal.
 // Без этого интерцептора паника в обработчике уронит весь сервер.
 func RecoveryInterceptor() grpc.UnaryServerInterceptor {
-	return func(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp any, err error) {
+	return func(
+		ctx context.Context,
+		req any,
+		info *grpc.UnaryServerInfo,
+		handler grpc.UnaryHandler,
+	) (resp any, err error) {
 		// Описываем обработчик панических ситуаций
 		defer func() {
 			if r := recover(); r != nil {

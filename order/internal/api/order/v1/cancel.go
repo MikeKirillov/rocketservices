@@ -2,10 +2,8 @@ package v1
 
 import (
 	"context"
-	"errors"
-	"net/http"
 
-	errs "github.com/MikeKirillov/rocketservices/order/internal/errors"
+	sharedErrs "github.com/MikeKirillov/rocketservices/shared/pkg/errors"
 	orderv1 "github.com/MikeKirillov/rocketservices/shared/pkg/openapi/order/v1"
 )
 
@@ -13,17 +11,12 @@ import (
 // POST /api/v1/orders/{order_uuid}/cancel.
 func (o *orderHandler) CancelOrder(ctx context.Context, params orderv1.CancelOrderParams) (orderv1.CancelOrderRes, error) {
 	err := o.orderService.Cancel(ctx, params.OrderUUID.String())
-	if errors.Is(err, errs.ErrOrderNotFound) {
-		return &orderv1.CancelOrderNotFound{
-			Code:    http.StatusNotFound,
-			Message: err.Error(),
-		}, nil
-	}
-	if errors.Is(err, errs.ErrOrderCancelling) {
-		return &orderv1.CancelOrderConflict{
-			Code:    http.StatusConflict,
-			Message: err.Error(),
-		}, nil
+	if err != nil {
+		return sharedErrs.MapHTTPError[orderv1.CancelOrderRes](
+			err,
+			sharedErrs.WithNotFound[orderv1.CancelOrderNotFound](),
+			sharedErrs.WithConflict[orderv1.CancelOrderConflict](),
+		)
 	}
 
 	// Вернуть success

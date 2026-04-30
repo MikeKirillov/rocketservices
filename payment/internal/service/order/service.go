@@ -9,6 +9,7 @@ import (
 
 	errs "github.com/MikeKirillov/rocketservices/payment/internal/errors"
 	"github.com/MikeKirillov/rocketservices/payment/internal/model"
+	sharedErrs "github.com/MikeKirillov/rocketservices/shared/pkg/errors"
 )
 
 type service struct{}
@@ -20,17 +21,17 @@ func NewService() *service {
 func (s *service) Pay(_ context.Context, order model.Order) (string, error) {
 	// Проверить, что order_uuid не пустой → INVALID_ARGUMENT
 	if order.Uuid == "" {
-		return "", errs.ErrOrderOmittedUUID
+		return "", sharedErrs.NewInvalidArgument(errs.ErrOrderOmittedUUID)
 	}
 
 	// Проверить, что payment_method != UNSPECIFIED → INVALID_ARGUMENT
 	if !order.PaymentMethod.IsValid() {
-		return "", fmt.Errorf("способ оплаты %s: %w", order.PaymentMethod, errs.ErrOrderInvalidPayMethod)
+		return "", sharedErrs.NewInvalidArgument(fmt.Errorf("способ оплаты %s: %w", order.PaymentMethod, errs.ErrOrderInvalidPayMethod))
 	}
 
 	// Проверить формат UUID → INVALID_ARGUMENT
 	if _, err := uuid.Parse(order.Uuid); err != nil {
-		return "", fmt.Errorf("заказ %s: %w", order.Uuid, errs.ErrOrderInvalidUUID)
+		return "", sharedErrs.NewInvalidArgument(errs.ErrOrderInvalidUUID)
 	}
 
 	// Сгенерировать transaction_uuid (UUID v4)

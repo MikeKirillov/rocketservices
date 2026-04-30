@@ -4,13 +4,13 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
-	"strconv"
 
 	"github.com/google/uuid"
 
 	errs "github.com/MikeKirillov/rocketservices/order/internal/errors"
 	"github.com/MikeKirillov/rocketservices/order/internal/model"
 	"github.com/MikeKirillov/rocketservices/order/internal/repository/converter"
+	sharedErrs "github.com/MikeKirillov/rocketservices/shared/pkg/errors"
 )
 
 type OrderStatus string
@@ -18,28 +18,27 @@ type OrderStatus string
 func (s *service) Create(ctx context.Context, orderRq model.CreateOrderRq) (model.CreateOrderRs, error) {
 	// 1. Валидация: hull_uuid и engine_uuid обязательны
 	if err := checkRequiredField(orderRq.HullUUID, "hull_uuid"); err != nil {
-		return model.CreateOrderRs{}, fmt.Errorf("поле hull_uuid: %w", err)
+		return model.CreateOrderRs{}, sharedErrs.NewInvalidArgument(err)
 	}
 	if err := checkRequiredField(orderRq.EngineUUID, "engine_uuid"); err != nil {
-		return model.CreateOrderRs{}, fmt.Errorf("поле engine_uuid: %w", err)
+		return model.CreateOrderRs{}, sharedErrs.NewInvalidArgument(err)
 	}
 
 	rqParts := orderRq.PartUUIDsAsStringSlice()
 	err := validateUUIDs(rqParts)
 	if err != nil {
-		return model.CreateOrderRs{}, err
+		return model.CreateOrderRs{}, sharedErrs.NewInvalidArgument(err)
 	}
 
 	// 2. Получить детали через InventoryService.ListParts
 	parts, err := s.inventoryClient.ListParts(ctx, rqParts)
 	if err != nil {
-		return model.CreateOrderRs{}, err
+		return model.CreateOrderRs{}, sharedErrs.NewNotFound(err) // клиент уже завернул в BusinessError у себя
 	}
 
 	// Проверяет, что все детали существуют (иначе 404)
 	if parts == nil || len(parts) < len(rqParts) {
-		slog.Error("детали найдены", "запрашивали", strconv.Itoa(len(rqParts)), "найдено", strconv.Itoa(len(parts)))
-		return model.CreateOrderRs{}, errs.ErrPartNotFound
+		return model.CreateOrderRs{}, sharedErrs.NewNotFound(errs.ErrPartNotFound)
 	}
 
 	// 3. Проверить stock_quantity > 0
@@ -47,8 +46,7 @@ func (s *service) Create(ctx context.Context, orderRq model.CreateOrderRq) (mode
 	var totalPrice int64
 	for _, p := range parts {
 		if p.StockQuantity <= 0 {
-			slog.Error("недостаточное количество на складе", "деталь", p.Name, "количество", p.StockQuantity)
-			return model.CreateOrderRs{}, fmt.Errorf("деталь %s: %w", p.Name, errs.ErrOutOfStock)
+			return model.CreateOrderRs{}, sharedErrs.NewConflict(fmt.Errorf("деталь %s: %w", p.Name, errs.ErrOutOfStock))
 		}
 		totalPrice += p.Price
 	}
@@ -62,7 +60,7 @@ func (s *service) Create(ctx context.Context, orderRq model.CreateOrderRq) (mode
 	// 7. Сохранить в store
 	err = s.orderRepository.Create(ctx, order)
 	if err != nil {
-		return model.CreateOrderRs{}, fmt.Errorf("создать заявку: %w", err)
+		return model.CreateOrderRs{}, sharedErrs.NewInternal(err)
 	}
 
 	// 8. Вернуть order_uuid и total_price

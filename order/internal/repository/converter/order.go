@@ -55,18 +55,13 @@ func OrderToRepoCreate(
 	return result
 }
 
-func OrderToRepoUpdate(
-	order model.Order,
-	status model.OrderStatus,
-	transactionUUID *string,
-	paymentMethod *model.PaymentMethod,
-) record.Order {
+func OrderToRepoUpdate(order model.Order) record.Order {
 	result := record.Order{
 		OrderUUID:  order.OrderUUID,
 		HullUUID:   order.HullUUID,
 		EngineUUID: order.EngineUUID,
 		TotalPrice: order.TotalPrice,
-		Status:     string(status),
+		Status:     string(order.Status),
 		CreatedAt:  order.CreatedAt,
 	}
 	if order.ShieldUUID != nil {
@@ -75,11 +70,11 @@ func OrderToRepoUpdate(
 	if order.WeaponUUID != nil {
 		result.WeaponUUID = order.WeaponUUID
 	}
-	if transactionUUID != nil {
-		result.TransactionUUID = transactionUUID
+	if order.TransactionUUID != nil {
+		result.TransactionUUID = order.TransactionUUID
 	}
-	if paymentMethod != nil {
-		payment := string(*paymentMethod)
+	if order.PaymentMethod != nil {
+		payment := string(*order.PaymentMethod)
 		result.PaymentMethod = &payment
 	}
 

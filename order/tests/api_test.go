@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"log/slog"
 	"net"
 	"net/http"
 	"net/http/httptest"
@@ -1002,6 +1003,7 @@ func TestPayment_PayOrder_InvalidUUIDFormat(t *testing.T) {
 		PaymentMethod: paymentv1.PaymentMethod_PAYMENT_METHOD_CARD,
 	})
 	require.Error(t, err)
+	slog.Info("!!!", "err", err)
 	testutil.AssertGRPCStatus(t, err, codes.InvalidArgument)
 }
 
