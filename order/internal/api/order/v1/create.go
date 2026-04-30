@@ -2,11 +2,9 @@ package v1
 
 import (
 	"context"
-	"errors"
-	"net/http"
 
 	"github.com/MikeKirillov/rocketservices/order/internal/converter"
-	errs "github.com/MikeKirillov/rocketservices/order/internal/errors"
+	sharedErrs "github.com/MikeKirillov/rocketservices/shared/pkg/errors"
 	orderv1 "github.com/MikeKirillov/rocketservices/shared/pkg/openapi/order/v1"
 )
 
@@ -17,33 +15,13 @@ func (o *orderHandler) CreateOrder(ctx context.Context, req *orderv1.CreateOrder
 
 	order, err := o.orderService.Create(ctx, orderRq)
 	if err != nil {
-		switch {
-		case errors.Is(err, errs.ErrOmittedRequiredField) ||
-			errors.Is(err, errs.ErrInvalidUUID) ||
-			errors.Is(err, errs.ErrGrpcInvalidArgument):
-			return &orderv1.CreateOrderBadRequest{
-				Code:    http.StatusBadRequest,
-				Message: err.Error(),
-			}, nil
-
-		case errors.Is(err, errs.ErrPartNotFound) || errors.Is(err, errs.ErrInventoryNotFound):
-			return &orderv1.CreateOrderNotFound{
-				Code:    http.StatusNotFound,
-				Message: err.Error(),
-			}, nil
-
-		case errors.Is(err, errs.ErrOutOfStock):
-			return &orderv1.CreateOrderConflict{
-				Code:    http.StatusConflict,
-				Message: err.Error(),
-			}, nil
-
-		default:
-			return &orderv1.CreateOrderInternalServerError{
-				Code:    http.StatusInternalServerError,
-				Message: err.Error(),
-			}, nil
-		}
+		return sharedErrs.MapHTTPError[orderv1.CreateOrderRes](
+			err,
+			sharedErrs.WithBadRequest[orderv1.CreateOrderBadRequest](),
+			sharedErrs.WithNotFound[orderv1.CreateOrderNotFound](),
+			sharedErrs.WithConflict[orderv1.CreateOrderConflict](),
+			sharedErrs.WithInternal[orderv1.CreateOrderInternalServerError](),
+		)
 	}
 
 	// 8. Вернуть order_uuid и total_price

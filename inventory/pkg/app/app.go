@@ -1,12 +1,15 @@
 package app
 
 import (
+	"log/slog"
+
 	"google.golang.org/grpc"
 
 	partAPIV1 "github.com/MikeKirillov/rocketservices/inventory/internal/api/part/v1"
 	partRepository "github.com/MikeKirillov/rocketservices/inventory/internal/repository/part"
 	partService "github.com/MikeKirillov/rocketservices/inventory/internal/service/part"
 	interceptor "github.com/MikeKirillov/rocketservices/shared/interceptor"
+	sharedErrs "github.com/MikeKirillov/rocketservices/shared/pkg/errors"
 	inventoryv1 "github.com/MikeKirillov/rocketservices/shared/pkg/proto/inventory/v1"
 )
 
@@ -22,6 +25,7 @@ func Interceptors() []grpc.ServerOption {
 		grpc.ChainUnaryInterceptor(
 			interceptor.RecoveryInterceptor(),
 			interceptor.LoggerInterceptor(),
+			sharedErrs.UnaryErrorInterceptor(slog.Default()),
 		),
 	}
 }

@@ -16,10 +16,13 @@ func paymentMethodToProto(payment model.PaymentMethod) paymentv1.PaymentMethod {
 	switch payment {
 	case model.PaymentMethodCard:
 		return paymentv1.PaymentMethod_PAYMENT_METHOD_CARD
+
 	case model.PaymentMethodSbp:
 		return paymentv1.PaymentMethod_PAYMENT_METHOD_SBP
+
 	case model.PaymentMethodCreditCard:
 		return paymentv1.PaymentMethod_PAYMENT_METHOD_CREDIT_CARD
+
 	default:
 		return paymentv1.PaymentMethod_PAYMENT_METHOD_INVESTOR_MONEY
 	}

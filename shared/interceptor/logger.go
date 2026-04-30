@@ -13,7 +13,12 @@ import (
 // LoggerInterceptor создает серверный унарный интерцептор, который логирует
 // информацию о времени выполнения методов gRPC сервера.
 func LoggerInterceptor() grpc.UnaryServerInterceptor {
-	return func(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp any, err error) {
+	return func(
+		ctx context.Context,
+		req any,
+		info *grpc.UnaryServerInfo,
+		handler grpc.UnaryHandler,
+	) (resp any, err error) {
 		// Извлекаем имя метода из полного пути
 		method := path.Base(info.FullMethod)
 
