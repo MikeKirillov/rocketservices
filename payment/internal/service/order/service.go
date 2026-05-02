@@ -37,8 +37,7 @@ func (s *service) Pay(_ context.Context, order model.Order) (string, error) {
 	// Сгенерировать transaction_uuid (UUID v4)
 	newUUID := uuid.NewString()
 
-	// Вывести в лог: "оплата прошла успешно, order_uuid: X, transaction_uuid: Y"
-	slog.Info("оплата прошла успешно", "order_uuid", order.Uuid, "transaction_uuid", newUUID)
+	slog.Info("оплата выполнена", "order_uuid", order.Uuid, "transaction_uuid", newUUID, "payment_method", order.PaymentMethod)
 
 	return newUUID, nil
 }

@@ -32,12 +32,12 @@ func (r *repository) Get(_ context.Context, id string) (model.Order, error) {
 	return converter.OrderToModel(order), nil
 }
 
-func (r *repository) Create(_ context.Context, order record.Order) error {
+func (r *repository) Create(_ context.Context, order record.Order) (string, error) {
 	r.mu.Lock()
 	r.data[order.OrderUUID] = order
 	r.mu.Unlock()
 
-	return nil
+	return order.OrderUUID, nil
 }
 
 func (r *repository) Update(_ context.Context, order record.Order) error {

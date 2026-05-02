@@ -24,7 +24,7 @@ func (s *service) Pay(ctx context.Context, orderRq model.PayOrderRq) (uuid.UUID,
 
 	// 2. Проверить статус == PENDING_PAYMENT
 	if order.Status != model.OrderStatusPendingPayment {
-		return uuid.Nil, sharedErrs.NewConflict(errs.ErrOrderAlreadyPaid)
+		return uuid.Nil, sharedErrs.NewConflict(errs.ErrOrderAlreadyPaidOrCancalled)
 	}
 
 	// 3. Вызвать h.paymentClient.PayOrder для обработки платежа

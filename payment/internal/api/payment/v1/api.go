@@ -19,7 +19,7 @@ func NewAPI(orderService OrderService) *api {
 
 // PayOrder обрабатывает оплату заказа.
 func (a *api) PayOrder(ctx context.Context, req *paymentv1.PayOrderRequest) (*paymentv1.PayOrderResponse, error) {
-	order := converter.OrderToModel(req.GetOrderUuid(), req.GetPaymentMethod())
+	order := converter.OrderToModel(req)
 	transaction, err := a.orderService.Pay(ctx, order)
 	if err != nil {
 		return nil, err

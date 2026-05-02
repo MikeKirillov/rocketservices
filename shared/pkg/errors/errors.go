@@ -77,7 +77,6 @@ type BusinessError struct {
 	message string
 }
 
-// same as ClientMessage() // TODO DELETE comment.
 func (e *BusinessError) Error() string {
 	if e == nil {
 		return ""
@@ -105,9 +104,10 @@ func (e *BusinessError) Code() Code {
 	return e.code
 }
 
-func (e *BusinessError) Is(target error) bool {
+func (e *BusinessError) Is(err error) bool {
 	var t *BusinessError
-	ok := errors.As(target, &t)
+	ok := errors.As(err, &t)
+
 	if !ok {
 		return false
 	}

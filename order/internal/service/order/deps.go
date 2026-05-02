@@ -9,7 +9,7 @@ import (
 
 type OrderRepository interface {
 	Get(ctx context.Context, id string) (model.Order, error)
-	Create(ctx context.Context, order record.Order) error
+	Create(ctx context.Context, order record.Order) (string, error)
 	Update(ctx context.Context, order record.Order) error
 }
 
