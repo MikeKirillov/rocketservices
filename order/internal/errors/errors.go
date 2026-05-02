@@ -4,10 +4,10 @@ import "errors"
 
 var (
 	// Ошибки заказов.
-	ErrOrderNotFound    = errors.New("заказ не найден")
-	ErrOrderAlreadyPaid = errors.New("заказ уже оплачен или был отменен")
-	ErrOrderCancelled   = errors.New("заказ отменён")
-	ErrOrderCancelling  = errors.New("невозможно отменить заказ")
+	ErrOrderNotFound               = errors.New("заказ не найден")
+	ErrOrderAlreadyPaidOrCancalled = errors.New("заказ уже оплачен или был отменен")
+	ErrOrderCancelled              = errors.New("заказ отменён")
+	ErrOrderCancelling             = errors.New("невозможно отменить заказ")
 
 	// Ошибки деталей.
 	ErrPartNotFound = errors.New("деталь не найдена")

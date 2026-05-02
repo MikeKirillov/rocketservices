@@ -5,10 +5,10 @@ import (
 	paymentv1 "github.com/MikeKirillov/rocketservices/shared/pkg/proto/payment/v1"
 )
 
-func OrderToModel(id string, paymentMethod paymentv1.PaymentMethod) model.Order {
+func OrderToModel(order *paymentv1.PayOrderRequest) model.Order {
 	return model.Order{
-		Uuid:          id,
-		PaymentMethod: PayMethodToModel(paymentMethod),
+		Uuid:          order.GetOrderUuid(),
+		PaymentMethod: PayMethodToModel(order.GetPaymentMethod()),
 	}
 }
 

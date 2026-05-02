@@ -52,19 +52,23 @@ func (s *service) Create(ctx context.Context, orderRq model.CreateOrderRq) (mode
 	}
 
 	// 5. Сгенерировать order_uuid (UUID v4)
-	orderUUID := uuid.New()
+	// Создать заказ со статусом PENDING_PAYMENT
+	order := converter.OrderToRepoCreate(orderRq, totalPrice, model.OrderStatusPendingPayment)
 
-	// 6. Создать заказ со статусом PENDING_PAYMENT
-	order := converter.OrderToRepoCreate(orderRq, totalPrice, orderUUID.String(), model.OrderStatusPendingPayment)
-
-	// 7. Сохранить в store
-	err = s.orderRepository.Create(ctx, order)
+	// 6. Сохранить в store
+	orderUUID, err := s.orderRepository.Create(ctx, order)
 	if err != nil {
 		return model.CreateOrderRs{}, sharedErrs.NewInternal(err)
 	}
 
-	// 8. Вернуть order_uuid и total_price
-	return model.CreateOrderRs{OrderUUID: orderUUID, TotalPrice: totalPrice}, nil
+	// 7. Вернуть order_uuid и total_price
+	orderUUIDParsed, err := uuid.Parse(orderUUID)
+	if err != nil {
+		return model.CreateOrderRs{}, sharedErrs.NewInvalidArgument(
+			fmt.Errorf("ошибка при парсинге orderUUID %s: %w", orderUUID, errs.ErrInvalidUUID),
+		)
+	}
+	return model.CreateOrderRs{OrderUUID: orderUUIDParsed, TotalPrice: totalPrice}, nil
 }
 
 func checkRequiredField(field, fieldName string) error {

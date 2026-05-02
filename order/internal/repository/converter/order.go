@@ -3,6 +3,8 @@ package converter
 import (
 	"time"
 
+	"github.com/google/uuid"
+
 	"github.com/MikeKirillov/rocketservices/order/internal/model"
 	"github.com/MikeKirillov/rocketservices/order/internal/repository/record"
 )
@@ -35,11 +37,10 @@ func OrderToModel(order record.Order) model.Order {
 func OrderToRepoCreate(
 	order model.CreateOrderRq,
 	totalPrice int64,
-	orderUUID string,
 	status model.OrderStatus,
 ) record.Order {
 	result := record.Order{
-		OrderUUID:  orderUUID,
+		OrderUUID:  uuid.New().String(),
 		HullUUID:   order.HullUUID,
 		EngineUUID: order.EngineUUID,
 		TotalPrice: totalPrice,
