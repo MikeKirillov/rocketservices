@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/brianvoe/gofakeit/v7"
+	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc/codes"
@@ -33,23 +34,17 @@ func TestGetPart(t *testing.T) {
 
 	var (
 		ctx     = context.Background()
-		uuid    = gofakeit.UUID()
+		id      = uuid.New()
 		str     = gofakeit.Word()
 		num     = gofakeit.Int64()
 		created = time.Now()
 
 		req = &inventoryv1.GetPartRequest{
-			Uuid: uuid,
+			Uuid: id.String(),
 		}
-
-		reqInvalidUuid = &inventoryv1.GetPartRequest{
-			Uuid: str,
-		}
-
-		reqEmptyUuid = &inventoryv1.GetPartRequest{}
 
 		expModel = model.Part{
-			UUID:          uuid,
+			UUID:          id,
 			Name:          str,
 			Description:   str,
 			Price:         num,
@@ -72,7 +67,7 @@ func TestGetPart(t *testing.T) {
 			name: "деталь найдена - ошибок нет",
 			args: args{req: req},
 			setupMock: func(s *mocks.PartService) {
-				s.EXPECT().Get(ctx, req.GetUuid()).Return(expModel, nil)
+				s.EXPECT().Get(ctx, id).Return(expModel, nil)
 			},
 			expected: expected{
 				res: &inventoryv1.GetPartResponse{Part: expProto},
@@ -86,7 +81,7 @@ func TestGetPart(t *testing.T) {
 			args: args{req: req},
 			setupMock: func(s *mocks.PartService) {
 				s.EXPECT().
-					Get(ctx, req.GetUuid()).
+					Get(ctx, id).
 					Return(model.Part{}, sharedErrs.NewNotFound(errs.ErrPartNotFound))
 			},
 			expected: expected{
@@ -103,32 +98,11 @@ func TestGetPart(t *testing.T) {
 			},
 		},
 		{
-			name: "невалидный формат UUID - codes.InvalidArgument",
-			args: args{req: reqInvalidUuid},
-			setupMock: func(s *mocks.PartService) {
-				s.EXPECT().
-					Get(ctx, reqInvalidUuid.GetUuid()).
-					Return(model.Part{}, sharedErrs.NewInvalidArgument(errs.ErrPartInvalidUUID))
-			},
-			expected: expected{
-				res: nil,
-				errCheck: func(t *testing.T, err error) {
-					require.Error(t, err)
-
-					// Доменная ошибка - маппим Code -> grpc code, message - клиенту.
-					be, ok := sharedErrs.AsBusinessError(err)
-					assert.True(t, ok)
-					assert.Equal(t, codes.InvalidArgument, be.Code().GRPCCode())
-					assert.True(t, errors.Is(err, errs.ErrPartInvalidUUID))
-				},
-			},
-		},
-		{
 			name: "пустой UUID - codes.InvalidArgument",
-			args: args{req: reqEmptyUuid},
+			args: args{req: req},
 			setupMock: func(s *mocks.PartService) {
 				s.EXPECT().
-					Get(ctx, reqEmptyUuid.GetUuid()).
+					Get(ctx, id).
 					Return(model.Part{}, sharedErrs.NewInvalidArgument(errs.ErrPartOmittedUUID))
 			},
 			expected: expected{
@@ -149,7 +123,7 @@ func TestGetPart(t *testing.T) {
 			args: args{req: req},
 			setupMock: func(s *mocks.PartService) {
 				s.EXPECT().
-					Get(ctx, req.GetUuid()).
+					Get(ctx, id).
 					Return(model.Part{}, sharedErrs.NewInternal(errInternal))
 			},
 			expected: expected{

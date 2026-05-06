@@ -47,13 +47,13 @@ func TestCreateOrder(t *testing.T) {
 			WeaponUUID: orderv1.NewOptNilUUID(id),
 		}
 
-		orderRq = converter.OrderCreateRqToModel(req)
-		orderRs = model.CreateOrderRs{
+		orderRq, _ = converter.OrderCreateRqToModel(req)
+		orderRs    = model.CreateOrderRs{
 			OrderUUID:  orderId,
 			TotalPrice: num * 2,
 		}
-		orderRqOpt = converter.OrderCreateRqToModel(reqOpt)
-		orderRsOpt = model.CreateOrderRs{
+		orderRqOpt, _ = converter.OrderCreateRqToModel(reqOpt)
+		orderRsOpt    = model.CreateOrderRs{
 			OrderUUID:  orderId,
 			TotalPrice: num * 4,
 		}

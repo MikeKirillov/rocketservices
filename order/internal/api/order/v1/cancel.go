@@ -10,7 +10,7 @@ import (
 // CancelOrder реализует операцию cancelOrder.
 // POST /api/v1/orders/{order_uuid}/cancel.
 func (o *orderHandler) CancelOrder(ctx context.Context, params orderv1.CancelOrderParams) (orderv1.CancelOrderRes, error) {
-	err := o.orderService.Cancel(ctx, params.OrderUUID.String())
+	err := o.orderService.Cancel(ctx, params.OrderUUID)
 	if err != nil {
 		return sharedErrs.MapHTTPError[orderv1.CancelOrderRes](
 			err,

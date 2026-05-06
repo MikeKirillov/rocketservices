@@ -6,7 +6,7 @@ import (
 	"google.golang.org/grpc"
 
 	paymentAPIV1 "github.com/MikeKirillov/rocketservices/payment/internal/api/payment/v1"
-	orderService "github.com/MikeKirillov/rocketservices/payment/internal/service/order"
+	orderService "github.com/MikeKirillov/rocketservices/payment/internal/service/payment"
 	"github.com/MikeKirillov/rocketservices/shared/interceptor"
 	sharedErrs "github.com/MikeKirillov/rocketservices/shared/pkg/errors"
 	paymentv1 "github.com/MikeKirillov/rocketservices/shared/pkg/proto/payment/v1"

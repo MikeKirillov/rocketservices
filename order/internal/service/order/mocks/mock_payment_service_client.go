@@ -11,6 +11,7 @@ import (
 	"context"
 
 	"github.com/MikeKirillov/rocketservices/order/internal/model"
+	"github.com/google/uuid"
 	mock "github.com/stretchr/testify/mock"
 )
 
@@ -42,22 +43,24 @@ func (_m *PaymentServiceClient) EXPECT() *PaymentServiceClient_Expecter {
 }
 
 // PayOrder provides a mock function for the type PaymentServiceClient
-func (_mock *PaymentServiceClient) PayOrder(ctx context.Context, orderRq model.PayOrderRq) (string, error) {
+func (_mock *PaymentServiceClient) PayOrder(ctx context.Context, orderRq model.PayOrderRq) (uuid.UUID, error) {
 	ret := _mock.Called(ctx, orderRq)
 
 	if len(ret) == 0 {
 		panic("no return value specified for PayOrder")
 	}
 
-	var r0 string
+	var r0 uuid.UUID
 	var r1 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, model.PayOrderRq) (string, error)); ok {
+	if returnFunc, ok := ret.Get(0).(func(context.Context, model.PayOrderRq) (uuid.UUID, error)); ok {
 		return returnFunc(ctx, orderRq)
 	}
-	if returnFunc, ok := ret.Get(0).(func(context.Context, model.PayOrderRq) string); ok {
+	if returnFunc, ok := ret.Get(0).(func(context.Context, model.PayOrderRq) uuid.UUID); ok {
 		r0 = returnFunc(ctx, orderRq)
 	} else {
-		r0 = ret.Get(0).(string)
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(uuid.UUID)
+		}
 	}
 	if returnFunc, ok := ret.Get(1).(func(context.Context, model.PayOrderRq) error); ok {
 		r1 = returnFunc(ctx, orderRq)
@@ -97,12 +100,12 @@ func (_c *PaymentServiceClient_PayOrder_Call) Run(run func(ctx context.Context, 
 	return _c
 }
 
-func (_c *PaymentServiceClient_PayOrder_Call) Return(s string, err error) *PaymentServiceClient_PayOrder_Call {
-	_c.Call.Return(s, err)
+func (_c *PaymentServiceClient_PayOrder_Call) Return(uUID uuid.UUID, err error) *PaymentServiceClient_PayOrder_Call {
+	_c.Call.Return(uUID, err)
 	return _c
 }
 
-func (_c *PaymentServiceClient_PayOrder_Call) RunAndReturn(run func(ctx context.Context, orderRq model.PayOrderRq) (string, error)) *PaymentServiceClient_PayOrder_Call {
+func (_c *PaymentServiceClient_PayOrder_Call) RunAndReturn(run func(ctx context.Context, orderRq model.PayOrderRq) (uuid.UUID, error)) *PaymentServiceClient_PayOrder_Call {
 	_c.Call.Return(run)
 	return _c
 }

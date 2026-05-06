@@ -4,6 +4,8 @@ import (
 	"context"
 	"sync"
 
+	"github.com/google/uuid"
+
 	errs "github.com/MikeKirillov/rocketservices/order/internal/errors"
 	"github.com/MikeKirillov/rocketservices/order/internal/model"
 	"github.com/MikeKirillov/rocketservices/order/internal/repository/converter"
@@ -12,14 +14,14 @@ import (
 
 type repository struct {
 	mu   sync.RWMutex
-	data map[string]record.Order
+	data map[uuid.UUID]record.Order
 }
 
 func NewRepository() *repository {
-	return &repository{data: make(map[string]record.Order)}
+	return &repository{data: make(map[uuid.UUID]record.Order)}
 }
 
-func (r *repository) Get(_ context.Context, id string) (model.Order, error) {
+func (r *repository) Get(_ context.Context, id uuid.UUID) (model.Order, error) {
 	// Найти заказ (с блокировкой для thread-safety)
 	r.mu.RLock()
 	order, ok := r.data[id]
@@ -32,15 +34,19 @@ func (r *repository) Get(_ context.Context, id string) (model.Order, error) {
 	return converter.OrderToModel(order), nil
 }
 
-func (r *repository) Create(_ context.Context, order record.Order) (string, error) {
+func (r *repository) Create(_ context.Context, order model.Order) (uuid.UUID, error) {
+	o := converter.OrderToRepo(order)
+
 	r.mu.Lock()
-	r.data[order.OrderUUID] = order
+	r.data[order.OrderUUID] = o
 	r.mu.Unlock()
 
 	return order.OrderUUID, nil
 }
 
-func (r *repository) Update(_ context.Context, order record.Order) error {
+func (r *repository) Update(_ context.Context, order model.Order) error {
+	o := converter.OrderToRepo(order)
+
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
@@ -48,6 +54,6 @@ func (r *repository) Update(_ context.Context, order record.Order) error {
 		return errs.ErrOrderNotFound
 	}
 
-	r.data[order.OrderUUID] = order
+	r.data[order.OrderUUID] = o
 	return nil
 }

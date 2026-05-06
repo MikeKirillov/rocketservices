@@ -11,7 +11,13 @@ import (
 // CreateOrder реализует операцию createOrder.
 // POST /api/v1/orders.
 func (o *orderHandler) CreateOrder(ctx context.Context, req *orderv1.CreateOrderRequest) (orderv1.CreateOrderRes, error) {
-	orderRq := converter.OrderCreateRqToModel(req)
+	orderRq, err := converter.OrderCreateRqToModel(req)
+	if err != nil {
+		return sharedErrs.MapHTTPError[orderv1.CreateOrderRes](
+			err,
+			sharedErrs.WithBadRequest[orderv1.CreateOrderBadRequest](),
+		)
+	}
 
 	order, err := o.orderService.Create(ctx, orderRq)
 	if err != nil {

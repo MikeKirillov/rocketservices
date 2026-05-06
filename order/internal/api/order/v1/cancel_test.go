@@ -45,7 +45,7 @@ func TestCancelOrder(t *testing.T) {
 			name: "успешная отмена - ошибок нет",
 			args: args{req: req},
 			setupMock: func(s *mocks.OrderService) {
-				s.EXPECT().Cancel(ctx, id.String()).Return(nil)
+				s.EXPECT().Cancel(ctx, id).Return(nil)
 			},
 			expected: expected{
 				res:    &orderv1.CancelOrderResponse{},
@@ -60,7 +60,7 @@ func TestCancelOrder(t *testing.T) {
 			args: args{req: req},
 			setupMock: func(s *mocks.OrderService) {
 				s.EXPECT().
-					Cancel(ctx, id.String()).
+					Cancel(ctx, id).
 					Return(sharedErrs.NewNotFound(errs.ErrOrderNotFound))
 			},
 			expected: expected{
@@ -76,17 +76,36 @@ func TestCancelOrder(t *testing.T) {
 			},
 		},
 		{
-			name: "заказ уже оплачен или отменен - errs.ErrOrderAlreadyPaidOrCancalled",
+			name: "заказ уже отменен - errs.ErrOrderAlreadyCancelled",
 			args: args{req: req},
 			setupMock: func(s *mocks.OrderService) {
 				s.EXPECT().
-					Cancel(ctx, id.String()).
-					Return(sharedErrs.NewConflict(errs.ErrOrderAlreadyPaidOrCancalled))
+					Cancel(ctx, id).
+					Return(sharedErrs.NewConflict(errs.ErrOrderAlreadyCancelled))
 			},
 			expected: expected{
 				res: &orderv1.CancelOrderConflict{
 					Code:    http.StatusConflict,
-					Message: "заказ уже оплачен или был отменен",
+					Message: "заказ уже отменён",
+				},
+				hasErr: true,
+				errCheck: func(t *testing.T, err error) {
+					require.NoError(t, err)
+				},
+			},
+		},
+		{
+			name: "заказ уже оплачен - errs.ErrOrderAlreadyPaid",
+			args: args{req: req},
+			setupMock: func(s *mocks.OrderService) {
+				s.EXPECT().
+					Cancel(ctx, id).
+					Return(sharedErrs.NewConflict(errs.ErrOrderAlreadyPaid))
+			},
+			expected: expected{
+				res: &orderv1.CancelOrderConflict{
+					Code:    http.StatusConflict,
+					Message: "заказ уже оплачен",
 				},
 				hasErr: true,
 				errCheck: func(t *testing.T, err error) {

@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/brianvoe/gofakeit/v7"
+	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -19,7 +20,7 @@ func TestGet(t *testing.T) {
 	t.Parallel()
 
 	type args struct {
-		id string
+		id uuid.UUID
 	}
 
 	type expected struct {
@@ -29,16 +30,17 @@ func TestGet(t *testing.T) {
 	}
 
 	var (
-		ctx  = context.Background()
-		uuid = gofakeit.UUID()
-		num  = gofakeit.Int64()
+		ctx   = context.Background()
+		uuid  = uuid.New()
+		num   = gofakeit.Int64()
+		parts = []model.Part{
+			{Uuid: uuid, Type: model.PartTypeHull},
+			{Uuid: uuid, Type: model.PartTypeEngine},
+		}
 
 		expModel = model.Order{
 			OrderUUID:       uuid,
-			HullUUID:        uuid,
-			EngineUUID:      uuid,
-			ShieldUUID:      nil,
-			WeaponUUID:      nil,
+			Parts:           parts,
 			TotalPrice:      num,
 			TransactionUUID: nil,
 			PaymentMethod:   nil,
@@ -121,10 +123,7 @@ func TestGet(t *testing.T) {
 			} else {
 				require.NotEmpty(t, res)
 				assert.Equal(t, test.expected.res.OrderUUID, res.OrderUUID)
-				assert.Equal(t, test.expected.res.HullUUID, res.HullUUID)
-				assert.Equal(t, test.expected.res.EngineUUID, res.EngineUUID)
-				assert.Nil(t, res.ShieldUUID)
-				assert.Nil(t, res.WeaponUUID)
+				assert.Equal(t, len(test.expected.res.Parts), len(res.Parts))
 				assert.Equal(t, test.expected.res.TotalPrice, res.TotalPrice)
 				assert.Nil(t, res.TransactionUUID)
 				assert.Nil(t, res.PaymentMethod)

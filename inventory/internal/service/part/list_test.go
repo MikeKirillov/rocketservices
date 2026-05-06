@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/brianvoe/gofakeit/v7"
+	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -28,32 +29,30 @@ func TestList(t *testing.T) {
 	}
 
 	var (
-		ctx            = context.Background()
-		uuid           = gofakeit.UUID()
-		uuid2          = gofakeit.UUID()
-		str            = gofakeit.Word()
-		num            = gofakeit.Int64()
-		created        = time.Now()
-		partTypeUnspec = "UNSPECIFIED"
+		ctx     = context.Background()
+		id      = uuid.New()
+		id2     = uuid.New()
+		str     = gofakeit.Word()
+		num     = gofakeit.Int64()
+		created = time.Now()
 
 		filter = model.PartFilter{
-			PartType: model.PartType(partTypeUnspec),
-			UUIDs:    nil,
+			UUIDs: nil,
 		}
 		filterHull = model.PartFilter{
 			PartType: model.PartTypeHull,
 			UUIDs:    nil,
 		}
 		filterUuid = model.PartFilter{
-			UUIDs: []string{uuid},
+			UUIDs: []uuid.UUID{id},
 		}
 		filterUuids = model.PartFilter{
-			UUIDs: []string{uuid, uuid2},
+			UUIDs: []uuid.UUID{id, id2},
 		}
 
 		expModel = []model.Part{
 			{
-				UUID:          uuid,
+				UUID:          id,
 				Name:          "дорогая деталь",
 				Description:   str,
 				Price:         num,
@@ -102,7 +101,7 @@ func TestList(t *testing.T) {
 			name: "фильтр по конкретным UUID - детали в порядке запрошенных",
 			args: args{filter: filterUuid},
 			setupMock: func(s *mocks.PartRepository) {
-				s.EXPECT().ListByUUIDs(ctx, []string{uuid}).Return(expModel, nil)
+				s.EXPECT().ListByUUIDs(ctx, []uuid.UUID{id}).Return(expModel, nil)
 			},
 			expected: expected{
 				res: expModel,
@@ -116,7 +115,7 @@ func TestList(t *testing.T) {
 			args: args{filter: filterUuids},
 			setupMock: func(s *mocks.PartRepository) {
 				s.EXPECT().
-					ListByUUIDs(ctx, []string{uuid, uuid2}).
+					ListByUUIDs(ctx, []uuid.UUID{id, id2}).
 					Return(nil, errs.ErrPartNotFound)
 			},
 			expected: expected{

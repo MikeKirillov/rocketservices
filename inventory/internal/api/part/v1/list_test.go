@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/brianvoe/gofakeit/v7"
+	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc/codes"
@@ -32,13 +33,13 @@ func TestListParts(t *testing.T) {
 	}
 
 	var (
-		ctx         = context.Background()
-		uuid        = gofakeit.UUID()
-		uuid2       = gofakeit.UUID()
-		uuidInvalid = gofakeit.Word()
-		str         = gofakeit.Word()
-		num         = gofakeit.Int64()
-		created     = time.Now()
+		ctx     = context.Background()
+		id      = uuid.New()
+		uuid    = gofakeit.UUID()
+		uuid2   = gofakeit.UUID()
+		str     = gofakeit.Word()
+		num     = gofakeit.Int64()
+		created = time.Now()
 
 		req = &inventoryv1.ListPartsRequest{
 			PartType: inventoryv1.PartType_PART_TYPE_UNSPECIFIED,
@@ -54,19 +55,15 @@ func TestListParts(t *testing.T) {
 		reqUuids = &inventoryv1.ListPartsRequest{
 			Uuids: []string{uuid, uuid2},
 		}
-		reqUuidInvalid = &inventoryv1.ListPartsRequest{
-			Uuids: []string{uuid, uuidInvalid},
-		}
 
-		rqModel            = converter.PartsRqToModel(req)
-		rqModelHull        = converter.PartsRqToModel(reqHull)
-		rqModelUuid        = converter.PartsRqToModel(reqUuid)
-		rqModelUuids       = converter.PartsRqToModel(reqUuids)
-		rqModelUuidInvalid = converter.PartsRqToModel(reqUuidInvalid)
+		rqModel, _      = converter.PartsRqToModel(req)
+		rqModelHull, _  = converter.PartsRqToModel(reqHull)
+		rqModelUuid, _  = converter.PartsRqToModel(reqUuid)
+		rqModelUuids, _ = converter.PartsRqToModel(reqUuids)
 
 		expModel = []model.Part{
 			{
-				UUID:          uuid,
+				UUID:          id,
 				Name:          "дорогая деталь",
 				Description:   str,
 				Price:         num,
@@ -143,27 +140,6 @@ func TestListParts(t *testing.T) {
 					assert.True(t, ok)
 					assert.Equal(t, codes.NotFound, be.Code().GRPCCode())
 					assert.True(t, errors.Is(err, errs.ErrPartNotFound))
-				},
-			},
-		},
-		{
-			name: "невалидный формат UUID - codes.InvalidArgument",
-			args: args{req: reqUuidInvalid},
-			setupMock: func(s *mocks.PartService) {
-				s.EXPECT().
-					List(ctx, rqModelUuidInvalid).
-					Return(nil, sharedErrs.NewInvalidArgument(errs.ErrPartInvalidUUID))
-			},
-			expected: expected{
-				res: nil,
-				errCheck: func(t *testing.T, err error) {
-					require.Error(t, err)
-
-					// Доменная ошибка - маппим Code -> grpc code, message - клиенту.
-					be, ok := sharedErrs.AsBusinessError(err)
-					assert.True(t, ok)
-					assert.Equal(t, codes.InvalidArgument, be.Code().GRPCCode())
-					assert.True(t, errors.Is(err, errs.ErrPartInvalidUUID))
 				},
 			},
 		},

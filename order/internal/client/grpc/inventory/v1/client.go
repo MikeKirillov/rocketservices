@@ -2,9 +2,12 @@ package v1
 
 import (
 	"context"
+	"errors"
+	"fmt"
 	"log/slog"
 	"time"
 
+	"github.com/google/uuid"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
@@ -29,12 +32,12 @@ func New(grpcClient inventoryv1.InventoryServiceClient) *client {
 }
 
 // ListParts возвращает список деталей.
-func (c *client) ListParts(ctx context.Context, partsUuids []string) ([]model.Part, error) {
+func (c *client) ListParts(ctx context.Context, partsUuids []uuid.UUID) ([]model.Part, error) {
 	// ПАТТЕРН 1: Контекст с таймаутом
 	ctx, cancel := context.WithTimeout(ctx, grpcCallTimeout)
 	defer cancel()
 
-	rs, err := c.grpcClient.ListParts(ctx, &inventoryv1.ListPartsRequest{Uuids: partsUuids})
+	rs, err := c.grpcClient.ListParts(ctx, &inventoryv1.ListPartsRequest{Uuids: converter.PartUuidsToStr(partsUuids)})
 	// ПАТТЕРН 2: Обработка gRPC ошибок
 	if err != nil {
 		st, ok := status.FromError(err)
@@ -47,7 +50,7 @@ func (c *client) ListParts(ctx context.Context, partsUuids []string) ([]model.Pa
 		switch st.Code() {
 		case codes.NotFound:
 			slog.Error("получить список деталей", "message", st.Message())
-			return []model.Part{}, errs.ErrInventoryNotFound
+			return []model.Part{}, errs.ErrGrpcNotFound
 
 		case codes.InvalidArgument:
 			slog.Error("получить список деталей", "message", st.Message())
@@ -73,7 +76,17 @@ func (c *client) ListParts(ctx context.Context, partsUuids []string) ([]model.Pa
 
 	parts := make([]model.Part, len(rs.GetParts()))
 	for i, p := range rs.GetParts() {
-		part := converter.PartToModel(p)
+		part, err := converter.PartToModel(p)
+		if err != nil {
+			if errors.Is(err, errs.ErrInvalidUUID) {
+				slog.Error("неверный формат", "uuid", p.Uuid)
+				return []model.Part{}, fmt.Errorf("деталь %s: %w", p.GetUuid(), err)
+			}
+			if errors.Is(err, errs.ErrWrongPartType) {
+				return []model.Part{}, fmt.Errorf("деталь %s: %w", p.GetPartType(), err)
+			}
+			return []model.Part{}, errs.ErrUnknown
+		}
 		parts[i] = part
 	}
 	return parts, nil

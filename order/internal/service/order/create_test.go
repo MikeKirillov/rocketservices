@@ -30,40 +30,43 @@ func TestCreate(t *testing.T) {
 	}
 
 	var (
-		ctx        = context.Background()
-		id         = gofakeit.UUID()
-		id2        = gofakeit.UUID()
-		id3        = gofakeit.UUID()
-		id4        = gofakeit.UUID()
-		num        = gofakeit.Int64()
-		orderId    = uuid.New()
-		orderIdStr = orderId.String()
+		ctx     = context.Background()
+		id      = uuid.New()
+		id2     = uuid.New()
+		id3     = uuid.New()
+		id4     = uuid.New()
+		num     = gofakeit.Int64()
+		orderId = uuid.New()
+		parts   = []model.Part{
+			{Uuid: id, Type: model.PartTypeHull},
+			{Uuid: id2, Type: model.PartTypeEngine},
+		}
+		partsOpt = []model.Part{
+			{Uuid: id, Type: model.PartTypeHull},
+			{Uuid: id2, Type: model.PartTypeEngine},
+			{Uuid: id3, Type: model.PartTypeShield},
+			{Uuid: id4, Type: model.PartTypeWeapon},
+		}
 
 		req = model.CreateOrderRq{
-			HullUUID:   id,
-			EngineUUID: id2,
-			ShieldUUID: nil,
-			WeaponUUID: nil,
+			Parts: parts,
 		}
 		reqOpt = model.CreateOrderRq{
-			HullUUID:   id,
-			EngineUUID: id2,
-			ShieldUUID: &id3,
-			WeaponUUID: &id4,
+			Parts: partsOpt,
 		}
 
-		rqParts    = []string{id, id2}
-		rqPartsOpt = []string{id, id2, id3, id4}
+		rqParts    = []uuid.UUID{id, id2}
+		rqPartsOpt = []uuid.UUID{id, id2, id3, id4}
 		rsParts    = []model.Part{
 			{
 				Uuid:          id,
-				Name:          "hull",
+				Name:          new("hull"),
 				Price:         num,
 				StockQuantity: num,
 			},
 			{
 				Uuid:          id2,
-				Name:          "engine",
+				Name:          new("engine"),
 				Price:         num,
 				StockQuantity: num,
 			},
@@ -71,13 +74,15 @@ func TestCreate(t *testing.T) {
 		rsPartsOut = []model.Part{
 			{
 				Uuid:          id,
-				Name:          "hull",
+				Type:          model.PartTypeHull,
+				Name:          new("hull"),
 				Price:         num,
 				StockQuantity: 0,
 			},
 			{
 				Uuid:          id2,
-				Name:          "engine",
+				Type:          model.PartTypeEngine,
+				Name:          new("engine"),
 				Price:         num,
 				StockQuantity: num,
 			},
@@ -85,25 +90,29 @@ func TestCreate(t *testing.T) {
 		rsPartsOpt = []model.Part{
 			{
 				Uuid:          id,
-				Name:          "hull",
+				Type:          model.PartTypeHull,
+				Name:          new("hull"),
 				Price:         num,
 				StockQuantity: num,
 			},
 			{
 				Uuid:          id2,
-				Name:          "engine",
+				Type:          model.PartTypeEngine,
+				Name:          new("engine"),
 				Price:         num,
 				StockQuantity: num,
 			},
 			{
 				Uuid:          id3,
-				Name:          "shield",
+				Type:          model.PartTypeShield,
+				Name:          new("shield"),
 				Price:         num,
 				StockQuantity: num,
 			},
 			{
 				Uuid:          id4,
-				Name:          "weapon",
+				Type:          model.PartTypeWeapon,
+				Name:          new("weapon"),
 				Price:         num,
 				StockQuantity: num,
 			},
@@ -123,7 +132,14 @@ func TestCreate(t *testing.T) {
 			args: args{req: req},
 			setupMock: func(r *mocks.OrderRepository, i *mocks.InventoryServiceClient) {
 				i.EXPECT().ListParts(ctx, rqParts).Return(rsParts, nil)
-				r.EXPECT().Create(ctx, mock.Anything).Return(orderIdStr, nil)
+				r.EXPECT().Create(ctx, mock.MatchedBy(func(o model.Order) bool {
+					return o.OrderUUID != uuid.Nil &&
+						o.Parts != nil &&
+						len(o.Parts) > 0 &&
+						o.TotalPrice != 0 &&
+						o.Status == model.OrderStatusPendingPayment &&
+						!o.CreatedAt.IsZero()
+				})).Return(orderId, nil)
 			},
 			expected: expected{
 				res: model.CreateOrderRs{
@@ -141,7 +157,14 @@ func TestCreate(t *testing.T) {
 			args: args{req: reqOpt},
 			setupMock: func(r *mocks.OrderRepository, i *mocks.InventoryServiceClient) {
 				i.EXPECT().ListParts(ctx, rqPartsOpt).Return(rsPartsOpt, nil)
-				r.EXPECT().Create(ctx, mock.Anything).Return(orderIdStr, nil)
+				r.EXPECT().Create(ctx, mock.MatchedBy(func(o model.Order) bool {
+					return o.OrderUUID != uuid.Nil &&
+						o.Parts != nil &&
+						len(o.Parts) > 0 &&
+						o.TotalPrice != 0 &&
+						o.Status == model.OrderStatusPendingPayment &&
+						!o.CreatedAt.IsZero()
+				})).Return(orderId, nil)
 			},
 			expected: expected{
 				res: model.CreateOrderRs{
@@ -206,7 +229,14 @@ func TestCreate(t *testing.T) {
 			args: args{req: req},
 			setupMock: func(r *mocks.OrderRepository, i *mocks.InventoryServiceClient) {
 				i.EXPECT().ListParts(ctx, rqParts).Return(rsParts, nil)
-				r.EXPECT().Create(ctx, mock.Anything).Return(orderIdStr, errInternal)
+				r.EXPECT().Create(ctx, mock.MatchedBy(func(o model.Order) bool {
+					return o.OrderUUID != uuid.Nil &&
+						o.Parts != nil &&
+						len(o.Parts) > 0 &&
+						o.TotalPrice != 0 &&
+						o.Status == model.OrderStatusPendingPayment &&
+						!o.CreatedAt.IsZero()
+				})).Return(orderId, errInternal)
 			},
 			expected: expected{
 				res:    model.CreateOrderRs{},

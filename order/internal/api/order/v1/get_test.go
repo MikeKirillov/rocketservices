@@ -35,16 +35,24 @@ func TestGetOrder(t *testing.T) {
 	var (
 		ctx = context.Background()
 		id  = uuid.New()
-		id1 = gofakeit.UUID()
-		id2 = gofakeit.UUID()
+		id1 = uuid.New()
+		id2 = uuid.New()
 		num = gofakeit.Int64()
 
 		req = orderv1.GetOrderParams{OrderUUID: id}
 
 		expModel = model.Order{
-			OrderUUID:  id1,
-			HullUUID:   id2,
-			EngineUUID: id2,
+			OrderUUID: id1,
+			Parts: []model.Part{
+				{
+					Uuid: id2,
+					Type: model.PartTypeHull,
+				},
+				{
+					Uuid: id2,
+					Type: model.PartTypeEngine,
+				},
+			},
 			TotalPrice: num,
 			Status:     model.OrderStatusPendingPayment,
 			CreatedAt:  time.Now(),
@@ -65,7 +73,7 @@ func TestGetOrder(t *testing.T) {
 			name: "заказ найден - ошибок нет",
 			args: args{req: req},
 			setupMock: func(s *mocks.OrderService) {
-				s.EXPECT().Get(ctx, id.String()).Return(expModel, nil)
+				s.EXPECT().Get(ctx, id).Return(expModel, nil)
 			},
 			expected: expected{
 				res: res,
@@ -79,7 +87,7 @@ func TestGetOrder(t *testing.T) {
 			args: args{req: req},
 			setupMock: func(s *mocks.OrderService) {
 				s.EXPECT().
-					Get(ctx, id.String()).
+					Get(ctx, id).
 					Return(emptyModel, sharedErrs.NewNotFound(errs.ErrOrderNotFound))
 			},
 			expected: expected{
@@ -98,7 +106,7 @@ func TestGetOrder(t *testing.T) {
 			args: args{req: req},
 			setupMock: func(s *mocks.OrderService) {
 				s.EXPECT().
-					Get(ctx, id.String()).
+					Get(ctx, id).
 					Return(emptyModel, sharedErrs.NewInternal(errInternal))
 			},
 			expected: expected{

@@ -2,9 +2,11 @@ package v1
 
 import (
 	"context"
+	"fmt"
 	"log/slog"
 	"time"
 
+	"github.com/google/uuid"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
@@ -29,7 +31,7 @@ func New(grpcClient paymentv1.PaymentServiceClient) *client {
 }
 
 // PayOrder обрабатывает оплату заказа.
-func (c *client) PayOrder(ctx context.Context, orderRq model.PayOrderRq) (string, error) {
+func (c *client) PayOrder(ctx context.Context, orderRq model.PayOrderRq) (uuid.UUID, error) {
 	// ПАТТЕРН 1: Контекст с таймаутом
 	ctx, cancel := context.WithTimeout(ctx, grpcCallTimeout)
 	defer cancel()
@@ -41,35 +43,40 @@ func (c *client) PayOrder(ctx context.Context, orderRq model.PayOrderRq) (string
 		if !ok {
 			// Неизвестная ошибка
 			slog.Error("неизвестная ошибка", "error", err)
-			return "", errs.ErrGrpcInternal
+			return uuid.Nil, errs.ErrGrpcInternal
 		}
 		// Маппинг gRPC ошибок в доменные ошибки
 		switch st.Code() {
 		case codes.NotFound:
 			slog.Error("обработать платеж", "message", st.Message())
-			return "", errs.ErrInventoryNotFound
+			return uuid.Nil, errs.ErrGrpcNotFound
 
 		case codes.InvalidArgument:
 			slog.Error("обработать платеж", "message", st.Message())
-			return "", errs.ErrGrpcInvalidArgument
+			return uuid.Nil, errs.ErrGrpcInvalidArgument
 
 		case codes.DeadlineExceeded: // Таймаут — клиент может повторить запрос
 			slog.Error("таймаут", "message", st.Message())
-			return "", errs.ErrGrpcTimeout
+			return uuid.Nil, errs.ErrGrpcTimeout
 
 		case codes.Unavailable: // gRPC сервис недоступен
 			slog.Error("gRPC сервис недоступен", "message", st.Message())
-			return "", errs.ErrGrpcUnavailable
+			return uuid.Nil, errs.ErrGrpcUnavailable
 
 		case codes.Canceled: // Запрос был отменён (например, клиент закрыл соединение)
 			slog.Error("запрос отменен", "message", st.Message())
-			return "", errs.ErrGrpcUnavailable
+			return uuid.Nil, errs.ErrGrpcUnavailable
 
 		default:
 			slog.Error("ошибка gRPC", "code", st.Code(), "message", st.Message())
-			return "", errs.ErrGrpcInternal
+			return uuid.Nil, errs.ErrGrpcInternal
 		}
 	}
 
-	return rs.GetTransactionUuid(), nil
+	transactionId, err := uuid.Parse(rs.GetTransactionUuid())
+	if err != nil {
+		slog.Error("неверный формат", "uuid", rs.GetTransactionUuid())
+		return uuid.Nil, fmt.Errorf("транзакция %s: %w", rs.GetTransactionUuid(), errs.ErrInvalidUUID)
+	}
+	return transactionId, nil
 }
