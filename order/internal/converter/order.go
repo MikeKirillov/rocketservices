@@ -62,13 +62,11 @@ func OrderCreateRqToModel(orderRq *orderv1.CreateOrderRequest) (model.CreateOrde
 		},
 	}
 
-	if orderRq.GetShieldUUID().IsSet() && !orderRq.GetShieldUUID().IsNull() {
-		val := orderRq.GetShieldUUID().Value
-		parts = append(parts, model.Part{Uuid: val, Type: model.PartTypeShield})
+	if v, ok := orderRq.GetShieldUUID().Get(); ok {
+		parts = append(parts, model.Part{Uuid: v, Type: model.PartTypeShield})
 	}
-	if orderRq.GetWeaponUUID().IsSet() && !orderRq.GetWeaponUUID().IsNull() {
-		val := orderRq.GetWeaponUUID().Value
-		parts = append(parts, model.Part{Uuid: val, Type: model.PartTypeWeapon})
+	if v, ok := orderRq.GetWeaponUUID().Get(); ok {
+		parts = append(parts, model.Part{Uuid: v, Type: model.PartTypeWeapon})
 	}
 	return model.CreateOrderRq{Parts: parts}, nil
 }
