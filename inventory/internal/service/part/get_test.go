@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/brianvoe/gofakeit/v7"
+	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -19,7 +20,7 @@ func TestGet(t *testing.T) {
 	t.Parallel()
 
 	type args struct {
-		id string
+		id uuid.UUID
 	}
 
 	type expected struct {
@@ -30,7 +31,7 @@ func TestGet(t *testing.T) {
 
 	var (
 		ctx     = context.Background()
-		uuid    = gofakeit.UUID()
+		uuid    = uuid.New()
 		str     = gofakeit.Word()
 		num     = gofakeit.Int64()
 		created = time.Now()

@@ -13,7 +13,6 @@ import (
 
 	errs "github.com/MikeKirillov/rocketservices/order/internal/errors"
 	"github.com/MikeKirillov/rocketservices/order/internal/model"
-	"github.com/MikeKirillov/rocketservices/order/internal/repository/converter"
 	"github.com/MikeKirillov/rocketservices/order/internal/service/order/mocks"
 )
 
@@ -31,8 +30,8 @@ func TestPay(t *testing.T) {
 
 	var (
 		ctx    = context.Background()
-		id     = gofakeit.UUID()
-		tranId = gofakeit.UUID()
+		id     = uuid.New()
+		tranId = uuid.New()
 		num    = gofakeit.Int64()
 		date   = time.Now()
 
@@ -40,14 +39,14 @@ func TestPay(t *testing.T) {
 			OrderUUID:     id,
 			PaymentMethod: model.PaymentMethodCard,
 		}
-		res, _ = uuid.Parse(tranId)
+		parts = []model.Part{
+			{Uuid: id, Type: model.PartTypeHull},
+			{Uuid: id, Type: model.PartTypeEngine},
+		}
 
 		modelToGet = model.Order{
 			OrderUUID:       id,
-			HullUUID:        id,
-			EngineUUID:      id,
-			ShieldUUID:      nil,
-			WeaponUUID:      nil,
+			Parts:           parts,
 			TotalPrice:      num,
 			TransactionUUID: nil,
 			PaymentMethod:   nil,
@@ -56,10 +55,7 @@ func TestPay(t *testing.T) {
 		}
 		modelCancelled = model.Order{
 			OrderUUID:       id,
-			HullUUID:        id,
-			EngineUUID:      id,
-			ShieldUUID:      nil,
-			WeaponUUID:      nil,
+			Parts:           parts,
 			TotalPrice:      num,
 			TransactionUUID: nil,
 			PaymentMethod:   nil,
@@ -68,10 +64,7 @@ func TestPay(t *testing.T) {
 		}
 		modelPaid = model.Order{
 			OrderUUID:       id,
-			HullUUID:        id,
-			EngineUUID:      id,
-			ShieldUUID:      nil,
-			WeaponUUID:      nil,
+			Parts:           parts,
 			TotalPrice:      num,
 			TransactionUUID: nil,
 			PaymentMethod:   nil,
@@ -80,10 +73,7 @@ func TestPay(t *testing.T) {
 		}
 		modelToPay = model.Order{
 			OrderUUID:       id,
-			HullUUID:        id,
-			EngineUUID:      id,
-			ShieldUUID:      nil,
-			WeaponUUID:      nil,
+			Parts:           parts,
 			TotalPrice:      num,
 			TransactionUUID: &tranId,
 			PaymentMethod:   &req.PaymentMethod,
@@ -91,8 +81,7 @@ func TestPay(t *testing.T) {
 			CreatedAt:       date,
 		}
 
-		repoModelToPay = converter.OrderToRepoUpdate(modelToPay)
-		errInternal    = errors.New("внутренняя ошибка")
+		errInternal = errors.New("внутренняя ошибка")
 	)
 
 	tests := []struct {
@@ -106,11 +95,11 @@ func TestPay(t *testing.T) {
 			args: args{req: req},
 			setupMock: func(r *mocks.OrderRepository, p *mocks.PaymentServiceClient) {
 				r.EXPECT().Get(ctx, id).Return(modelToGet, nil)
-				r.EXPECT().Update(ctx, repoModelToPay).Return(nil)
+				r.EXPECT().Update(ctx, modelToPay).Return(nil)
 				p.EXPECT().PayOrder(ctx, req).Return(tranId, nil)
 			},
 			expected: expected{
-				res: res,
+				res: tranId,
 				errCheck: func(t *testing.T, err error) {
 					require.NoError(t, err)
 				},
@@ -131,7 +120,7 @@ func TestPay(t *testing.T) {
 			},
 		},
 		{
-			name: "заказ уже оплачен - errs.ErrOrderAlreadyPaidOrCancalled",
+			name: "заказ уже оплачен - errs.ErrOrderAlreadyPaid",
 			args: args{req: req},
 			setupMock: func(r *mocks.OrderRepository, p *mocks.PaymentServiceClient) {
 				r.EXPECT().Get(ctx, id).Return(modelPaid, nil)
@@ -140,12 +129,12 @@ func TestPay(t *testing.T) {
 				res: uuid.Nil,
 				errCheck: func(t *testing.T, err error) {
 					require.Error(t, err)
-					assert.True(t, errors.Is(err, errs.ErrOrderAlreadyPaidOrCancalled))
+					assert.True(t, errors.Is(err, errs.ErrOrderAlreadyPaid))
 				},
 			},
 		},
 		{
-			name: "заказ отменен - errs.ErrOrderAlreadyPaidOrCancalled",
+			name: "заказ отменен - errs.ErrOrderAlreadyCancelled",
 			args: args{req: req},
 			setupMock: func(r *mocks.OrderRepository, p *mocks.PaymentServiceClient) {
 				r.EXPECT().Get(ctx, id).Return(modelCancelled, nil)
@@ -154,7 +143,7 @@ func TestPay(t *testing.T) {
 				res: uuid.Nil,
 				errCheck: func(t *testing.T, err error) {
 					require.Error(t, err)
-					assert.True(t, errors.Is(err, errs.ErrOrderAlreadyPaidOrCancalled))
+					assert.True(t, errors.Is(err, errs.ErrOrderAlreadyCancelled))
 				},
 			},
 		},
@@ -163,7 +152,7 @@ func TestPay(t *testing.T) {
 			args: args{req: req},
 			setupMock: func(r *mocks.OrderRepository, p *mocks.PaymentServiceClient) {
 				r.EXPECT().Get(ctx, id).Return(modelToGet, nil)
-				p.EXPECT().PayOrder(ctx, req).Return("", errInternal)
+				p.EXPECT().PayOrder(ctx, req).Return(uuid.Nil, errInternal)
 			},
 			expected: expected{
 				res: uuid.Nil,
@@ -178,7 +167,7 @@ func TestPay(t *testing.T) {
 			args: args{req: req},
 			setupMock: func(r *mocks.OrderRepository, p *mocks.PaymentServiceClient) {
 				r.EXPECT().Get(ctx, id).Return(modelToGet, nil)
-				r.EXPECT().Update(ctx, repoModelToPay).Return(errInternal)
+				r.EXPECT().Update(ctx, modelToPay).Return(errInternal)
 				p.EXPECT().PayOrder(ctx, req).Return(tranId, nil)
 			},
 			expected: expected{

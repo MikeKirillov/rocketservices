@@ -3,20 +3,21 @@ package order
 import (
 	"context"
 
+	"github.com/google/uuid"
+
 	"github.com/MikeKirillov/rocketservices/order/internal/model"
-	"github.com/MikeKirillov/rocketservices/order/internal/repository/record"
 )
 
 type OrderRepository interface {
-	Get(ctx context.Context, id string) (model.Order, error)
-	Create(ctx context.Context, order record.Order) (string, error)
-	Update(ctx context.Context, order record.Order) error
+	Get(ctx context.Context, id uuid.UUID) (model.Order, error)
+	Create(ctx context.Context, order model.Order) (uuid.UUID, error)
+	Update(ctx context.Context, order model.Order) error
 }
 
 type InventoryServiceClient interface {
-	ListParts(ctx context.Context, partsUuids []string) ([]model.Part, error)
+	ListParts(ctx context.Context, partsUuids []uuid.UUID) ([]model.Part, error)
 }
 
 type PaymentServiceClient interface {
-	PayOrder(ctx context.Context, orderRq model.PayOrderRq) (string, error)
+	PayOrder(ctx context.Context, orderRq model.PayOrderRq) (uuid.UUID, error)
 }

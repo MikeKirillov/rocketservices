@@ -7,7 +7,7 @@ import (
 
 func PaymentToProto(orderRq model.PayOrderRq) *paymentv1.PayOrderRequest {
 	return &paymentv1.PayOrderRequest{
-		OrderUuid:     orderRq.OrderUUID,
+		OrderUuid:     orderRq.OrderUUID.String(),
 		PaymentMethod: paymentMethodToProto(orderRq.PaymentMethod),
 	}
 }

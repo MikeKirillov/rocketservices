@@ -7,12 +7,12 @@ import (
 	"time"
 
 	"github.com/brianvoe/gofakeit/v7"
+	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	errs "github.com/MikeKirillov/rocketservices/order/internal/errors"
 	"github.com/MikeKirillov/rocketservices/order/internal/model"
-	"github.com/MikeKirillov/rocketservices/order/internal/repository/converter"
 	"github.com/MikeKirillov/rocketservices/order/internal/service/order/mocks"
 )
 
@@ -20,7 +20,7 @@ func TestCancel(t *testing.T) {
 	t.Parallel()
 
 	type args struct {
-		id string
+		id uuid.UUID
 	}
 
 	type expected struct {
@@ -28,17 +28,18 @@ func TestCancel(t *testing.T) {
 	}
 
 	var (
-		ctx  = context.Background()
-		uuid = gofakeit.UUID()
-		num  = gofakeit.Int64()
-		date = time.Now()
+		ctx   = context.Background()
+		uuid  = uuid.New()
+		num   = gofakeit.Int64()
+		date  = time.Now()
+		parts = []model.Part{
+			{Uuid: uuid, Type: model.PartTypeHull},
+			{Uuid: uuid, Type: model.PartTypeEngine},
+		}
 
 		modelToSave = model.Order{
 			OrderUUID:       uuid,
-			HullUUID:        uuid,
-			EngineUUID:      uuid,
-			ShieldUUID:      nil,
-			WeaponUUID:      nil,
+			Parts:           parts,
 			TotalPrice:      num,
 			TransactionUUID: nil,
 			PaymentMethod:   nil,
@@ -47,10 +48,7 @@ func TestCancel(t *testing.T) {
 		}
 		modelToCancel = model.Order{
 			OrderUUID:       uuid,
-			HullUUID:        uuid,
-			EngineUUID:      uuid,
-			ShieldUUID:      nil,
-			WeaponUUID:      nil,
+			Parts:           parts,
 			TotalPrice:      num,
 			TransactionUUID: nil,
 			PaymentMethod:   nil,
@@ -58,8 +56,7 @@ func TestCancel(t *testing.T) {
 			CreatedAt:       date,
 		}
 
-		repoModelToCancel = converter.OrderToRepoUpdate(modelToCancel)
-		errInternal       = errors.New("внутренняя ошибка бд")
+		errInternal = errors.New("внутренняя ошибка бд")
 	)
 
 	tests := []struct {
@@ -73,7 +70,7 @@ func TestCancel(t *testing.T) {
 			args: args{id: uuid},
 			setupMock: func(r *mocks.OrderRepository) {
 				r.EXPECT().Get(ctx, uuid).Return(modelToSave, nil)
-				r.EXPECT().Update(ctx, repoModelToCancel).Return(nil)
+				r.EXPECT().Update(ctx, modelToCancel).Return(nil)
 			},
 			expected: expected{
 				errCheck: func(t *testing.T, err error) {
@@ -99,7 +96,7 @@ func TestCancel(t *testing.T) {
 			args: args{id: uuid},
 			setupMock: func(r *mocks.OrderRepository) {
 				r.EXPECT().Get(ctx, uuid).Return(modelToSave, nil)
-				r.EXPECT().Update(ctx, repoModelToCancel).Return(errInternal)
+				r.EXPECT().Update(ctx, modelToCancel).Return(errInternal)
 			},
 			expected: expected{
 				errCheck: func(t *testing.T, err error) {

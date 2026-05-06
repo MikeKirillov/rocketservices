@@ -2,31 +2,33 @@ package order
 
 import (
 	"context"
+	"errors"
+
+	"github.com/google/uuid"
 
 	errs "github.com/MikeKirillov/rocketservices/order/internal/errors"
-	"github.com/MikeKirillov/rocketservices/order/internal/model"
-	"github.com/MikeKirillov/rocketservices/order/internal/repository/converter"
 	sharedErrs "github.com/MikeKirillov/rocketservices/shared/pkg/errors"
 )
 
-func (s *service) Cancel(ctx context.Context, id string) error {
-	// 1. Найти заказ в store
+func (s *service) Cancel(ctx context.Context, id uuid.UUID) error {
+	// Найти заказ в store
 	order, err := s.orderRepository.Get(ctx, id)
 	if err != nil {
-		return sharedErrs.NewNotFound(err)
+		if errors.Is(err, errs.ErrOrderNotFound) {
+			return sharedErrs.NewNotFound(err)
+		}
+		return sharedErrs.NewInternal(err)
 	}
 
-	// 2. Проверить статус == PENDING_PAYMENT
-	if order.Status != model.OrderStatusPendingPayment {
-		return sharedErrs.NewConflict(errs.ErrOrderCancelling)
+	err = order.Cancel()
+	if err != nil {
+		return sharedErrs.NewConflict(err)
 	}
-
-	// 3. Обновить статус на CANCELLED
-	order.SetStatus(model.OrderStatusCancelled)
-
-	orderRepo := converter.OrderToRepoUpdate(order)
-	if err = s.orderRepository.Update(ctx, orderRepo); err != nil {
-		return sharedErrs.NewNotFound(err)
+	if err = s.orderRepository.Update(ctx, order); err != nil {
+		if errors.Is(err, errs.ErrOrderNotFound) {
+			return sharedErrs.NewNotFound(err)
+		}
+		return sharedErrs.NewInternal(err)
 	}
 	return nil
 }

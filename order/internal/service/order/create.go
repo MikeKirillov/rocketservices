@@ -3,32 +3,18 @@ package order
 import (
 	"context"
 	"fmt"
-	"log/slog"
+	"time"
 
 	"github.com/google/uuid"
 
+	"github.com/MikeKirillov/rocketservices/order/internal/converter"
 	errs "github.com/MikeKirillov/rocketservices/order/internal/errors"
 	"github.com/MikeKirillov/rocketservices/order/internal/model"
-	"github.com/MikeKirillov/rocketservices/order/internal/repository/converter"
 	sharedErrs "github.com/MikeKirillov/rocketservices/shared/pkg/errors"
 )
 
-type OrderStatus string
-
 func (s *service) Create(ctx context.Context, orderRq model.CreateOrderRq) (model.CreateOrderRs, error) {
-	// 1. Валидация: hull_uuid и engine_uuid обязательны
-	if err := checkRequiredField(orderRq.HullUUID, "hull_uuid"); err != nil {
-		return model.CreateOrderRs{}, sharedErrs.NewInvalidArgument(err)
-	}
-	if err := checkRequiredField(orderRq.EngineUUID, "engine_uuid"); err != nil {
-		return model.CreateOrderRs{}, sharedErrs.NewInvalidArgument(err)
-	}
-
-	rqParts := orderRq.PartUUIDsAsStringSlice()
-	err := validateUUIDs(rqParts)
-	if err != nil {
-		return model.CreateOrderRs{}, sharedErrs.NewInvalidArgument(err)
-	}
+	rqParts := orderRq.PartUUIDsAsSlice()
 
 	// 2. Получить детали через InventoryService.ListParts
 	parts, err := s.inventoryClient.ListParts(ctx, rqParts)
@@ -46,14 +32,14 @@ func (s *service) Create(ctx context.Context, orderRq model.CreateOrderRq) (mode
 	var totalPrice int64
 	for _, p := range parts {
 		if p.StockQuantity <= 0 {
-			return model.CreateOrderRs{}, sharedErrs.NewConflict(fmt.Errorf("деталь %s: %w", p.Name, errs.ErrOutOfStock))
+			return model.CreateOrderRs{}, sharedErrs.NewConflict(fmt.Errorf("деталь %s: %w", *p.Name, errs.ErrOutOfStock))
 		}
 		totalPrice += p.Price
 	}
 
 	// 5. Сгенерировать order_uuid (UUID v4)
 	// Создать заказ со статусом PENDING_PAYMENT
-	order := converter.OrderToRepoCreate(orderRq, totalPrice, model.OrderStatusPendingPayment)
+	order := converter.CreateOrderRqToOrder(orderRq, totalPrice, model.OrderStatusPendingPayment, uuid.New(), time.Now())
 
 	// 6. Сохранить в store
 	orderUUID, err := s.orderRepository.Create(ctx, order)
@@ -62,29 +48,5 @@ func (s *service) Create(ctx context.Context, orderRq model.CreateOrderRq) (mode
 	}
 
 	// 7. Вернуть order_uuid и total_price
-	orderUUIDParsed, err := uuid.Parse(orderUUID)
-	if err != nil {
-		return model.CreateOrderRs{}, sharedErrs.NewInvalidArgument(
-			fmt.Errorf("ошибка при парсинге orderUUID %s: %w", orderUUID, errs.ErrInvalidUUID),
-		)
-	}
-	return model.CreateOrderRs{OrderUUID: orderUUIDParsed, TotalPrice: totalPrice}, nil
-}
-
-func checkRequiredField(field, fieldName string) error {
-	if field == "" {
-		slog.Error("некорректный запрос", "не передано обязательное поле", fieldName)
-		return errs.ErrOmittedRequiredField
-	}
-	return nil
-}
-
-func validateUUIDs(parts []string) error {
-	for _, id := range parts {
-		if _, err := uuid.Parse(id); err != nil {
-			slog.Error("неверный формат", "uuid", id)
-			return fmt.Errorf("деталь %s: %w", id, errs.ErrInvalidUUID)
-		}
-	}
-	return nil
+	return model.CreateOrderRs{OrderUUID: orderUUID, TotalPrice: totalPrice}, nil
 }

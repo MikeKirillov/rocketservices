@@ -81,17 +81,35 @@ func TestPayOrder(t *testing.T) {
 			},
 		},
 		{
-			name: "заказ уже оплачен или отменен - errs.ErrOrderAlreadyPaidOrCancalled",
+			name: "заказ уже оплачен - errs.ErrOrderAlreadyPaid",
 			args: args{req: req, params: params},
 			setupMock: func(s *mocks.OrderService) {
 				s.EXPECT().
 					Pay(ctx, payOrderRq).
-					Return(uuid.Nil, sharedErrs.NewConflict(errs.ErrOrderAlreadyPaidOrCancalled))
+					Return(uuid.Nil, sharedErrs.NewConflict(errs.ErrOrderAlreadyPaid))
 			},
 			expected: expected{
 				res: &orderv1.PayOrderConflict{
 					Code:    http.StatusConflict,
-					Message: "заказ уже оплачен или был отменен",
+					Message: "заказ уже оплачен",
+				},
+				errCheck: func(t *testing.T, err error) {
+					require.NoError(t, err)
+				},
+			},
+		},
+		{
+			name: "заказ уже отменен - errs.ErrOrderAlreadyCancelled",
+			args: args{req: req, params: params},
+			setupMock: func(s *mocks.OrderService) {
+				s.EXPECT().
+					Pay(ctx, payOrderRq).
+					Return(uuid.Nil, sharedErrs.NewConflict(errs.ErrOrderAlreadyCancelled))
+			},
+			expected: expected{
+				res: &orderv1.PayOrderConflict{
+					Code:    http.StatusConflict,
+					Message: "заказ уже отменён",
 				},
 				errCheck: func(t *testing.T, err error) {
 					require.NoError(t, err)

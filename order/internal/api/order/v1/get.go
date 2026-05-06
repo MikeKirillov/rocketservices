@@ -11,7 +11,7 @@ import (
 // GetOrder реализует операцию getOrder (пример реализации).
 // GET /api/v1/orders/{order_uuid}.
 func (o *orderHandler) GetOrder(ctx context.Context, params orderv1.GetOrderParams) (orderv1.GetOrderRes, error) {
-	order, err := o.orderService.Get(ctx, params.OrderUUID.String())
+	order, err := o.orderService.Get(ctx, params.OrderUUID)
 	if err != nil {
 		return sharedErrs.MapHTTPError[orderv1.GetOrderRes](
 			err,

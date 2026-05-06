@@ -9,8 +9,8 @@ import (
 )
 
 type OrderService interface {
-	Get(ctx context.Context, id string) (model.Order, error)
+	Get(ctx context.Context, id uuid.UUID) (model.Order, error)
 	Create(ctx context.Context, orderRq model.CreateOrderRq) (model.CreateOrderRs, error)
-	Cancel(ctx context.Context, id string) error
+	Cancel(ctx context.Context, id uuid.UUID) error
 	Pay(ctx context.Context, orderRq model.PayOrderRq) (uuid.UUID, error)
 }

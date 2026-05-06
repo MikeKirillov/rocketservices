@@ -11,7 +11,7 @@ import (
 	"context"
 
 	"github.com/MikeKirillov/rocketservices/order/internal/model"
-	"github.com/MikeKirillov/rocketservices/order/internal/repository/record"
+	"github.com/google/uuid"
 	mock "github.com/stretchr/testify/mock"
 )
 
@@ -43,24 +43,26 @@ func (_m *OrderRepository) EXPECT() *OrderRepository_Expecter {
 }
 
 // Create provides a mock function for the type OrderRepository
-func (_mock *OrderRepository) Create(ctx context.Context, order record.Order) (string, error) {
+func (_mock *OrderRepository) Create(ctx context.Context, order model.Order) (uuid.UUID, error) {
 	ret := _mock.Called(ctx, order)
 
 	if len(ret) == 0 {
 		panic("no return value specified for Create")
 	}
 
-	var r0 string
+	var r0 uuid.UUID
 	var r1 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, record.Order) (string, error)); ok {
+	if returnFunc, ok := ret.Get(0).(func(context.Context, model.Order) (uuid.UUID, error)); ok {
 		return returnFunc(ctx, order)
 	}
-	if returnFunc, ok := ret.Get(0).(func(context.Context, record.Order) string); ok {
+	if returnFunc, ok := ret.Get(0).(func(context.Context, model.Order) uuid.UUID); ok {
 		r0 = returnFunc(ctx, order)
 	} else {
-		r0 = ret.Get(0).(string)
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(uuid.UUID)
+		}
 	}
-	if returnFunc, ok := ret.Get(1).(func(context.Context, record.Order) error); ok {
+	if returnFunc, ok := ret.Get(1).(func(context.Context, model.Order) error); ok {
 		r1 = returnFunc(ctx, order)
 	} else {
 		r1 = ret.Error(1)
@@ -75,20 +77,20 @@ type OrderRepository_Create_Call struct {
 
 // Create is a helper method to define mock.On call
 //   - ctx context.Context
-//   - order record.Order
+//   - order model.Order
 func (_e *OrderRepository_Expecter) Create(ctx interface{}, order interface{}) *OrderRepository_Create_Call {
 	return &OrderRepository_Create_Call{Call: _e.mock.On("Create", ctx, order)}
 }
 
-func (_c *OrderRepository_Create_Call) Run(run func(ctx context.Context, order record.Order)) *OrderRepository_Create_Call {
+func (_c *OrderRepository_Create_Call) Run(run func(ctx context.Context, order model.Order)) *OrderRepository_Create_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		var arg0 context.Context
 		if args[0] != nil {
 			arg0 = args[0].(context.Context)
 		}
-		var arg1 record.Order
+		var arg1 model.Order
 		if args[1] != nil {
-			arg1 = args[1].(record.Order)
+			arg1 = args[1].(model.Order)
 		}
 		run(
 			arg0,
@@ -98,18 +100,18 @@ func (_c *OrderRepository_Create_Call) Run(run func(ctx context.Context, order r
 	return _c
 }
 
-func (_c *OrderRepository_Create_Call) Return(s string, err error) *OrderRepository_Create_Call {
-	_c.Call.Return(s, err)
+func (_c *OrderRepository_Create_Call) Return(uUID uuid.UUID, err error) *OrderRepository_Create_Call {
+	_c.Call.Return(uUID, err)
 	return _c
 }
 
-func (_c *OrderRepository_Create_Call) RunAndReturn(run func(ctx context.Context, order record.Order) (string, error)) *OrderRepository_Create_Call {
+func (_c *OrderRepository_Create_Call) RunAndReturn(run func(ctx context.Context, order model.Order) (uuid.UUID, error)) *OrderRepository_Create_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
 // Get provides a mock function for the type OrderRepository
-func (_mock *OrderRepository) Get(ctx context.Context, id string) (model.Order, error) {
+func (_mock *OrderRepository) Get(ctx context.Context, id uuid.UUID) (model.Order, error) {
 	ret := _mock.Called(ctx, id)
 
 	if len(ret) == 0 {
@@ -118,15 +120,15 @@ func (_mock *OrderRepository) Get(ctx context.Context, id string) (model.Order, 
 
 	var r0 model.Order
 	var r1 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, string) (model.Order, error)); ok {
+	if returnFunc, ok := ret.Get(0).(func(context.Context, uuid.UUID) (model.Order, error)); ok {
 		return returnFunc(ctx, id)
 	}
-	if returnFunc, ok := ret.Get(0).(func(context.Context, string) model.Order); ok {
+	if returnFunc, ok := ret.Get(0).(func(context.Context, uuid.UUID) model.Order); ok {
 		r0 = returnFunc(ctx, id)
 	} else {
 		r0 = ret.Get(0).(model.Order)
 	}
-	if returnFunc, ok := ret.Get(1).(func(context.Context, string) error); ok {
+	if returnFunc, ok := ret.Get(1).(func(context.Context, uuid.UUID) error); ok {
 		r1 = returnFunc(ctx, id)
 	} else {
 		r1 = ret.Error(1)
@@ -141,20 +143,20 @@ type OrderRepository_Get_Call struct {
 
 // Get is a helper method to define mock.On call
 //   - ctx context.Context
-//   - id string
+//   - id uuid.UUID
 func (_e *OrderRepository_Expecter) Get(ctx interface{}, id interface{}) *OrderRepository_Get_Call {
 	return &OrderRepository_Get_Call{Call: _e.mock.On("Get", ctx, id)}
 }
 
-func (_c *OrderRepository_Get_Call) Run(run func(ctx context.Context, id string)) *OrderRepository_Get_Call {
+func (_c *OrderRepository_Get_Call) Run(run func(ctx context.Context, id uuid.UUID)) *OrderRepository_Get_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		var arg0 context.Context
 		if args[0] != nil {
 			arg0 = args[0].(context.Context)
 		}
-		var arg1 string
+		var arg1 uuid.UUID
 		if args[1] != nil {
-			arg1 = args[1].(string)
+			arg1 = args[1].(uuid.UUID)
 		}
 		run(
 			arg0,
@@ -169,13 +171,13 @@ func (_c *OrderRepository_Get_Call) Return(order model.Order, err error) *OrderR
 	return _c
 }
 
-func (_c *OrderRepository_Get_Call) RunAndReturn(run func(ctx context.Context, id string) (model.Order, error)) *OrderRepository_Get_Call {
+func (_c *OrderRepository_Get_Call) RunAndReturn(run func(ctx context.Context, id uuid.UUID) (model.Order, error)) *OrderRepository_Get_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
 // Update provides a mock function for the type OrderRepository
-func (_mock *OrderRepository) Update(ctx context.Context, order record.Order) error {
+func (_mock *OrderRepository) Update(ctx context.Context, order model.Order) error {
 	ret := _mock.Called(ctx, order)
 
 	if len(ret) == 0 {
@@ -183,7 +185,7 @@ func (_mock *OrderRepository) Update(ctx context.Context, order record.Order) er
 	}
 
 	var r0 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, record.Order) error); ok {
+	if returnFunc, ok := ret.Get(0).(func(context.Context, model.Order) error); ok {
 		r0 = returnFunc(ctx, order)
 	} else {
 		r0 = ret.Error(0)
@@ -198,20 +200,20 @@ type OrderRepository_Update_Call struct {
 
 // Update is a helper method to define mock.On call
 //   - ctx context.Context
-//   - order record.Order
+//   - order model.Order
 func (_e *OrderRepository_Expecter) Update(ctx interface{}, order interface{}) *OrderRepository_Update_Call {
 	return &OrderRepository_Update_Call{Call: _e.mock.On("Update", ctx, order)}
 }
 
-func (_c *OrderRepository_Update_Call) Run(run func(ctx context.Context, order record.Order)) *OrderRepository_Update_Call {
+func (_c *OrderRepository_Update_Call) Run(run func(ctx context.Context, order model.Order)) *OrderRepository_Update_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		var arg0 context.Context
 		if args[0] != nil {
 			arg0 = args[0].(context.Context)
 		}
-		var arg1 record.Order
+		var arg1 model.Order
 		if args[1] != nil {
-			arg1 = args[1].(record.Order)
+			arg1 = args[1].(model.Order)
 		}
 		run(
 			arg0,
@@ -226,7 +228,7 @@ func (_c *OrderRepository_Update_Call) Return(err error) *OrderRepository_Update
 	return _c
 }
 
-func (_c *OrderRepository_Update_Call) RunAndReturn(run func(ctx context.Context, order record.Order) error) *OrderRepository_Update_Call {
+func (_c *OrderRepository_Update_Call) RunAndReturn(run func(ctx context.Context, order model.Order) error) *OrderRepository_Update_Call {
 	_c.Call.Return(run)
 	return _c
 }

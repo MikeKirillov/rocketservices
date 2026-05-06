@@ -1,9 +1,12 @@
 package model
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/google/uuid"
+
+	errs "github.com/MikeKirillov/rocketservices/order/internal/errors"
 )
 
 type OrderStatus string
@@ -17,59 +20,74 @@ const (
 type PaymentMethod string
 
 const (
-	PaymentMethodUnspecified   PaymentMethod = "UNSPECIFIED"
 	PaymentMethodCard          PaymentMethod = "CARD"
 	PaymentMethodSbp           PaymentMethod = "SBP"
 	PaymentMethodCreditCard    PaymentMethod = "CREDIT_CARD"
 	PaymentMethodInvestorMoney PaymentMethod = "INVESTOR_MONEY"
 )
 
+func NewPaymentMethod(s string) (PaymentMethod, error) {
+	pm := PaymentMethod(s)
+	switch pm {
+	case PaymentMethodCard, PaymentMethodSbp, PaymentMethodCreditCard, PaymentMethodInvestorMoney:
+		return pm, nil
+	default:
+		return "", fmt.Errorf("способ оплаты %s: %w", s, errs.ErrInvalidPaymentMethod)
+	}
+}
+
 // Order представляет заказ на постройку космического корабля.
 type Order struct {
-	OrderUUID       string
-	HullUUID        string
-	EngineUUID      string
-	ShieldUUID      *string // опциональный
-	WeaponUUID      *string // опциональный
-	TotalPrice      int64   // в копейках
-	TransactionUUID *string
+	OrderUUID       uuid.UUID
+	Parts           []Part
+	TotalPrice      int64 // в копейках
+	TransactionUUID *uuid.UUID
 	PaymentMethod   *PaymentMethod
 	Status          OrderStatus
 	CreatedAt       time.Time
 }
 
-func (o *Order) SetTransaction(id string) {
-	if id != "" {
-		o.TransactionUUID = &id
+// CanModify() позволяет менять заказы только в статусе PENDING_PAYMENT.
+func (o *Order) CanModify() error {
+	if o.Status == OrderStatusCancelled {
+		return errs.ErrOrderAlreadyCancelled
 	}
+	if o.Status == OrderStatusPaid {
+		return errs.ErrOrderAlreadyPaid
+	}
+	if o.Status != OrderStatusPendingPayment {
+		return errs.ErrOrderUnknownStatus
+	}
+	return nil
 }
 
-func (o *Order) SetPaymentMethod(payment *PaymentMethod) {
+// Pay() меняет статус заказа на PAID, устанавливает способ оплаты и идентификатор транзакции.
+func (o *Order) Pay(transaction uuid.UUID, payment *PaymentMethod) {
 	if payment != nil {
 		o.PaymentMethod = payment
 	}
+	o.TransactionUUID = &transaction
+	o.Status = OrderStatusPaid
 }
 
-func (o *Order) SetStatus(status OrderStatus) {
-	if status != "" {
-		o.Status = status
+// Cancel() меняет статус заказа на CANCELLED.
+func (o *Order) Cancel() error {
+	err := o.CanModify()
+	if err != nil {
+		return err
 	}
+	o.Status = OrderStatusCancelled
+	return nil
 }
 
 type CreateOrderRq struct {
-	HullUUID   string
-	EngineUUID string
-	ShieldUUID *string
-	WeaponUUID *string
+	Parts []Part
 }
 
-func (r *CreateOrderRq) PartUUIDsAsStringSlice() []string {
-	uuids := []string{r.HullUUID, r.EngineUUID}
-	if r.ShieldUUID != nil {
-		uuids = append(uuids, *r.ShieldUUID)
-	}
-	if r.WeaponUUID != nil {
-		uuids = append(uuids, *r.WeaponUUID)
+func (r *CreateOrderRq) PartUUIDsAsSlice() []uuid.UUID {
+	uuids := make([]uuid.UUID, 0, len(r.Parts))
+	for _, v := range r.Parts {
+		uuids = append(uuids, v.Uuid)
 	}
 	return uuids
 }
@@ -80,6 +98,6 @@ type CreateOrderRs struct {
 }
 
 type PayOrderRq struct {
-	OrderUUID     string
+	OrderUUID     uuid.UUID
 	PaymentMethod PaymentMethod
 }
