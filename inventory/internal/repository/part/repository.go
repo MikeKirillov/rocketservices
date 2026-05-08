@@ -2,156 +2,150 @@ package part
 
 import (
 	"context"
+	"errors"
 	"fmt"
-	"sync"
-	"time"
+	"log/slog"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
 
 	errs "github.com/MikeKirillov/rocketservices/inventory/internal/errors"
 	"github.com/MikeKirillov/rocketservices/inventory/internal/model"
-	"github.com/MikeKirillov/rocketservices/inventory/internal/repository/converter"
-	"github.com/MikeKirillov/rocketservices/inventory/internal/repository/record"
 )
 
 type repository struct {
-	mu   sync.RWMutex
-	data map[uuid.UUID]record.Part
+	pool *pgxpool.Pool
 }
 
-func NewRepository() *repository {
-	now := time.Now()
-	return &repository{
-		data: map[uuid.UUID]record.Part{
-			uuid.MustParse("550e8400-e29b-41d4-a716-446655440001"): {
-				UUID:          uuid.MustParse("550e8400-e29b-41d4-a716-446655440001"),
-				Name:          "Алюминиевый корпус",
-				Description:   "Лёгкий корпус для небольших кораблей",
-				Price:         500000, // 5000₽
-				PartType:      "HULL",
-				StockQuantity: 10,
-				CreatedAt:     now,
-			},
-			uuid.MustParse("550e8400-e29b-41d4-a716-446655440002"): {
-				UUID:          uuid.MustParse("550e8400-e29b-41d4-a716-446655440002"),
-				Name:          "Титановый корпус",
-				Description:   "Прочный корпус для средних кораблей",
-				Price:         1500000, // 15000₽
-				PartType:      "HULL",
-				StockQuantity: 5,
-				CreatedAt:     now,
-			},
-			uuid.MustParse("550e8400-e29b-41d4-a716-446655440003"): {
-				UUID:          uuid.MustParse("550e8400-e29b-41d4-a716-446655440003"),
-				Name:          "Ионный двигатель C",
-				Description:   "Базовый ионный двигатель класса C",
-				Price:         300000, // 3000₽
-				PartType:      "ENGINE",
-				StockQuantity: 8,
-				CreatedAt:     now,
-			},
-			uuid.MustParse("550e8400-e29b-41d4-a716-446655440004"): {
-				UUID:          uuid.MustParse("550e8400-e29b-41d4-a716-446655440004"),
-				Name:          "Ионный двигатель B",
-				Description:   "Улучшенный ионный двигатель класса B",
-				Price:         800000, // 8000₽
-				PartType:      "ENGINE",
-				StockQuantity: 3,
-				CreatedAt:     now,
-			},
-			uuid.MustParse("550e8400-e29b-41d4-a716-446655440005"): {
-				UUID:          uuid.MustParse("550e8400-e29b-41d4-a716-446655440005"),
-				Name:          "Энергетический щит",
-				Description:   "Стандартный энергетический щит",
-				Price:         400000, // 4000₽
-				PartType:      "SHIELD",
-				StockQuantity: 6,
-				CreatedAt:     now,
-			},
-			uuid.MustParse("550e8400-e29b-41d4-a716-446655440006"): {
-				UUID:          uuid.MustParse("550e8400-e29b-41d4-a716-446655440006"),
-				Name:          "Лазерная пушка",
-				Description:   "Точная лазерная пушка",
-				Price:         250000, // 2500₽
-				PartType:      "WEAPON",
-				StockQuantity: 7,
-				CreatedAt:     now,
-			},
-			uuid.MustParse("550e8400-e29b-41d4-a716-446655440007"): {
-				UUID:          uuid.MustParse("550e8400-e29b-41d4-a716-446655440007"),
-				Name:          "Плазменный корпус",
-				Description:   "Экспериментальный корпус (нет на складе)",
-				Price:         2000000, // 20000₽
-				PartType:      "HULL",
-				StockQuantity: 0,
-				CreatedAt:     now,
-			},
-		},
-	}
+func NewRepository(pool *pgxpool.Pool) *repository {
+	return &repository{pool: pool}
 }
 
-func (r *repository) Get(_ context.Context, uuid uuid.UUID) (model.Part, error) {
-	r.mu.RLock()
-	part, ok := r.data[uuid]
-	r.mu.RUnlock()
-	if !ok {
-		return model.Part{}, errs.ErrPartNotFound
-	}
-	p, err := converter.PartToModel(part)
+func (r *repository) Get(ctx context.Context, uuid uuid.UUID) (model.Part, error) {
+	query := `SELECT uuid,
+       name,
+       description,
+       part_type,
+       price,
+       stock_quantity,
+       created_at
+	   FROM parts WHERE uuid = $1`
+
+	var p model.Part
+	err := r.pool.QueryRow(ctx, query, uuid).
+		Scan(&p.UUID, &p.Name, &p.Description, &p.PartType, &p.Price, &p.StockQuantity, &p.CreatedAt)
 	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return model.Part{}, errs.ErrPartNotFound
+		}
 		return model.Part{}, err
 	}
 	return p, nil
 }
 
-func (r *repository) List(_ context.Context) ([]model.Part, error) {
-	r.mu.RLock()
-	defer r.mu.RUnlock()
+func (r *repository) List(ctx context.Context) ([]model.Part, error) {
+	query := `SELECT uuid,
+       name,
+       description,
+       part_type,
+       price,
+       stock_quantity,
+       created_at
+	   FROM parts`
 
-	parts := make([]model.Part, 0, len(r.data))
-	for _, v := range r.data {
-		part, err := converter.PartToModel(v)
-		if err != nil {
-			return nil, err
-		}
-		parts = append(parts, part)
+	rows, err := r.pool.Query(ctx, query)
+	if err != nil {
+		slog.Error("не удалось выполнить выборку", "error", err)
+		return nil, err
 	}
+
+	parts, err := scanRows(rows)
+	if err != nil {
+		return nil, err
+	}
+
 	return parts, nil
 }
 
-func (r *repository) ListByPartType(_ context.Context, partType model.PartType) ([]model.Part, error) {
-	r.mu.RLock()
-	defer r.mu.RUnlock()
+func (r *repository) ListByPartType(ctx context.Context, partType model.PartType) ([]model.Part, error) {
+	query := `SELECT uuid,
+       name,
+       description,
+       part_type,
+       price,
+       stock_quantity,
+       created_at
+	   FROM parts WHERE part_type = $1`
+	rows, err := r.pool.Query(ctx, query, partType)
+	if err != nil {
+		slog.Error("не удалось выполнить выборку", "error", err)
+		return nil, err
+	}
 
+	parts, err := scanRows(rows)
+	if err != nil {
+		return nil, err
+	}
+
+	return parts, nil
+}
+
+func (r *repository) ListByUUIDs(ctx context.Context, uuids []uuid.UUID) ([]model.Part, error) {
+	query := `SELECT uuid,
+       name,
+       description,
+       part_type,
+       price,
+       stock_quantity,
+       created_at
+	   FROM parts WHERE uuid = ANY($1)`
+
+	rows, err := r.pool.Query(ctx, query, uuids)
+	if err != nil {
+		slog.Error("не удалось выполнить выборку", "error", err)
+		return nil, err
+	}
+
+	parts, err := scanRows(rows)
+	if err != nil {
+		return nil, err
+	}
+
+	// Создаем set параметров UUID из ответа БД
+	foundUUIDs := make(map[uuid.UUID]struct{})
+	for _, p := range parts {
+		foundUUIDs[p.UUID] = struct{}{}
+	}
+
+	// Проверяем, какие UUID из запроса не были найдены
+	var missingUUIDs []uuid.UUID
+	for _, id := range uuids {
+		if _, ok := foundUUIDs[id]; !ok {
+			missingUUIDs = append(missingUUIDs, id)
+		}
+	}
+
+	if len(missingUUIDs) > 0 {
+		return nil, fmt.Errorf("детали %s: %w", missingUUIDs, errs.ErrPartNotFound)
+	}
+
+	return parts, nil
+}
+
+func scanRows(rows pgx.Rows) ([]model.Part, error) {
 	var parts []model.Part
-	for k := range r.data {
-		if r.data[k].PartType == string(partType) {
-			part, err := converter.PartToModel(r.data[k])
-			if err != nil {
-				return nil, err
-			}
-			parts = append(parts, part)
-		}
-	}
-	return parts, nil
-}
 
-func (r *repository) ListByUUIDs(_ context.Context, uuids []uuid.UUID) ([]model.Part, error) {
-	r.mu.RLock()
-	defer r.mu.RUnlock()
+	for rows.Next() {
+		var p model.Part
 
-	parts := make([]model.Part, len(uuids))
-	for i, uuid := range uuids {
-		p, ok := r.data[uuid]
-		// Если хоть один UUID не найден → NOT_FOUND
-		if !ok {
-			return nil, fmt.Errorf("деталь %s: %w", uuid, errs.ErrPartNotFound)
-		}
-		part, err := converter.PartToModel(p)
+		err := rows.Scan(&p.UUID, &p.Name, &p.Description, &p.PartType, &p.Price, &p.StockQuantity, &p.CreatedAt)
 		if err != nil {
+			slog.Info("не удалось прочитать строку", "error", err)
 			return nil, err
 		}
-		parts[i] = part
+
+		parts = append(parts, p)
 	}
 	return parts, nil
 }

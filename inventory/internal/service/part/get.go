@@ -18,14 +18,10 @@ func (s *service) Get(ctx context.Context, id uuid.UUID) (model.Part, error) {
 	}
 	part, err := s.partRepository.Get(ctx, id)
 	if err != nil {
-		switch {
-		case errors.Is(err, errs.ErrPartNotFound):
+		if errors.Is(err, errs.ErrPartNotFound) {
 			return model.Part{}, sharedErrs.NewNotFound(err)
-		case errors.Is(err, errs.ErrWrongPartType):
-			return model.Part{}, sharedErrs.NewConflict(err)
-		default:
-			return model.Part{}, sharedErrs.NewInternal(err)
 		}
+		return model.Part{}, sharedErrs.NewInternal(err)
 	}
 	return part, nil
 }

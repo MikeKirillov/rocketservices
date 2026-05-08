@@ -71,3 +71,12 @@ $ curl -v -X POST http://localhost:8080/api/v1/orders/{order_uuid}/pay -H "Conte
 ```
 $ curl -v -X POST http://localhost:8080/api/v1/orders/{order_uuid}/cancel -H "Content-Type: application/json"
 ```
+
+# goose файл миграции
+
+```
+$ bin/goose -dir migrations/inventory create create_parts_table sql
+$ bin/goose -dir migrations/inventory create seed_parts sql
+$ bin/goose -dir migrations/order create create_orders_table sql
+$ bin/goose -dir migrations/order create create_order_items_table sql
+```

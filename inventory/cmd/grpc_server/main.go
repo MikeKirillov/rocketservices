@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"log/slog"
 	"net"
 	"os"
@@ -8,6 +9,8 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/joho/godotenv"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/keepalive"
 	"google.golang.org/grpc/reflection"
@@ -30,10 +33,54 @@ const (
 )
 
 func main() {
+	// При получении сигнала SIGINT/SIGTERM сервер должен:
+	// 1. Перестать принимать новые соединения
+	// 2. Дождаться завершения текущих запросов
+	// 3. Корректно завершить работу
+	// Подсказка: используйте signal.Notify и grpcServer.GracefulStop()
+	ctx, cancel := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
+	defer cancel()
+
+	// Загружаем переменные окружения из .env
+	err := godotenv.Load("inventory.env")
+	if err != nil {
+		slog.Error("ошибка загрузки переменных окружения из inventory.env", "error", err)
+		cancel()
+		os.Exit(1)
+	}
+
+	// Подключаемся к PostgreSQL
+	dbURI := os.Getenv("DB_URI")
+	if dbURI == "" {
+		slog.Error("переменная окружения DB_URI не установлена")
+		cancel()
+		os.Exit(1)
+	}
+
+	pool, err := pgxpool.New(ctx, dbURI)
+	if err != nil {
+		slog.Error("ошибка подключения к БД", "error", err)
+		cancel()
+		os.Exit(1)
+	}
+	defer pool.Close()
+
+	err = pool.Ping(ctx)
+	if err != nil {
+		slog.Error("проверка соединения с БД", "error", err)
+		pool.Close()
+		cancel()
+		os.Exit(1)
+	}
+
+	slog.Info("подключение к PostgreSQL установлено")
+
 	//nolint:noctx // Контекст здесь не нужен: GracefulStop() сам закроет listener и прервёт Accept()
 	lis, err := net.Listen("tcp", grpcAddress)
 	if err != nil {
 		slog.Error("не удалось создать listener", "error", err)
+		pool.Close()
+		cancel()
 		os.Exit(1)
 	}
 
@@ -61,7 +108,7 @@ func main() {
 	)
 
 	// Регистрируем наш сервис
-	invApp.RegisterServices(grpcServer)
+	invApp.RegisterServices(grpcServer, pool)
 
 	// Включаем reflection для postman/grpcurl
 	reflection.Register(grpcServer)
@@ -70,18 +117,12 @@ func main() {
 		slog.Info("gRPC сервер InventoryService запущен", "адрес", grpcAddress)
 		if err := grpcServer.Serve(lis); err != nil {
 			slog.Error("ошибка запуска сервера InventoryService", "error", err)
+			cancel()
 		}
 	}()
 
 	// Реализовать graceful shutdown
-	// При получении сигнала SIGINT/SIGTERM сервер должен:
-	// 1. Перестать принимать новые соединения
-	// 2. Дождаться завершения текущих запросов
-	// 3. Корректно завершить работу
-	// Подсказка: используйте signal.Notify и grpcServer.GracefulStop()
-	quit := make(chan os.Signal, 1)
-	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
-	<-quit
+	<-ctx.Done()
 	slog.Info("остановка gRPC сервера...")
 	grpcServer.GracefulStop()
 	slog.Info("сервер остановлен")
