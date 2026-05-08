@@ -36,17 +36,11 @@ func (s *service) List(ctx context.Context, filter model.PartFilter) ([]model.Pa
 	if filter.PartType == "" {
 		parts, err = s.partRepository.List(ctx)
 		if err != nil {
-			if errors.Is(err, errs.ErrWrongPartType) {
-				return nil, sharedErrs.NewConflict(err)
-			}
 			return nil, sharedErrs.NewInternal(err)
 		}
 	} else { // Иначе → фильтровать по типу
 		parts, err = s.partRepository.ListByPartType(ctx, filter.PartType)
 		if err != nil {
-			if errors.Is(err, errs.ErrWrongPartType) {
-				return nil, sharedErrs.NewConflict(err)
-			}
 			return nil, sharedErrs.NewInternal(err)
 		}
 	}

@@ -3,6 +3,7 @@ package app
 import (
 	"log/slog"
 
+	"github.com/jackc/pgx/v5/pgxpool"
 	"google.golang.org/grpc"
 
 	partAPIV1 "github.com/MikeKirillov/rocketservices/inventory/internal/api/part/v1"
@@ -13,8 +14,8 @@ import (
 	inventoryv1 "github.com/MikeKirillov/rocketservices/shared/pkg/proto/inventory/v1"
 )
 
-func RegisterServices(grpcServer *grpc.Server) {
-	repo := partRepository.NewRepository()
+func RegisterServices(grpcServer *grpc.Server, pool *pgxpool.Pool) {
+	repo := partRepository.NewRepository(pool)
 	svc := partService.NewService(repo)
 	api := partAPIV1.NewAPI(svc)
 	inventoryv1.RegisterInventoryServiceServer(grpcServer, api)
