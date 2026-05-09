@@ -3,11 +3,7 @@ package order
 import (
 	"context"
 	"fmt"
-	"time"
 
-	"github.com/google/uuid"
-
-	"github.com/MikeKirillov/rocketservices/order/internal/converter"
 	errs "github.com/MikeKirillov/rocketservices/order/internal/errors"
 	"github.com/MikeKirillov/rocketservices/order/internal/model"
 	sharedErrs "github.com/MikeKirillov/rocketservices/shared/pkg/errors"
@@ -39,7 +35,7 @@ func (s *service) Create(ctx context.Context, orderRq model.CreateOrderRq) (mode
 
 	// 5. Сгенерировать order_uuid (UUID v4)
 	// Создать заказ со статусом PENDING_PAYMENT
-	order := converter.CreateOrderRqToOrder(parts, totalPrice, model.OrderStatusPendingPayment, uuid.New(), time.Now())
+	order := model.NewOrderToCreate(parts, totalPrice)
 
 	// 6. Сохранить в store
 	err = s.orderRepository.Create(ctx, order)

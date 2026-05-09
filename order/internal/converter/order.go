@@ -2,7 +2,6 @@ package converter
 
 import (
 	"log/slog"
-	"time"
 
 	"github.com/google/uuid"
 
@@ -77,23 +76,6 @@ func checkRequiredField(field uuid.UUID, fieldName string) error {
 		return errs.ErrOmittedRequiredField
 	}
 	return nil
-}
-
-func CreateOrderRqToOrder(
-	parts []model.OrderItem,
-	totalPrice int64,
-	status model.OrderStatus,
-	orderId uuid.UUID,
-	createdAt time.Time,
-) model.Order {
-	result := model.Order{
-		OrderUUID:  orderId,
-		Items:      parts,
-		TotalPrice: totalPrice,
-		Status:     status,
-		CreatedAt:  createdAt,
-	}
-	return result
 }
 
 func OrderCreateRsToDTO(order model.CreateOrderRs) *orderv1.CreateOrderResponse {

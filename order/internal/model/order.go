@@ -47,6 +47,19 @@ type Order struct {
 	CreatedAt       time.Time
 }
 
+func NewOrderToCreate(
+	parts []OrderItem,
+	totalPrice int64,
+) Order {
+	return Order{
+		OrderUUID:  uuid.New(),
+		Items:      parts,
+		TotalPrice: totalPrice,
+		Status:     OrderStatusPendingPayment,
+		CreatedAt:  time.Now(),
+	}
+}
+
 // CanModify() позволяет менять заказы только в статусе PENDING_PAYMENT.
 func (o *Order) CanModify() error {
 	if o.Status == OrderStatusCancelled {
