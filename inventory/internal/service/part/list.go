@@ -13,7 +13,7 @@ import (
 
 func (s *service) List(ctx context.Context, filter model.PartFilter) ([]model.Part, error) {
 	if filter.UUIDs != nil {
-		parts, err := s.partRepository.ListByUUIDs(ctx, filter.UUIDs)
+		partsUnordered, err := s.partRepository.ListByUUIDs(ctx, filter.UUIDs)
 		if err != nil {
 			switch {
 			case errors.Is(err, errs.ErrPartNotFound):
@@ -24,7 +24,8 @@ func (s *service) List(ctx context.Context, filter model.PartFilter) ([]model.Pa
 				return nil, sharedErrs.NewInternal(err)
 			}
 		}
-		return parts, nil
+
+		return model.OrderPartsByIds(partsUnordered, filter.UUIDs), nil
 	}
 
 	var (

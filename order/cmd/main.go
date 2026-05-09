@@ -11,6 +11,10 @@ import (
 	"syscall"
 	"time"
 
+	trmpgx "github.com/avito-tech/go-transaction-manager/drivers/pgxv5/v2"
+	"github.com/avito-tech/go-transaction-manager/trm/v2/manager"
+	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/joho/godotenv"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/keepalive"
@@ -39,6 +43,21 @@ const (
 )
 
 func main() {
+	// При получении сигнала SIGINT/SIGTERM сервер должен:
+	// 1. Перестать принимать новые соединения
+	// 2. Дождаться завершения текущих запросов (с таймаутом)
+	// 3. Закрыть gRPC соединения
+	// 4. Корректно завершить работу
+	// Подсказка: используйте signal.Notify и httpServer.Shutdown(ctx)
+	ctx, cancel := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
+	defer cancel()
+
+	pool, txManager, err := createPgConnection(ctx)
+	if err != nil {
+		cancel()
+		os.Exit(1) //nolint:gocritic // cancel() выполняется непосредственно перед os.Exit(1)
+	}
+
 	// Настроить gRPC клиент с параметрами keepalive
 	// Подумайте, какие параметры стоит задать для gRPC клиента
 	// См. examples/week_1/GRPC_CONNECTIONS.md
@@ -81,7 +100,7 @@ func main() {
 	}()
 
 	// Создаём хранилище, сервис и обработчик
-	handler, err := app.NewHTTPHandler(inventoryGRPCClient, paymentGRPCClient)
+	handler, err := app.NewHTTPHandler(pool, txManager, inventoryGRPCClient, paymentGRPCClient)
 	if err != nil {
 		slog.Error("ошибка создания обработчика HTTP-запросов", "error", err)
 		return
@@ -100,36 +119,66 @@ func main() {
 		IdleTimeout:       idleTimeout,       // Таймаут keep-alive соединений
 	}
 
-	// Реализовать graceful shutdown для HTTP сервера
-	// При получении сигнала SIGINT/SIGTERM сервер должен:
-	// 1. Перестать принимать новые соединения
-	// 2. Дождаться завершения текущих запросов (с таймаутом)
-	// 3. Закрыть gRPC соединения
-	// 4. Корректно завершить работу
-	// Подсказка: используйте signal.Notify и httpServer.Shutdown(ctx)
-
 	// Запускаем сервер в отдельной горутине
 	go func() {
 		slog.Info("запуск сервера OrderService", "port", httpPort)
 
 		if err = server.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
 			slog.Error("ошибка запуска сервера", "error", err)
+			cancel()
 		}
 	}()
 
 	// Graceful shutdown
-	quit := make(chan os.Signal, 1)
-	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
-	<-quit
-
+	<-ctx.Done()
 	slog.Info("завершение работы сервера...")
 
 	// Создаем контекст с таймаутом для остановки сервера
-	ctx, cancel := context.WithTimeout(context.Background(), shutdownTimeout)
-	defer cancel()
+	shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), shutdownTimeout)
+	defer shutdownCancel()
 
-	if err := server.Shutdown(ctx); err != nil {
+	if err := server.Shutdown(shutdownCtx); err != nil {
 		slog.Error("ошибка при остановке сервера", "error", err)
 	}
 	slog.Info("сервер остановлен")
+}
+
+func createPgConnection(ctx context.Context) (*pgxpool.Pool, *manager.Manager, error) {
+	// Загружаем переменные окружения из .env
+	err := godotenv.Load("order.env")
+	if err != nil {
+		slog.Error("ошибка загрузки переменных окружения из inventory.env", "error", err)
+		return nil, nil, err
+	}
+
+	// Подключаемся к PostgreSQL
+	dbURI := os.Getenv("DB_URI")
+	if dbURI == "" {
+		slog.Error("переменная окружения DB_URI не установлена")
+		return nil, nil, err
+	}
+
+	pool, err := pgxpool.New(ctx, dbURI)
+	if err != nil {
+		slog.Error("ошибка подключения к БД", "error", err)
+		return nil, nil, err
+	}
+	defer pool.Close()
+
+	err = pool.Ping(ctx)
+	if err != nil {
+		slog.Error("проверка соединения с БД", "error", err)
+		return nil, nil, err
+	}
+
+	slog.Info("подключение к PostgreSQL установлено")
+
+	// Создаём Transaction Manager для pgx
+	txManager, err := manager.New(trmpgx.NewDefaultFactory(pool))
+	if err != nil {
+		slog.Error("создание transaction manager", "error", err)
+		return nil, nil, err
+	}
+
+	return pool, txManager, nil
 }

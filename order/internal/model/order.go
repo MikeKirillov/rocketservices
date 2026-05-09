@@ -39,7 +39,7 @@ func NewPaymentMethod(s string) (PaymentMethod, error) {
 // Order представляет заказ на постройку космического корабля.
 type Order struct {
 	OrderUUID       uuid.UUID
-	Parts           []Part
+	Items           []OrderItem
 	TotalPrice      int64 // в копейках
 	TransactionUUID *uuid.UUID
 	PaymentMethod   *PaymentMethod
@@ -81,12 +81,12 @@ func (o *Order) Cancel() error {
 }
 
 type CreateOrderRq struct {
-	Parts []Part
+	Items []OrderItem
 }
 
 func (r *CreateOrderRq) PartUUIDsAsSlice() []uuid.UUID {
-	uuids := make([]uuid.UUID, 0, len(r.Parts))
-	for _, v := range r.Parts {
+	uuids := make([]uuid.UUID, 0, len(r.Items))
+	for _, v := range r.Items {
 		uuids = append(uuids, v.Uuid)
 	}
 	return uuids

@@ -46,21 +46,19 @@ func main() {
 	if err != nil {
 		slog.Error("ошибка загрузки переменных окружения из inventory.env", "error", err)
 		cancel()
-		os.Exit(1)
+		os.Exit(1) //nolint:gocritic // cancel() выполняется непосредственно перед os.Exit(1)
 	}
 
 	// Подключаемся к PostgreSQL
 	dbURI := os.Getenv("DB_URI")
 	if dbURI == "" {
 		slog.Error("переменная окружения DB_URI не установлена")
-		cancel()
 		os.Exit(1)
 	}
 
 	pool, err := pgxpool.New(ctx, dbURI)
 	if err != nil {
 		slog.Error("ошибка подключения к БД", "error", err)
-		cancel()
 		os.Exit(1)
 	}
 	defer pool.Close()
@@ -68,8 +66,6 @@ func main() {
 	err = pool.Ping(ctx)
 	if err != nil {
 		slog.Error("проверка соединения с БД", "error", err)
-		pool.Close()
-		cancel()
 		os.Exit(1)
 	}
 
@@ -79,8 +75,6 @@ func main() {
 	lis, err := net.Listen("tcp", grpcAddress)
 	if err != nil {
 		slog.Error("не удалось создать listener", "error", err)
-		pool.Close()
-		cancel()
 		os.Exit(1)
 	}
 

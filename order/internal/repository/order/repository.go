@@ -2,58 +2,26 @@ package order
 
 import (
 	"context"
-	"sync"
 
-	"github.com/google/uuid"
-
-	errs "github.com/MikeKirillov/rocketservices/order/internal/errors"
-	"github.com/MikeKirillov/rocketservices/order/internal/model"
-	"github.com/MikeKirillov/rocketservices/order/internal/repository/converter"
-	"github.com/MikeKirillov/rocketservices/order/internal/repository/record"
+	trmpgx "github.com/avito-tech/go-transaction-manager/drivers/pgxv5/v2"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
+// TxManager определяет контракт для управления транзакциями.
+type TxManager interface {
+	Do(ctx context.Context, fn func(ctx context.Context) error) error
+}
+
 type repository struct {
-	mu   sync.RWMutex
-	data map[uuid.UUID]record.Order
+	pool      *pgxpool.Pool
+	getter    *trmpgx.CtxGetter
+	txManager TxManager
 }
 
-func NewRepository() *repository {
-	return &repository{data: make(map[uuid.UUID]record.Order)}
-}
-
-func (r *repository) Get(_ context.Context, id uuid.UUID) (model.Order, error) {
-	// Найти заказ (с блокировкой для thread-safety)
-	r.mu.RLock()
-	order, ok := r.data[id]
-	r.mu.RUnlock()
-
-	if !ok {
-		return model.Order{}, errs.ErrOrderNotFound
+func NewRepository(pool *pgxpool.Pool, txManager TxManager) *repository {
+	return &repository{
+		pool:      pool,
+		getter:    trmpgx.DefaultCtxGetter,
+		txManager: txManager,
 	}
-
-	return converter.OrderToModel(order), nil
-}
-
-func (r *repository) Create(_ context.Context, order model.Order) (uuid.UUID, error) {
-	o := converter.OrderToRepo(order)
-
-	r.mu.Lock()
-	r.data[order.OrderUUID] = o
-	r.mu.Unlock()
-
-	return order.OrderUUID, nil
-}
-
-func (r *repository) Update(_ context.Context, order model.Order) error {
-	o := converter.OrderToRepo(order)
-
-	r.mu.Lock()
-	defer r.mu.Unlock()
-
-	if _, ok := r.data[order.OrderUUID]; !ok {
-		return errs.ErrOrderNotFound
-	}
-
-	r.data[order.OrderUUID] = o
-	return nil
 }

@@ -39,14 +39,14 @@ func (s *service) Create(ctx context.Context, orderRq model.CreateOrderRq) (mode
 
 	// 5. Сгенерировать order_uuid (UUID v4)
 	// Создать заказ со статусом PENDING_PAYMENT
-	order := converter.CreateOrderRqToOrder(orderRq, totalPrice, model.OrderStatusPendingPayment, uuid.New(), time.Now())
+	order := converter.CreateOrderRqToOrder(parts, totalPrice, model.OrderStatusPendingPayment, uuid.New(), time.Now())
 
 	// 6. Сохранить в store
-	orderUUID, err := s.orderRepository.Create(ctx, order)
+	err = s.orderRepository.Create(ctx, order)
 	if err != nil {
 		return model.CreateOrderRs{}, sharedErrs.NewInternal(err)
 	}
 
 	// 7. Вернуть order_uuid и total_price
-	return model.CreateOrderRs{OrderUUID: orderUUID, TotalPrice: totalPrice}, nil
+	return model.CreateOrderRs{OrderUUID: order.OrderUUID, TotalPrice: totalPrice}, nil
 }

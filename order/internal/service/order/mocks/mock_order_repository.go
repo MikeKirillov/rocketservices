@@ -43,31 +43,20 @@ func (_m *OrderRepository) EXPECT() *OrderRepository_Expecter {
 }
 
 // Create provides a mock function for the type OrderRepository
-func (_mock *OrderRepository) Create(ctx context.Context, order model.Order) (uuid.UUID, error) {
+func (_mock *OrderRepository) Create(ctx context.Context, order model.Order) error {
 	ret := _mock.Called(ctx, order)
 
 	if len(ret) == 0 {
 		panic("no return value specified for Create")
 	}
 
-	var r0 uuid.UUID
-	var r1 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, model.Order) (uuid.UUID, error)); ok {
-		return returnFunc(ctx, order)
-	}
-	if returnFunc, ok := ret.Get(0).(func(context.Context, model.Order) uuid.UUID); ok {
+	var r0 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, model.Order) error); ok {
 		r0 = returnFunc(ctx, order)
 	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(uuid.UUID)
-		}
+		r0 = ret.Error(0)
 	}
-	if returnFunc, ok := ret.Get(1).(func(context.Context, model.Order) error); ok {
-		r1 = returnFunc(ctx, order)
-	} else {
-		r1 = ret.Error(1)
-	}
-	return r0, r1
+	return r0
 }
 
 // OrderRepository_Create_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Create'
@@ -100,12 +89,12 @@ func (_c *OrderRepository_Create_Call) Run(run func(ctx context.Context, order m
 	return _c
 }
 
-func (_c *OrderRepository_Create_Call) Return(uUID uuid.UUID, err error) *OrderRepository_Create_Call {
-	_c.Call.Return(uUID, err)
+func (_c *OrderRepository_Create_Call) Return(err error) *OrderRepository_Create_Call {
+	_c.Call.Return(err)
 	return _c
 }
 
-func (_c *OrderRepository_Create_Call) RunAndReturn(run func(ctx context.Context, order model.Order) (uuid.UUID, error)) *OrderRepository_Create_Call {
+func (_c *OrderRepository_Create_Call) RunAndReturn(run func(ctx context.Context, order model.Order) error) *OrderRepository_Create_Call {
 	_c.Call.Return(run)
 	return _c
 }

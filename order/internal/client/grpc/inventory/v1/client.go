@@ -32,7 +32,7 @@ func New(grpcClient inventoryv1.InventoryServiceClient) *client {
 }
 
 // ListParts возвращает список деталей.
-func (c *client) ListParts(ctx context.Context, partsUuids []uuid.UUID) ([]model.Part, error) {
+func (c *client) ListParts(ctx context.Context, partsUuids []uuid.UUID) ([]model.OrderItem, error) {
 	// ПАТТЕРН 1: Контекст с таймаутом
 	ctx, cancel := context.WithTimeout(ctx, grpcCallTimeout)
 	defer cancel()
@@ -44,48 +44,48 @@ func (c *client) ListParts(ctx context.Context, partsUuids []uuid.UUID) ([]model
 		if !ok {
 			// Неизвестная ошибка
 			slog.Error("неизвестная ошибка", "error", err)
-			return []model.Part{}, errs.ErrGrpcInternal
+			return []model.OrderItem{}, errs.ErrGrpcInternal
 		}
 		// Маппинг gRPC ошибок в доменные ошибки
 		switch st.Code() {
 		case codes.NotFound:
 			slog.Error("получить список деталей", "message", st.Message())
-			return []model.Part{}, errs.ErrGrpcNotFound
+			return []model.OrderItem{}, errs.ErrGrpcNotFound
 
 		case codes.InvalidArgument:
 			slog.Error("получить список деталей", "message", st.Message())
-			return []model.Part{}, errs.ErrGrpcInvalidArgument
+			return []model.OrderItem{}, errs.ErrGrpcInvalidArgument
 
 		case codes.DeadlineExceeded: // Таймаут — клиент может повторить запрос
 			slog.Error("таймаут", "message", st.Message())
-			return []model.Part{}, errs.ErrGrpcTimeout
+			return []model.OrderItem{}, errs.ErrGrpcTimeout
 
 		case codes.Unavailable: // gRPC сервис недоступен
 			slog.Error("gRPC сервис недоступен", "message", st.Message())
-			return []model.Part{}, errs.ErrGrpcUnavailable
+			return []model.OrderItem{}, errs.ErrGrpcUnavailable
 
 		case codes.Canceled: // Запрос был отменён (например, клиент закрыл соединение)
 			slog.Error("запрос отменен", "message", st.Message())
-			return []model.Part{}, errs.ErrGrpcUnavailable
+			return []model.OrderItem{}, errs.ErrGrpcUnavailable
 
 		default:
 			slog.Error("ошибка gRPC", "code", st.Code(), "message", st.Message())
-			return []model.Part{}, errs.ErrGrpcInternal
+			return []model.OrderItem{}, errs.ErrGrpcInternal
 		}
 	}
 
-	parts := make([]model.Part, len(rs.GetParts()))
+	parts := make([]model.OrderItem, len(rs.GetParts()))
 	for i, p := range rs.GetParts() {
 		part, err := converter.PartToModel(p)
 		if err != nil {
 			if errors.Is(err, errs.ErrInvalidUUID) {
 				slog.Error("неверный формат", "uuid", p.Uuid)
-				return []model.Part{}, fmt.Errorf("деталь %s: %w", p.GetUuid(), err)
+				return []model.OrderItem{}, fmt.Errorf("деталь %s: %w", p.GetUuid(), err)
 			}
 			if errors.Is(err, errs.ErrWrongPartType) {
-				return []model.Part{}, fmt.Errorf("деталь %s: %w", p.GetPartType(), err)
+				return []model.OrderItem{}, fmt.Errorf("деталь %s: %w", p.GetPartType(), err)
 			}
-			return []model.Part{}, errs.ErrUnknown
+			return []model.OrderItem{}, errs.ErrUnknown
 		}
 		parts[i] = part
 	}

@@ -33,14 +33,14 @@ func TestGet(t *testing.T) {
 		ctx   = context.Background()
 		uuid  = uuid.New()
 		num   = gofakeit.Int64()
-		parts = []model.Part{
+		items = []model.OrderItem{
 			{Uuid: uuid, Type: model.PartTypeHull},
 			{Uuid: uuid, Type: model.PartTypeEngine},
 		}
 
 		expModel = model.Order{
 			OrderUUID:       uuid,
-			Parts:           parts,
+			Items:           items,
 			TotalPrice:      num,
 			TransactionUUID: nil,
 			PaymentMethod:   nil,
@@ -123,7 +123,7 @@ func TestGet(t *testing.T) {
 			} else {
 				require.NotEmpty(t, res)
 				assert.Equal(t, test.expected.res.OrderUUID, res.OrderUUID)
-				assert.Equal(t, len(test.expected.res.Parts), len(res.Parts))
+				assert.Equal(t, len(test.expected.res.Items), len(res.Items))
 				assert.Equal(t, test.expected.res.TotalPrice, res.TotalPrice)
 				assert.Nil(t, res.TransactionUUID)
 				assert.Nil(t, res.PaymentMethod)

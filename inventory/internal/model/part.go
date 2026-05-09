@@ -39,6 +39,22 @@ func NewPartType(s string) (PartType, error) {
 	}
 }
 
+func OrderPartsByIds(parts []Part, ids []uuid.UUID) []Part {
+	pMap := make(map[uuid.UUID]Part)
+	for _, p := range parts {
+		pMap[p.UUID] = p
+	}
+
+	pOrdered := make([]Part, 0, len(ids))
+	for _, id := range ids {
+		if p, ok := pMap[id]; ok {
+			pOrdered = append(pOrdered, p)
+		}
+	}
+
+	return pOrdered
+}
+
 type PartFilter struct {
 	// UUIDs — если не пустой, возвращаются только эти детали (приоритет)
 	UUIDs []uuid.UUID

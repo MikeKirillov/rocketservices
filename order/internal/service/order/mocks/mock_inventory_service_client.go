@@ -43,23 +43,23 @@ func (_m *InventoryServiceClient) EXPECT() *InventoryServiceClient_Expecter {
 }
 
 // ListParts provides a mock function for the type InventoryServiceClient
-func (_mock *InventoryServiceClient) ListParts(ctx context.Context, partsUuids []uuid.UUID) ([]model.Part, error) {
+func (_mock *InventoryServiceClient) ListParts(ctx context.Context, partsUuids []uuid.UUID) ([]model.OrderItem, error) {
 	ret := _mock.Called(ctx, partsUuids)
 
 	if len(ret) == 0 {
 		panic("no return value specified for ListParts")
 	}
 
-	var r0 []model.Part
+	var r0 []model.OrderItem
 	var r1 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, []uuid.UUID) ([]model.Part, error)); ok {
+	if returnFunc, ok := ret.Get(0).(func(context.Context, []uuid.UUID) ([]model.OrderItem, error)); ok {
 		return returnFunc(ctx, partsUuids)
 	}
-	if returnFunc, ok := ret.Get(0).(func(context.Context, []uuid.UUID) []model.Part); ok {
+	if returnFunc, ok := ret.Get(0).(func(context.Context, []uuid.UUID) []model.OrderItem); ok {
 		r0 = returnFunc(ctx, partsUuids)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]model.Part)
+			r0 = ret.Get(0).([]model.OrderItem)
 		}
 	}
 	if returnFunc, ok := ret.Get(1).(func(context.Context, []uuid.UUID) error); ok {
@@ -100,12 +100,12 @@ func (_c *InventoryServiceClient_ListParts_Call) Run(run func(ctx context.Contex
 	return _c
 }
 
-func (_c *InventoryServiceClient_ListParts_Call) Return(parts []model.Part, err error) *InventoryServiceClient_ListParts_Call {
-	_c.Call.Return(parts, err)
+func (_c *InventoryServiceClient_ListParts_Call) Return(orderItems []model.OrderItem, err error) *InventoryServiceClient_ListParts_Call {
+	_c.Call.Return(orderItems, err)
 	return _c
 }
 
-func (_c *InventoryServiceClient_ListParts_Call) RunAndReturn(run func(ctx context.Context, partsUuids []uuid.UUID) ([]model.Part, error)) *InventoryServiceClient_ListParts_Call {
+func (_c *InventoryServiceClient_ListParts_Call) RunAndReturn(run func(ctx context.Context, partsUuids []uuid.UUID) ([]model.OrderItem, error)) *InventoryServiceClient_ListParts_Call {
 	_c.Call.Return(run)
 	return _c
 }

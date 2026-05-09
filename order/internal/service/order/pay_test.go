@@ -39,14 +39,14 @@ func TestPay(t *testing.T) {
 			OrderUUID:     id,
 			PaymentMethod: model.PaymentMethodCard,
 		}
-		parts = []model.Part{
+		items = []model.OrderItem{
 			{Uuid: id, Type: model.PartTypeHull},
 			{Uuid: id, Type: model.PartTypeEngine},
 		}
 
 		modelToGet = model.Order{
 			OrderUUID:       id,
-			Parts:           parts,
+			Items:           items,
 			TotalPrice:      num,
 			TransactionUUID: nil,
 			PaymentMethod:   nil,
@@ -55,7 +55,7 @@ func TestPay(t *testing.T) {
 		}
 		modelCancelled = model.Order{
 			OrderUUID:       id,
-			Parts:           parts,
+			Items:           items,
 			TotalPrice:      num,
 			TransactionUUID: nil,
 			PaymentMethod:   nil,
@@ -64,7 +64,7 @@ func TestPay(t *testing.T) {
 		}
 		modelPaid = model.Order{
 			OrderUUID:       id,
-			Parts:           parts,
+			Items:           items,
 			TotalPrice:      num,
 			TransactionUUID: nil,
 			PaymentMethod:   nil,
@@ -73,7 +73,7 @@ func TestPay(t *testing.T) {
 		}
 		modelToPay = model.Order{
 			OrderUUID:       id,
-			Parts:           parts,
+			Items:           items,
 			TotalPrice:      num,
 			TransactionUUID: &tranId,
 			PaymentMethod:   &req.PaymentMethod,

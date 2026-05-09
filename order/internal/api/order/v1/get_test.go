@@ -43,7 +43,7 @@ func TestGetOrder(t *testing.T) {
 
 		expModel = model.Order{
 			OrderUUID: id1,
-			Parts: []model.Part{
+			Items: []model.OrderItem{
 				{
 					Uuid: id2,
 					Type: model.PartTypeHull,

@@ -4,7 +4,7 @@ import (
 	"github.com/google/uuid"
 )
 
-type Part struct {
+type OrderItem struct {
 	Uuid          uuid.UUID
 	Type          PartType
 	Name          *string
