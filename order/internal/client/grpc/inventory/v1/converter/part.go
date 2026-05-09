@@ -8,16 +8,16 @@ import (
 	inventoryv1 "github.com/MikeKirillov/rocketservices/shared/pkg/proto/inventory/v1"
 )
 
-func PartToModel(part *inventoryv1.Part) (model.Part, error) {
+func PartToModel(part *inventoryv1.Part) (model.OrderItem, error) {
 	id, err := uuid.Parse(part.GetUuid())
 	if err != nil {
-		return model.Part{}, errs.ErrInvalidUUID
+		return model.OrderItem{}, errs.ErrInvalidUUID
 	}
 	pt, err := partTypeToModel(part.PartType)
 	if err != nil {
-		return model.Part{}, err
+		return model.OrderItem{}, err
 	}
-	return model.Part{
+	return model.OrderItem{
 		Uuid:          id,
 		Type:          pt,
 		Name:          new(part.GetName()),

@@ -23,14 +23,9 @@ func NewRepository(pool *pgxpool.Pool) *repository {
 }
 
 func (r *repository) Get(ctx context.Context, uuid uuid.UUID) (model.Part, error) {
-	query := `SELECT uuid,
-       name,
-       description,
-       part_type,
-       price,
-       stock_quantity,
-       created_at
-	   FROM parts WHERE uuid = $1`
+	query := `SELECT
+	uuid, name, description, part_type, price, stock_quantity, created_at
+	FROM parts WHERE uuid = $1`
 
 	var p model.Part
 	err := r.pool.QueryRow(ctx, query, uuid).
@@ -45,20 +40,16 @@ func (r *repository) Get(ctx context.Context, uuid uuid.UUID) (model.Part, error
 }
 
 func (r *repository) List(ctx context.Context) ([]model.Part, error) {
-	query := `SELECT uuid,
-       name,
-       description,
-       part_type,
-       price,
-       stock_quantity,
-       created_at
-	   FROM parts`
+	query := `SELECT
+	uuid, name, description, part_type, price, stock_quantity, created_at
+	FROM parts`
 
 	rows, err := r.pool.Query(ctx, query)
 	if err != nil {
 		slog.Error("не удалось выполнить выборку", "error", err)
 		return nil, err
 	}
+	defer rows.Close()
 
 	parts, err := scanRows(rows)
 	if err != nil {
@@ -69,19 +60,15 @@ func (r *repository) List(ctx context.Context) ([]model.Part, error) {
 }
 
 func (r *repository) ListByPartType(ctx context.Context, partType model.PartType) ([]model.Part, error) {
-	query := `SELECT uuid,
-       name,
-       description,
-       part_type,
-       price,
-       stock_quantity,
-       created_at
-	   FROM parts WHERE part_type = $1`
+	query := `SELECT
+	uuid, name, description, part_type, price, stock_quantity, created_at
+	FROM parts WHERE part_type = $1`
 	rows, err := r.pool.Query(ctx, query, partType)
 	if err != nil {
 		slog.Error("не удалось выполнить выборку", "error", err)
 		return nil, err
 	}
+	defer rows.Close()
 
 	parts, err := scanRows(rows)
 	if err != nil {
@@ -92,20 +79,16 @@ func (r *repository) ListByPartType(ctx context.Context, partType model.PartType
 }
 
 func (r *repository) ListByUUIDs(ctx context.Context, uuids []uuid.UUID) ([]model.Part, error) {
-	query := `SELECT uuid,
-       name,
-       description,
-       part_type,
-       price,
-       stock_quantity,
-       created_at
-	   FROM parts WHERE uuid = ANY($1)`
+	query := `SELECT
+	uuid, name, description, part_type, price, stock_quantity, created_at
+	FROM parts WHERE uuid = ANY($1)`
 
 	rows, err := r.pool.Query(ctx, query, uuids)
 	if err != nil {
 		slog.Error("не удалось выполнить выборку", "error", err)
 		return nil, err
 	}
+	defer rows.Close()
 
 	parts, err := scanRows(rows)
 	if err != nil {

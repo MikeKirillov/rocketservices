@@ -4,6 +4,9 @@ import (
 	"log/slog"
 	"net/http"
 
+	"github.com/avito-tech/go-transaction-manager/trm/v2/manager"
+	"github.com/jackc/pgx/v5/pgxpool"
+
 	orderAPIV1 "github.com/MikeKirillov/rocketservices/order/internal/api/order/v1"
 	inventoryClientV1 "github.com/MikeKirillov/rocketservices/order/internal/client/grpc/inventory/v1"
 	paymentClientV1 "github.com/MikeKirillov/rocketservices/order/internal/client/grpc/payment/v1"
@@ -16,10 +19,12 @@ import (
 )
 
 func NewHTTPHandler(
+	pool *pgxpool.Pool,
+	txManager *manager.Manager,
 	inventoryGRPCClient inventoryv1.InventoryServiceClient,
 	paymentGRPCClient paymentv1.PaymentServiceClient,
 ) (http.Handler, error) {
-	repo := orderRepo.NewRepository()
+	repo := orderRepo.NewRepository(pool, txManager)
 	inventoryClient := inventoryClientV1.New(inventoryGRPCClient)
 	paymentClient := paymentClientV1.New(paymentGRPCClient)
 	service := orderService.NewService(repo, inventoryClient, paymentClient)

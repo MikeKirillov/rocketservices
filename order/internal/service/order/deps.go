@@ -10,12 +10,12 @@ import (
 
 type OrderRepository interface {
 	Get(ctx context.Context, id uuid.UUID) (model.Order, error)
-	Create(ctx context.Context, order model.Order) (uuid.UUID, error)
+	Create(ctx context.Context, order model.Order) error
 	Update(ctx context.Context, order model.Order) error
 }
 
 type InventoryServiceClient interface {
-	ListParts(ctx context.Context, partsUuids []uuid.UUID) ([]model.Part, error)
+	ListParts(ctx context.Context, partsUuids []uuid.UUID) ([]model.OrderItem, error)
 }
 
 type PaymentServiceClient interface {

@@ -32,14 +32,14 @@ func TestCancel(t *testing.T) {
 		uuid  = uuid.New()
 		num   = gofakeit.Int64()
 		date  = time.Now()
-		parts = []model.Part{
+		items = []model.OrderItem{
 			{Uuid: uuid, Type: model.PartTypeHull},
 			{Uuid: uuid, Type: model.PartTypeEngine},
 		}
 
 		modelToSave = model.Order{
 			OrderUUID:       uuid,
-			Parts:           parts,
+			Items:           items,
 			TotalPrice:      num,
 			TransactionUUID: nil,
 			PaymentMethod:   nil,
@@ -48,7 +48,7 @@ func TestCancel(t *testing.T) {
 		}
 		modelToCancel = model.Order{
 			OrderUUID:       uuid,
-			Parts:           parts,
+			Items:           items,
 			TotalPrice:      num,
 			TransactionUUID: nil,
 			PaymentMethod:   nil,

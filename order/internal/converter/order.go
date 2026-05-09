@@ -18,7 +18,7 @@ func OrderToDTO(order model.Order) (*orderv1.OrderDto, error) {
 		Status:     orderv1.OrderStatus(order.Status),
 		CreatedAt:  order.CreatedAt,
 	}
-	for _, p := range order.Parts {
+	for _, p := range order.Items {
 		switch p.Type {
 		case model.PartTypeHull:
 			result.SetHullUUID(p.Uuid)
@@ -51,7 +51,7 @@ func OrderCreateRqToModel(orderRq *orderv1.CreateOrderRequest) (model.CreateOrde
 		return model.CreateOrderRq{}, err
 	}
 
-	parts := []model.Part{
+	items := []model.OrderItem{
 		{
 			Uuid: orderRq.HullUUID,
 			Type: model.PartTypeHull,
@@ -63,12 +63,12 @@ func OrderCreateRqToModel(orderRq *orderv1.CreateOrderRequest) (model.CreateOrde
 	}
 
 	if v, ok := orderRq.GetShieldUUID().Get(); ok {
-		parts = append(parts, model.Part{Uuid: v, Type: model.PartTypeShield})
+		items = append(items, model.OrderItem{Uuid: v, Type: model.PartTypeShield})
 	}
 	if v, ok := orderRq.GetWeaponUUID().Get(); ok {
-		parts = append(parts, model.Part{Uuid: v, Type: model.PartTypeWeapon})
+		items = append(items, model.OrderItem{Uuid: v, Type: model.PartTypeWeapon})
 	}
-	return model.CreateOrderRq{Parts: parts}, nil
+	return model.CreateOrderRq{Items: items}, nil
 }
 
 func checkRequiredField(field uuid.UUID, fieldName string) error {
@@ -80,7 +80,7 @@ func checkRequiredField(field uuid.UUID, fieldName string) error {
 }
 
 func CreateOrderRqToOrder(
-	order model.CreateOrderRq,
+	parts []model.OrderItem,
 	totalPrice int64,
 	status model.OrderStatus,
 	orderId uuid.UUID,
@@ -88,7 +88,7 @@ func CreateOrderRqToOrder(
 ) model.Order {
 	result := model.Order{
 		OrderUUID:  orderId,
-		Parts:      order.Parts,
+		Items:      parts,
 		TotalPrice: totalPrice,
 		Status:     status,
 		CreatedAt:  createdAt,

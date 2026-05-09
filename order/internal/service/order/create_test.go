@@ -37,11 +37,11 @@ func TestCreate(t *testing.T) {
 		id4     = uuid.New()
 		num     = gofakeit.Int64()
 		orderId = uuid.New()
-		parts   = []model.Part{
+		items   = []model.OrderItem{
 			{Uuid: id, Type: model.PartTypeHull},
 			{Uuid: id2, Type: model.PartTypeEngine},
 		}
-		partsOpt = []model.Part{
+		itemsOpt = []model.OrderItem{
 			{Uuid: id, Type: model.PartTypeHull},
 			{Uuid: id2, Type: model.PartTypeEngine},
 			{Uuid: id3, Type: model.PartTypeShield},
@@ -49,15 +49,15 @@ func TestCreate(t *testing.T) {
 		}
 
 		req = model.CreateOrderRq{
-			Parts: parts,
+			Items: items,
 		}
 		reqOpt = model.CreateOrderRq{
-			Parts: partsOpt,
+			Items: itemsOpt,
 		}
 
-		rqParts    = []uuid.UUID{id, id2}
-		rqPartsOpt = []uuid.UUID{id, id2, id3, id4}
-		rsParts    = []model.Part{
+		rqItems    = []uuid.UUID{id, id2}
+		rqItemsOpt = []uuid.UUID{id, id2, id3, id4}
+		rsItems    = []model.OrderItem{
 			{
 				Uuid:          id,
 				Name:          new("hull"),
@@ -71,7 +71,7 @@ func TestCreate(t *testing.T) {
 				StockQuantity: num,
 			},
 		}
-		rsPartsOut = []model.Part{
+		rsPartsOut = []model.OrderItem{
 			{
 				Uuid:          id,
 				Type:          model.PartTypeHull,
@@ -87,7 +87,7 @@ func TestCreate(t *testing.T) {
 				StockQuantity: num,
 			},
 		}
-		rsPartsOpt = []model.Part{
+		rsPartsOpt = []model.OrderItem{
 			{
 				Uuid:          id,
 				Type:          model.PartTypeHull,
@@ -131,20 +131,20 @@ func TestCreate(t *testing.T) {
 			name: "успешное создание hull+engine - ошибок нет",
 			args: args{req: req},
 			setupMock: func(r *mocks.OrderRepository, i *mocks.InventoryServiceClient) {
-				i.EXPECT().ListParts(ctx, rqParts).Return(rsParts, nil)
+				i.EXPECT().ListParts(ctx, rqItems).Return(rsItems, nil)
 				r.EXPECT().Create(ctx, mock.MatchedBy(func(o model.Order) bool {
 					return o.OrderUUID != uuid.Nil &&
-						o.Parts != nil &&
-						len(o.Parts) > 0 &&
+						o.Items != nil &&
+						len(o.Items) > 0 &&
 						o.TotalPrice != 0 &&
 						o.Status == model.OrderStatusPendingPayment &&
 						!o.CreatedAt.IsZero()
-				})).Return(orderId, nil)
+				})).Return(nil)
 			},
 			expected: expected{
 				res: model.CreateOrderRs{
 					OrderUUID:  orderId,
-					TotalPrice: num * int64(len(rsParts)),
+					TotalPrice: num * int64(len(rsItems)),
 				},
 				hasErr: false,
 				errCheck: func(t *testing.T, err error) {
@@ -156,15 +156,15 @@ func TestCreate(t *testing.T) {
 			name: "успешное создание shield+weapon - ошибок нет",
 			args: args{req: reqOpt},
 			setupMock: func(r *mocks.OrderRepository, i *mocks.InventoryServiceClient) {
-				i.EXPECT().ListParts(ctx, rqPartsOpt).Return(rsPartsOpt, nil)
+				i.EXPECT().ListParts(ctx, rqItemsOpt).Return(rsPartsOpt, nil)
 				r.EXPECT().Create(ctx, mock.MatchedBy(func(o model.Order) bool {
 					return o.OrderUUID != uuid.Nil &&
-						o.Parts != nil &&
-						len(o.Parts) > 0 &&
+						o.Items != nil &&
+						len(o.Items) > 0 &&
 						o.TotalPrice != 0 &&
 						o.Status == model.OrderStatusPendingPayment &&
 						!o.CreatedAt.IsZero()
-				})).Return(orderId, nil)
+				})).Return(nil)
 			},
 			expected: expected{
 				res: model.CreateOrderRs{
@@ -181,7 +181,7 @@ func TestCreate(t *testing.T) {
 			name: "одна из деталей не найдена - errs.ErrPartNotFound",
 			args: args{req: reqOpt},
 			setupMock: func(r *mocks.OrderRepository, i *mocks.InventoryServiceClient) {
-				i.EXPECT().ListParts(ctx, rqPartsOpt).Return(rsParts, nil) // rqPartsOpt = 4 записи, rsParts = 2 записи:
+				i.EXPECT().ListParts(ctx, rqItemsOpt).Return(rsItems, nil) // rqPartsOpt = 4 записи, rsParts = 2 записи:
 				// тк в сервисе сделана проверка на длину слайса в запросе и в ответе ListParts(),
 				// если значение в ответе меньше, чем в запросе, то будет выброшена соответствующая ошибка
 			},
@@ -198,7 +198,7 @@ func TestCreate(t *testing.T) {
 			name: "деталь закончилась на складе	- errs.ErrOutOfStock",
 			args: args{req: req},
 			setupMock: func(r *mocks.OrderRepository, i *mocks.InventoryServiceClient) {
-				i.EXPECT().ListParts(ctx, rqParts).Return(rsPartsOut, nil)
+				i.EXPECT().ListParts(ctx, rqItems).Return(rsPartsOut, nil)
 			},
 			expected: expected{
 				res:    model.CreateOrderRs{},
@@ -213,7 +213,7 @@ func TestCreate(t *testing.T) {
 			name: "ошибка InventoryService - errInternal",
 			args: args{req: req},
 			setupMock: func(r *mocks.OrderRepository, i *mocks.InventoryServiceClient) {
-				i.EXPECT().ListParts(ctx, rqParts).Return(nil, errInternal)
+				i.EXPECT().ListParts(ctx, rqItems).Return(nil, errInternal)
 			},
 			expected: expected{
 				res:    model.CreateOrderRs{},
@@ -228,15 +228,15 @@ func TestCreate(t *testing.T) {
 			name: "ошибка при сохранении - errInternal",
 			args: args{req: req},
 			setupMock: func(r *mocks.OrderRepository, i *mocks.InventoryServiceClient) {
-				i.EXPECT().ListParts(ctx, rqParts).Return(rsParts, nil)
+				i.EXPECT().ListParts(ctx, rqItems).Return(rsItems, nil)
 				r.EXPECT().Create(ctx, mock.MatchedBy(func(o model.Order) bool {
 					return o.OrderUUID != uuid.Nil &&
-						o.Parts != nil &&
-						len(o.Parts) > 0 &&
+						o.Items != nil &&
+						len(o.Items) > 0 &&
 						o.TotalPrice != 0 &&
 						o.Status == model.OrderStatusPendingPayment &&
 						!o.CreatedAt.IsZero()
-				})).Return(orderId, errInternal)
+				})).Return(errInternal)
 			},
 			expected: expected{
 				res:    model.CreateOrderRs{},
@@ -268,7 +268,7 @@ func TestCreate(t *testing.T) {
 				require.Empty(t, res)
 			} else {
 				require.NotEmpty(t, res)
-				assert.Equal(t, test.expected.res.OrderUUID, res.OrderUUID)
+				assert.NotNil(t, res.OrderUUID)
 				assert.Equal(t, test.expected.res.TotalPrice, res.TotalPrice)
 			}
 		})

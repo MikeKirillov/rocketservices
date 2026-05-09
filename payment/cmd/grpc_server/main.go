@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"log/slog"
 	"net"
 	"os"
@@ -30,11 +31,21 @@ const (
 )
 
 func main() {
+	// Реализовать graceful shutdown
+	// При получении сигнала SIGINT/SIGTERM сервер должен:
+	// 1. Перестать принимать новые соединения
+	// 2. Дождаться завершения текущих запросов
+	// 3. Корректно завершить работу
+	// Подсказка: используйте signal.Notify и grpcServer.GracefulStop()
+	ctx, cancel := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
+	defer cancel()
+
 	//nolint:noctx // Контекст здесь не нужен: GracefulStop() сам закроет listener и прервёт Accept()
 	lis, err := net.Listen("tcp", grpcAddress)
 	if err != nil {
 		slog.Error("не удалось создать listener", "error", err)
-		os.Exit(1)
+		cancel()
+		os.Exit(1) //nolint:gocritic // cancel() выполняется непосредственно перед os.Exit(1)
 	}
 
 	// Настроить gRPC сервер с параметрами keepalive
@@ -70,18 +81,11 @@ func main() {
 		slog.Info("gRPC сервер PaymentService запущен", "адрес", grpcAddress)
 		if err := grpcServer.Serve(lis); err != nil {
 			slog.Error("ошибка запуска сервера PaymentService", "error", err)
+			cancel()
 		}
 	}()
 
-	// Реализовать graceful shutdown
-	// При получении сигнала SIGINT/SIGTERM сервер должен:
-	// 1. Перестать принимать новые соединения
-	// 2. Дождаться завершения текущих запросов
-	// 3. Корректно завершить работу
-	// Подсказка: используйте signal.Notify и grpcServer.GracefulStop()
-	quit := make(chan os.Signal, 1)
-	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
-	<-quit
+	<-ctx.Done()
 	slog.Info("остановка gRPC сервера...")
 	grpcServer.GracefulStop()
 	slog.Info("сервер остановлен")
