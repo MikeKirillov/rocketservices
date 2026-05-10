@@ -2,11 +2,9 @@ package order
 
 import (
 	"context"
-	"errors"
 	"log/slog"
 
 	"github.com/google/uuid"
-	"github.com/jackc/pgx/v5"
 
 	errs "github.com/MikeKirillov/rocketservices/order/internal/errors"
 	"github.com/MikeKirillov/rocketservices/order/internal/model"
@@ -15,56 +13,50 @@ import (
 )
 
 func (r *repository) Get(ctx context.Context, id uuid.UUID) (model.Order, error) {
-	queryOrder := `SELECT
-	uuid, status, transaction_uuid, payment_method, created_at, updated_at
-	FROM public.orders
-	WHERE uuid = $1`
+	query := `SELECT
+	o.uuid, o.status, o.transaction_uuid, o.payment_method, o.created_at, o.updated_at,
+	i.uuid as i_uuid, i.order_uuid, i.part_uuid, i.part_type, i.price, i.created_at as i_created_at
+	FROM orders o
+	JOIN order_items i on o.uuid = i.order_uuid
+	WHERE o.uuid = $1`
 
-	queryItems := `SELECT
-    uuid, order_uuid, part_uuid, part_type, price, created_at
-	FROM public.order_items
-	WHERE order_uuid = $1`
-
-	batch := new(pgx.Batch{})
-	batch.Queue(queryOrder, id)
-	batch.Queue(queryItems, id)
-
-	br := r.pool.SendBatch(ctx, batch)
-	defer br.Close()
-
-	var o record.Order
-	err := br.QueryRow().Scan(&o.UUID, &o.Status, &o.TransactionUUID, &o.PaymentMethod, &o.CreatedAt, &o.UpdatedAt)
-	if err != nil {
-		if errors.Is(err, pgx.ErrNoRows) {
-			return model.Order{}, errs.ErrOrderNotFound
-		}
-		return model.Order{}, err
-	}
-
-	rows, err := br.Query()
+	rows, err := r.pool.Query(ctx, query, id)
 	if err != nil {
 		slog.Error("не удалось выполнить выборку", "error", err)
 		return model.Order{}, err
 	}
 	defer rows.Close()
 
+	order := record.Order{}
 	var items []record.OrderItem
-	for rows.Next() {
-		var i record.OrderItem
 
-		err = rows.Scan(&i.UUID, &i.OrderUUID, &i.PartUUID, &i.PartType, &i.Price, &i.CreatedAt)
+	found := false
+	for rows.Next() {
+		found = true
+
+		i := record.OrderItem{}
+		err = rows.Scan(
+			&order.UUID, &order.Status, &order.TransactionUUID, &order.PaymentMethod, &order.CreatedAt, &order.UpdatedAt,
+			&i.UUID, &i.OrderUUID, &i.PartUUID, &i.PartType, &i.Price, &i.CreatedAt,
+		)
 		if err != nil {
 			slog.Info("не удалось прочитать строку", "error", err)
 			return model.Order{}, err
 		}
 
-		items = append(items, i)
+		// проверяем, что LEFT JOIN притянул записи из таблицы order_items
+		if i.UUID != uuid.Nil {
+			items = append(items, i)
+		}
 	}
 
-	if err = rows.Err(); err != nil {
+	if !found {
+		return model.Order{}, errs.ErrOrderNotFound
+	}
+
+	if rows.Err() != nil {
 		slog.Error("ошибка при итерации по строкам", "error", err)
 		return model.Order{}, err
 	}
-
-	return converter.OrderToModel(o, items), nil
+	return converter.OrderToModel(order, items), nil
 }
