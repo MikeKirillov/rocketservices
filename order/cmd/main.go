@@ -52,10 +52,32 @@ func main() {
 	ctx, cancel := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer cancel()
 
-	pool, txManager, err := createPgConnection(ctx)
+	dbURI, err := getEnvURI()
 	if err != nil {
 		cancel()
 		os.Exit(1) //nolint:gocritic // cancel() выполняется непосредственно перед os.Exit(1)
+	}
+
+	pool, err := pgxpool.New(ctx, dbURI)
+	if err != nil {
+		slog.Error("ошибка подключения к БД", "error", err)
+		os.Exit(1)
+	}
+	defer pool.Close()
+
+	err = pool.Ping(ctx)
+	if err != nil {
+		slog.Error("проверка соединения с БД", "error", err)
+		os.Exit(1)
+	}
+
+	slog.Info("подключение к PostgreSQL установлено")
+
+	// Создаём Transaction Manager для pgx
+	txManager, err := manager.New(trmpgx.NewDefaultFactory(pool))
+	if err != nil {
+		slog.Error("создание transaction manager", "error", err)
+		os.Exit(1)
 	}
 
 	// Настроить gRPC клиент с параметрами keepalive
@@ -63,31 +85,28 @@ func main() {
 	// См. examples/week_1/GRPC_CONNECTIONS.md
 
 	// Создать gRPC соединение с InventoryService
-	inventoryConn, err := grpc.NewClient(inventoryServiceAddress,
+	inventoryConn, invErr := grpc.NewClient(inventoryServiceAddress,
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
 		grpc.WithKeepaliveParams(keepalive.ClientParameters{
 			Time:                grpcKeepaliveTime,    // Интервал ping'ов
 			Timeout:             grpcKeepaliveTimeout, // Таймаут ожидания pong
 			PermitWithoutStream: true,                 // Пинговать даже без активных RPC
 		}))
-	if err != nil {
-		slog.Error("не удалось подключиться к gRPC: InventoryService", "error", err)
-		os.Exit(1)
-	}
-	inventoryGRPCClient := inventoryv1.NewInventoryServiceClient(inventoryConn)
 
 	// Создать gRPC клиент PaymentService
-	paymentConn, err := grpc.NewClient(paymentServiceAddress,
+	paymentConn, payErr := grpc.NewClient(paymentServiceAddress,
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
 		grpc.WithKeepaliveParams(keepalive.ClientParameters{
 			Time:                grpcKeepaliveTime,    // Интервал ping'ов
 			Timeout:             grpcKeepaliveTimeout, // Таймаут ожидания pong
 			PermitWithoutStream: true,                 // Пинговать даже без активных RPC
 		}))
-	if err != nil {
-		slog.Error("не удалось подключиться к gRPC: PaymentService", "error", err)
+
+	if err = processGRPCConnErr(invErr, payErr); err != nil {
 		os.Exit(1)
 	}
+
+	inventoryGRPCClient := inventoryv1.NewInventoryServiceClient(inventoryConn)
 	paymentGRPCClient := paymentv1.NewPaymentServiceClient(paymentConn)
 
 	defer func() {
@@ -143,42 +162,30 @@ func main() {
 	slog.Info("сервер остановлен")
 }
 
-func createPgConnection(ctx context.Context) (*pgxpool.Pool, *manager.Manager, error) {
+func getEnvURI() (string, error) {
 	// Загружаем переменные окружения из .env
 	err := godotenv.Load("order.env")
 	if err != nil {
 		slog.Error("ошибка загрузки переменных окружения из inventory.env", "error", err)
-		return nil, nil, err
+		return "", err
 	}
 
 	// Подключаемся к PostgreSQL
 	dbURI := os.Getenv("DB_URI")
 	if dbURI == "" {
-		slog.Error("переменная окружения DB_URI не установлена")
-		return nil, nil, err
+		return "", errors.New("переменная окружения DB_URI не установлена")
 	}
+	return dbURI, nil
+}
 
-	pool, err := pgxpool.New(ctx, dbURI)
-	if err != nil {
-		slog.Error("ошибка подключения к БД", "error", err)
-		return nil, nil, err
+func processGRPCConnErr(invErr, payErr error) error {
+	if invErr != nil {
+		slog.Error("не удалось подключиться к gRPC: InventoryService", "error", invErr)
+		return invErr
 	}
-	defer pool.Close()
-
-	err = pool.Ping(ctx)
-	if err != nil {
-		slog.Error("проверка соединения с БД", "error", err)
-		return nil, nil, err
+	if payErr != nil {
+		slog.Error("не удалось подключиться к gRPC: PaymentService", "error", payErr)
+		return payErr
 	}
-
-	slog.Info("подключение к PostgreSQL установлено")
-
-	// Создаём Transaction Manager для pgx
-	txManager, err := manager.New(trmpgx.NewDefaultFactory(pool))
-	if err != nil {
-		slog.Error("создание transaction manager", "error", err)
-		return nil, nil, err
-	}
-
-	return pool, txManager, nil
+	return nil
 }

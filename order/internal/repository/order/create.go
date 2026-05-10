@@ -8,6 +8,7 @@ import (
 	"github.com/jackc/pgx/v5"
 
 	"github.com/MikeKirillov/rocketservices/order/internal/model"
+	"github.com/MikeKirillov/rocketservices/order/internal/repository/converter"
 )
 
 func (r *repository) Create(ctx context.Context, order model.Order) error {
@@ -20,10 +21,12 @@ func (r *repository) Create(ctx context.Context, order model.Order) error {
 }
 
 func (r *repository) createOrder(ctx context.Context, order model.Order) error {
+	o := converter.OrderToRecord(order)
+
 	query := `INSERT INTO orders (uuid, status, created_at) VALUES ($1, $2, $3)`
 
 	db := r.getter.DefaultTrOrDB(ctx, r.pool)
-	_, err := db.Exec(ctx, query, order.OrderUUID, string(order.Status), order.CreatedAt)
+	_, err := db.Exec(ctx, query, o.UUID, o.Status, o.CreatedAt)
 	if err != nil {
 		return fmt.Errorf("создание записи заказа %s: %w", order.OrderUUID, err)
 	}
@@ -42,8 +45,9 @@ func (r *repository) createOrderItem(ctx context.Context, order model.Order) err
 	VALUES ($1, $2, $3, $4, $5)`
 
 	batch := new(pgx.Batch{})
-	for _, i := range items {
-		batch.Queue(query, uuid.New(), order.OrderUUID, i.Uuid, string(i.Type), i.Price)
+	for _, item := range items {
+		i := converter.OrderItemToRecord(uuid.New(), order.OrderUUID, item)
+		batch.Queue(query, i.UUID, i.OrderUUID, i.PartUUID, i.PartType, i.Price)
 	}
 
 	db := r.getter.DefaultTrOrDB(ctx, r.pool)

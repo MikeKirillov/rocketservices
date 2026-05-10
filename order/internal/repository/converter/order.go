@@ -1,9 +1,38 @@
 package converter
 
 import (
+	"github.com/google/uuid"
+
 	"github.com/MikeKirillov/rocketservices/order/internal/model"
 	"github.com/MikeKirillov/rocketservices/order/internal/repository/record"
 )
+
+func OrderToRecord(order model.Order) record.Order {
+	result := record.Order{
+		UUID:      order.OrderUUID,
+		Status:    string(order.Status),
+		CreatedAt: order.CreatedAt,
+	}
+
+	if order.TransactionUUID != nil {
+		result.TransactionUUID = order.TransactionUUID
+	}
+	if order.PaymentMethod != nil {
+		result.PaymentMethod = (*string)(order.PaymentMethod)
+	}
+
+	return result
+}
+
+func OrderItemToRecord(partId, orderId uuid.UUID, item model.OrderItem) record.OrderItem {
+	return record.OrderItem{
+		UUID:      partId,
+		OrderUUID: orderId,
+		PartUUID:  item.Uuid,
+		PartType:  string(item.Type),
+		Price:     item.Price,
+	}
+}
 
 func OrderToModel(order record.Order, items []record.OrderItem) model.Order {
 	result := model.Order{
@@ -36,6 +65,5 @@ func OrderToModel(order record.Order, items []record.OrderItem) model.Order {
 	}
 	result.Items = modelItems
 	result.TotalPrice = totalPrice
-
 	return result
 }
