@@ -2,9 +2,11 @@ package order
 
 import (
 	"context"
+	"errors"
 	"log/slog"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5"
 
 	errs "github.com/MikeKirillov/rocketservices/order/internal/errors"
 	"github.com/MikeKirillov/rocketservices/order/internal/model"
@@ -14,49 +16,48 @@ import (
 
 func (r *repository) Get(ctx context.Context, id uuid.UUID) (model.Order, error) {
 	query := `SELECT
-	o.uuid, o.status, o.transaction_uuid, o.payment_method, o.created_at, o.updated_at,
-	i.uuid as i_uuid, i.order_uuid, i.part_uuid, i.part_type, i.price, i.created_at as i_created_at
+	o.uuid, o.status, o.transaction_uuid, o.payment_method,
+	o.created_at, o.updated_at, o.version,
+	COALESCE(
+	    jsonb_agg(
+	        jsonb_build_object(
+	            'uuid',       oi.uuid,
+				'order_uuid', oi.order_uuid,
+	            'part_uuid',  oi.part_uuid,
+	            'part_type',  oi.part_type,
+	            'price',      oi.price,
+	            'created_at', to_char(oi.created_at, 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"')
+	        ) ORDER BY oi.created_at
+	    ) FILTER (WHERE oi.uuid IS NOT NULL),
+	    '[]'::jsonb
+	) AS items
 	FROM orders o
-	JOIN order_items i on o.uuid = i.order_uuid
-	WHERE o.uuid = $1`
+	LEFT JOIN order_items oi ON oi.order_uuid = o.uuid
+	WHERE o.uuid = $1
+	GROUP BY o.uuid`
+	// FILTER (WHERE oi.uuid IS NOT NULL) - чтобы при заказе без позиций не получить [null].
+	// COALESCE(..., '[]') - пустой массив вместо NULL.
 
-	rows, err := r.pool.Query(ctx, query, id)
+	rows, err := r.getter.DefaultTrOrDB(ctx, r.pool).Query(ctx, query, id)
 	if err != nil {
 		slog.Error("не удалось выполнить выборку", "error", err)
 		return model.Order{}, err
 	}
 	defer rows.Close()
 
-	order := record.Order{}
-	var items []record.OrderItem
-
-	found := false
-	for rows.Next() {
-		found = true
-
-		i := record.OrderItem{}
-		err = rows.Scan(
-			&order.UUID, &order.Status, &order.TransactionUUID, &order.PaymentMethod, &order.CreatedAt, &order.UpdatedAt,
-			&i.UUID, &i.OrderUUID, &i.PartUUID, &i.PartType, &i.Price, &i.CreatedAt,
-		)
-		if err != nil {
-			slog.Info("не удалось прочитать строку", "error", err)
-			return model.Order{}, err
+	order, err := pgx.CollectExactlyOneRow(rows, pgx.RowToStructByName[record.Order])
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return model.Order{}, errs.ErrOrderNotFound
 		}
-
-		// проверяем, что LEFT JOIN притянул записи из таблицы order_items
-		if i.UUID != uuid.Nil {
-			items = append(items, i)
-		}
-	}
-
-	if !found {
-		return model.Order{}, errs.ErrOrderNotFound
+		slog.Info("не удалось прочитать строку", "error", err)
+		return model.Order{}, err
 	}
 
 	if rows.Err() != nil {
 		slog.Error("ошибка при итерации по строкам", "error", err)
 		return model.Order{}, err
 	}
-	return converter.OrderToModel(order, items), nil
+
+	return converter.OrderToModel(order), nil
 }

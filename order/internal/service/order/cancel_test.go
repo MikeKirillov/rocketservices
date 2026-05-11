@@ -9,6 +9,7 @@ import (
 	"github.com/brianvoe/gofakeit/v7"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 
 	errs "github.com/MikeKirillov/rocketservices/order/internal/errors"
@@ -45,15 +46,7 @@ func TestCancel(t *testing.T) {
 			PaymentMethod:   nil,
 			Status:          model.OrderStatusPendingPayment,
 			CreatedAt:       date,
-		}
-		modelToCancel = model.Order{
-			OrderUUID:       uuid,
-			Items:           items,
-			TotalPrice:      num,
-			TransactionUUID: nil,
-			PaymentMethod:   nil,
-			Status:          model.OrderStatusCancelled,
-			CreatedAt:       date,
+			UpdatedAt:       &date,
 		}
 
 		errInternal = errors.New("внутренняя ошибка бд")
@@ -70,7 +63,10 @@ func TestCancel(t *testing.T) {
 			args: args{id: uuid},
 			setupMock: func(r *mocks.OrderRepository) {
 				r.EXPECT().Get(ctx, uuid).Return(modelToSave, nil)
-				r.EXPECT().Update(ctx, modelToCancel).Return(nil)
+				r.EXPECT().Update(ctx, mock.MatchedBy(func(o model.Order) bool {
+					return o.Status == model.OrderStatusCancelled &&
+						!o.UpdatedAt.IsZero()
+				})).Return(nil)
 			},
 			expected: expected{
 				errCheck: func(t *testing.T, err error) {
@@ -79,15 +75,15 @@ func TestCancel(t *testing.T) {
 			},
 		},
 		{
-			name: "заказ не найден - errs.ErrOrderNotFound",
+			name: "заказ не найден - errs.ErrOrderConflict",
 			args: args{id: uuid},
 			setupMock: func(r *mocks.OrderRepository) {
-				r.EXPECT().Get(ctx, uuid).Return(model.Order{}, errs.ErrOrderNotFound)
+				r.EXPECT().Get(ctx, uuid).Return(model.Order{}, errs.ErrOrderConflict)
 			},
 			expected: expected{
 				errCheck: func(t *testing.T, err error) {
 					require.Error(t, err)
-					assert.True(t, errors.Is(err, errs.ErrOrderNotFound))
+					assert.True(t, errors.Is(err, errs.ErrOrderConflict))
 				},
 			},
 		},
@@ -96,7 +92,10 @@ func TestCancel(t *testing.T) {
 			args: args{id: uuid},
 			setupMock: func(r *mocks.OrderRepository) {
 				r.EXPECT().Get(ctx, uuid).Return(modelToSave, nil)
-				r.EXPECT().Update(ctx, modelToCancel).Return(errInternal)
+				r.EXPECT().Update(ctx, mock.MatchedBy(func(o model.Order) bool {
+					return o.Status == model.OrderStatusCancelled &&
+						!o.UpdatedAt.IsZero()
+				})).Return(errInternal)
 			},
 			expected: expected{
 				errCheck: func(t *testing.T, err error) {

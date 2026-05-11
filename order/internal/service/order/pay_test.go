@@ -9,6 +9,7 @@ import (
 	"github.com/brianvoe/gofakeit/v7"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 
 	errs "github.com/MikeKirillov/rocketservices/order/internal/errors"
@@ -52,6 +53,7 @@ func TestPay(t *testing.T) {
 			PaymentMethod:   nil,
 			Status:          model.OrderStatusPendingPayment,
 			CreatedAt:       date,
+			UpdatedAt:       &date,
 		}
 		modelCancelled = model.Order{
 			OrderUUID:       id,
@@ -61,6 +63,7 @@ func TestPay(t *testing.T) {
 			PaymentMethod:   nil,
 			Status:          model.OrderStatusCancelled,
 			CreatedAt:       date,
+			UpdatedAt:       &date,
 		}
 		modelPaid = model.Order{
 			OrderUUID:       id,
@@ -70,15 +73,7 @@ func TestPay(t *testing.T) {
 			PaymentMethod:   nil,
 			Status:          model.OrderStatusPaid,
 			CreatedAt:       date,
-		}
-		modelToPay = model.Order{
-			OrderUUID:       id,
-			Items:           items,
-			TotalPrice:      num,
-			TransactionUUID: &tranId,
-			PaymentMethod:   &req.PaymentMethod,
-			Status:          model.OrderStatusPaid,
-			CreatedAt:       date,
+			UpdatedAt:       &date,
 		}
 
 		errInternal = errors.New("внутренняя ошибка")
@@ -95,7 +90,12 @@ func TestPay(t *testing.T) {
 			args: args{req: req},
 			setupMock: func(r *mocks.OrderRepository, p *mocks.PaymentServiceClient) {
 				r.EXPECT().Get(ctx, id).Return(modelToGet, nil)
-				r.EXPECT().Update(ctx, modelToPay).Return(nil)
+				r.EXPECT().Update(ctx, mock.MatchedBy(func(o model.Order) bool {
+					return !o.UpdatedAt.IsZero() &&
+						o.Status == model.OrderStatusPaid &&
+						o.PaymentMethod != nil &&
+						o.TransactionUUID != nil
+				})).Return(nil)
 				p.EXPECT().PayOrder(ctx, req).Return(tranId, nil)
 			},
 			expected: expected{
@@ -106,16 +106,16 @@ func TestPay(t *testing.T) {
 			},
 		},
 		{
-			name: "заказ не найден - errs.ErrOrderNotFound",
+			name: "заказ не найден - errs.ErrOrderConflict",
 			args: args{req: req},
 			setupMock: func(r *mocks.OrderRepository, p *mocks.PaymentServiceClient) {
-				r.EXPECT().Get(ctx, id).Return(model.Order{}, errs.ErrOrderNotFound)
+				r.EXPECT().Get(ctx, id).Return(model.Order{}, errs.ErrOrderConflict)
 			},
 			expected: expected{
 				res: uuid.Nil,
 				errCheck: func(t *testing.T, err error) {
 					require.Error(t, err)
-					assert.True(t, errors.Is(err, errs.ErrOrderNotFound))
+					assert.True(t, errors.Is(err, errs.ErrOrderConflict))
 				},
 			},
 		},
@@ -167,7 +167,12 @@ func TestPay(t *testing.T) {
 			args: args{req: req},
 			setupMock: func(r *mocks.OrderRepository, p *mocks.PaymentServiceClient) {
 				r.EXPECT().Get(ctx, id).Return(modelToGet, nil)
-				r.EXPECT().Update(ctx, modelToPay).Return(errInternal)
+				r.EXPECT().Update(ctx, mock.MatchedBy(func(o model.Order) bool {
+					return !o.UpdatedAt.IsZero() &&
+						o.Status == model.OrderStatusPaid &&
+						o.PaymentMethod != nil &&
+						o.TransactionUUID != nil
+				})).Return(errInternal)
 				p.EXPECT().PayOrder(ctx, req).Return(tranId, nil)
 			},
 			expected: expected{

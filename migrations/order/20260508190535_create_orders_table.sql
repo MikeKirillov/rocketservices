@@ -5,7 +5,8 @@ CREATE TABLE orders (
     transaction_uuid UUID,
     payment_method VARCHAR(50),
     created_at TIMESTAMP NOT NULL DEFAULT NOW(),
-    updated_at TIMESTAMP
+    updated_at TIMESTAMP,
+    version INT DEFAULT 1
 );
 
 -- +goose Down

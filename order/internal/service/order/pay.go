@@ -37,8 +37,8 @@ func (s *service) Pay(ctx context.Context, orderRq model.PayOrderRq) (uuid.UUID,
 	// и payment_method
 	order.Pay(transactionUUIDRs, &orderRq.PaymentMethod)
 	if err = s.orderRepository.Update(ctx, order); err != nil {
-		if errors.Is(err, errs.ErrOrderNotFound) {
-			return uuid.Nil, sharedErrs.NewNotFound(err)
+		if errors.Is(err, errs.ErrOrderConflict) {
+			return uuid.Nil, sharedErrs.NewConflict(err)
 		}
 		return uuid.Nil, sharedErrs.NewInternal(err)
 	}

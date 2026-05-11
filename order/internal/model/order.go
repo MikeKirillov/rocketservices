@@ -45,6 +45,8 @@ type Order struct {
 	PaymentMethod   *PaymentMethod
 	Status          OrderStatus
 	CreatedAt       time.Time
+	UpdatedAt       *time.Time
+	Version         int64
 }
 
 func NewOrderToCreate(
@@ -81,6 +83,7 @@ func (o *Order) Pay(transaction uuid.UUID, payment *PaymentMethod) {
 	}
 	o.TransactionUUID = &transaction
 	o.Status = OrderStatusPaid
+	o.UpdatedAt = new(time.Now())
 }
 
 // Cancel() меняет статус заказа на CANCELLED.
@@ -90,6 +93,7 @@ func (o *Order) Cancel() error {
 		return err
 	}
 	o.Status = OrderStatusCancelled
+	o.UpdatedAt = new(time.Now())
 	return nil
 }
 

@@ -12,6 +12,8 @@ import (
 
 	errs "github.com/MikeKirillov/rocketservices/inventory/internal/errors"
 	"github.com/MikeKirillov/rocketservices/inventory/internal/model"
+	"github.com/MikeKirillov/rocketservices/inventory/internal/repository/converter"
+	"github.com/MikeKirillov/rocketservices/inventory/internal/repository/record"
 )
 
 type repository struct {
@@ -56,7 +58,7 @@ func (r *repository) List(ctx context.Context) ([]model.Part, error) {
 		return nil, err
 	}
 
-	return parts, nil
+	return converter.PartsToModel(parts), nil
 }
 
 func (r *repository) ListByPartType(ctx context.Context, partType model.PartType) ([]model.Part, error) {
@@ -75,7 +77,7 @@ func (r *repository) ListByPartType(ctx context.Context, partType model.PartType
 		return nil, err
 	}
 
-	return parts, nil
+	return converter.PartsToModel(parts), nil
 }
 
 func (r *repository) ListByUUIDs(ctx context.Context, uuids []uuid.UUID) ([]model.Part, error) {
@@ -113,22 +115,14 @@ func (r *repository) ListByUUIDs(ctx context.Context, uuids []uuid.UUID) ([]mode
 		return nil, fmt.Errorf("детали %s: %w", missingUUIDs, errs.ErrPartNotFound)
 	}
 
-	return parts, nil
+	return converter.PartsToModel(parts), nil
 }
 
-func scanRows(rows pgx.Rows) ([]model.Part, error) {
-	var parts []model.Part
-
-	for rows.Next() {
-		var p model.Part
-
-		err := rows.Scan(&p.UUID, &p.Name, &p.Description, &p.PartType, &p.Price, &p.StockQuantity, &p.CreatedAt)
-		if err != nil {
-			slog.Info("не удалось прочитать строку", "error", err)
-			return nil, err
-		}
-
-		parts = append(parts, p)
+func scanRows(rows pgx.Rows) ([]record.Part, error) {
+	parts, err := pgx.CollectRows(rows, pgx.RowToStructByName[record.Part])
+	if err != nil {
+		slog.Info("не удалось прочитать строки", "error", err)
+		return nil, err
 	}
 	return parts, nil
 }
