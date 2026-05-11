@@ -20,13 +20,14 @@ func (s *service) Cancel(ctx context.Context, id uuid.UUID) error {
 		return sharedErrs.NewInternal(err)
 	}
 
+	// Обновить статус на CANELLED
 	err = order.Cancel()
 	if err != nil {
 		return sharedErrs.NewConflict(err)
 	}
 	if err = s.orderRepository.Update(ctx, order); err != nil {
-		if errors.Is(err, errs.ErrOrderNotFound) {
-			return sharedErrs.NewNotFound(err)
+		if errors.Is(err, errs.ErrOrderConflict) {
+			return sharedErrs.NewConflict(err)
 		}
 		return sharedErrs.NewInternal(err)
 	}

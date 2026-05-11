@@ -12,6 +12,7 @@ func OrderToRecord(order model.Order) record.Order {
 		UUID:      order.OrderUUID,
 		Status:    string(order.Status),
 		CreatedAt: order.CreatedAt,
+		Version:   order.Version,
 	}
 
 	if order.TransactionUUID != nil {
@@ -19,6 +20,9 @@ func OrderToRecord(order model.Order) record.Order {
 	}
 	if order.PaymentMethod != nil {
 		result.PaymentMethod = (*string)(order.PaymentMethod)
+	}
+	if order.UpdatedAt != nil {
+		result.UpdatedAt = order.UpdatedAt
 	}
 
 	return result
@@ -34,11 +38,12 @@ func OrderItemToRecord(partId, orderId uuid.UUID, item model.OrderItem) record.O
 	}
 }
 
-func OrderToModel(order record.Order, items []record.OrderItem) model.Order {
+func OrderToModel(order record.Order) model.Order {
 	result := model.Order{
 		OrderUUID: order.UUID,
 		Status:    model.OrderStatus(order.Status),
 		CreatedAt: order.CreatedAt,
+		Version:   order.Version,
 	}
 
 	if order.TransactionUUID != nil {
@@ -50,9 +55,13 @@ func OrderToModel(order record.Order, items []record.OrderItem) model.Order {
 		result.PaymentMethod = &method
 	}
 
-	modelItems := make([]model.OrderItem, 0, len(items))
+	if order.UpdatedAt != nil {
+		result.UpdatedAt = order.UpdatedAt
+	}
+
+	modelItems := make([]model.OrderItem, 0, len(order.Items))
 	var totalPrice int64
-	for _, i := range items {
+	for _, i := range order.Items {
 		p := model.OrderItem{
 			Uuid:  i.PartUUID,
 			Type:  model.PartType(i.PartType),
