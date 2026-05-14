@@ -25,8 +25,6 @@ import (
 
 // Управляет жизненным циклом (запуск → ожидание сигнала → graceful shutdown).
 const (
-	grpcAddress = "localhost:50052"
-
 	// gRPC keepalive параметры.
 	grpcMaxConnectionIdle     = 15 * time.Minute // Закрыть idle-соединения (нет активных RPC)
 	grpcMaxConnectionAge      = 30 * time.Minute // Принудительная ротация для балансировки
@@ -140,7 +138,7 @@ func (a *App) initLogger(ctx context.Context) {
 
 // initListener создаёт TCP-листенер для gRPC-сервера.
 func (a *App) initListener(ctx context.Context) {
-	lis, err := net.Listen("tcp", grpcAddress) //nolint:noctx // Контекст здесь не нужен: GracefulStop() сам закроет listener и прервёт Accept()
+	lis, err := net.Listen("tcp", config.AppConfig().GRPC.Address()) //nolint:noctx // Контекст здесь не нужен: GracefulStop() сам закроет listener и прервёт Accept()
 	if err != nil {
 		slog.Error("не удалось создать listener", "error", err)
 		os.Exit(1)
