@@ -1,0 +1,32 @@
+grpc:
+  inventory:
+    host: "0.0.0.0"
+    port: "50051"
+    keepalive:
+      timeMin: 5 # Интервал ping'ов для обнаружения мёртвого сервера
+      timeoutSec: 1 # Таймаут ожидания pong
+  payment:
+    host: "0.0.0.0"
+    port: "50052"
+    keepalive:
+      timeMin: 5 # Интервал ping'ов для обнаружения мёртвого сервера
+      timeoutSec: 1 # Таймаут ожидания pong
+
+pg:
+  host: "postgres-production"
+  port: "5432"
+  database: "order-service"
+  user: "MUST_BE_SET_VIA_ENV"
+  password: "MUST_BE_SET_VIA_ENV"
+  sslmode: "require"
+
+http:
+  host: "0.0.0.0"
+  port: "8080"
+  timeout:
+    readHeaderSec: 5
+    readSec: 15
+    writeSec: 15
+    idleSec: 60
+    shutdownSec: 10
+    middlwareSec: 10

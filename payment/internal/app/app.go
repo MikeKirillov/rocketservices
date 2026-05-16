@@ -7,7 +7,6 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
-	"time"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
@@ -21,18 +20,6 @@ import (
 	"github.com/MikeKirillov/rocketservices/shared/interceptor"
 	sharedErrs "github.com/MikeKirillov/rocketservices/shared/pkg/errors"
 	paymentv1 "github.com/MikeKirillov/rocketservices/shared/pkg/proto/payment/v1"
-)
-
-// Управляет жизненным циклом (запуск → ожидание сигнала → graceful shutdown).
-const (
-	// gRPC keepalive параметры.
-	grpcMaxConnectionIdle     = 15 * time.Minute // Закрыть idle-соединения (нет активных RPC)
-	grpcMaxConnectionAge      = 30 * time.Minute // Принудительная ротация для балансировки
-	grpcMaxConnectionAgeGrace = 5 * time.Second  // Время на завершение активных RPC
-	grpcKeepaliveTime         = 5 * time.Minute  // Интервал ping'ов для обнаружения мёртвых соединений
-	grpcKeepaliveTimeout      = 1 * time.Second  // Таймаут ожидания pong
-	grpcMinPingInterval       = 5 * time.Minute  // Минимальный интервал ping'ов от клиента (защита от DoS)
-	shutdownTimeout           = 5 * time.Second
 )
 
 // App — корневая структура приложения, управляющая жизненным циклом всех компонентов.
@@ -74,7 +61,7 @@ func (a *App) startGracefulShutdown(ctx context.Context, cancel context.CancelFu
 		<-ctx.Done()
 		cancel()
 		slog.Info("получен сигнал завершения, начинаем graceful shutdown")
-		shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), shutdownTimeout)
+		shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), config.AppConfig().GRPC.ShutdownTimeout())
 		defer shutdownCancel()
 		if closeErr := closer.CloseAll(shutdownCtx); closeErr != nil {
 			slog.Error("ошибка при завершении работы", "error", closeErr)
@@ -154,14 +141,14 @@ func (a *App) initGRPCServer(ctx context.Context) {
 	a.grpcServer = grpc.NewServer(
 		grpc.Creds(insecure.NewCredentials()),
 		grpc.KeepaliveParams(keepalive.ServerParameters{
-			MaxConnectionIdle:     grpcMaxConnectionIdle,
-			MaxConnectionAge:      grpcMaxConnectionAge,
-			MaxConnectionAgeGrace: grpcMaxConnectionAgeGrace,
-			Time:                  grpcKeepaliveTime,
-			Timeout:               grpcKeepaliveTimeout,
+			MaxConnectionIdle:     config.AppConfig().GRPC.MaxConnectionIdle(),
+			MaxConnectionAge:      config.AppConfig().GRPC.MaxConnectionAge(),
+			MaxConnectionAgeGrace: config.AppConfig().GRPC.MaxConnectionAgeGrace(),
+			Time:                  config.AppConfig().GRPC.Time(),
+			Timeout:               config.AppConfig().GRPC.Timeout(),
 		}),
 		grpc.KeepaliveEnforcementPolicy(keepalive.EnforcementPolicy{
-			MinTime:             grpcMinPingInterval,
+			MinTime:             config.AppConfig().GRPC.MinPingInterval(),
 			PermitWithoutStream: true, // Разрешить "тёплые" соединения без активных RPC
 		}),
 		// Интерцепторы: recovery (перехват паник) + логирование запросов
