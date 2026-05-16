@@ -11,7 +11,8 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	errs "github.com/MikeKirillov/rocketservices/inventory/internal/errors"
-	"github.com/MikeKirillov/rocketservices/inventory/internal/model"
+	"github.com/MikeKirillov/rocketservices/inventory/internal/model/entity"
+	"github.com/MikeKirillov/rocketservices/inventory/internal/model/valueobject"
 	"github.com/MikeKirillov/rocketservices/inventory/internal/repository/converter"
 	"github.com/MikeKirillov/rocketservices/inventory/internal/repository/record"
 )
@@ -24,26 +25,39 @@ func NewRepository(pool *pgxpool.Pool) *repository {
 	return &repository{pool: pool}
 }
 
-func (r *repository) Get(ctx context.Context, uuid uuid.UUID) (model.Part, error) {
+func (r *repository) Get(ctx context.Context, uuid uuid.UUID) (entity.Part, error) {
 	query := `SELECT
-	uuid, name, description, part_type, price, stock_quantity, created_at
+	uuid, name, description, part_type, price, stock_quantity, reserved, properties, created_at
 	FROM parts WHERE uuid = $1`
 
-	var p model.Part
-	err := r.pool.QueryRow(ctx, query, uuid).
-		Scan(&p.UUID, &p.Name, &p.Description, &p.PartType, &p.Price, &p.StockQuantity, &p.CreatedAt)
+	var p record.Part
+	err := r.pool.QueryRow(ctx, query, uuid).Scan(
+		&p.UUID,
+		&p.Name,
+		&p.Description,
+		&p.PartType,
+		&p.Price,
+		&p.StockQuantity,
+		&p.Reserved,
+		&p.Properties,
+		&p.CreatedAt,
+	)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
-			return model.Part{}, errs.ErrPartNotFound
+			return entity.Part{}, errs.ErrPartNotFound
 		}
-		return model.Part{}, err
+		return entity.Part{}, err
 	}
-	return p, nil
+	part, err := converter.PartRecordToModel(p)
+	if err != nil {
+		return entity.Part{}, err
+	}
+	return part, nil
 }
 
-func (r *repository) List(ctx context.Context) ([]model.Part, error) {
+func (r *repository) List(ctx context.Context) ([]entity.Part, error) {
 	query := `SELECT
-	uuid, name, description, part_type, price, stock_quantity, created_at
+	uuid, name, description, part_type, price, stock_quantity, reserved, properties, created_at
 	FROM parts`
 
 	rows, err := r.pool.Query(ctx, query)
@@ -53,17 +67,21 @@ func (r *repository) List(ctx context.Context) ([]model.Part, error) {
 	}
 	defer rows.Close()
 
-	parts, err := scanRows(rows)
+	p, err := scanRows(rows)
 	if err != nil {
 		return nil, err
 	}
 
-	return converter.PartsToModel(parts), nil
+	parts, err := converter.PartsToModel(p)
+	if err != nil {
+		return nil, err
+	}
+	return parts, nil
 }
 
-func (r *repository) ListByPartType(ctx context.Context, partType model.PartType) ([]model.Part, error) {
+func (r *repository) ListByPartType(ctx context.Context, partType valueobject.PartType) ([]entity.Part, error) {
 	query := `SELECT
-	uuid, name, description, part_type, price, stock_quantity, created_at
+	uuid, name, description, part_type, price, stock_quantity, reserved, properties, created_at
 	FROM parts WHERE part_type = $1`
 	rows, err := r.pool.Query(ctx, query, partType)
 	if err != nil {
@@ -72,17 +90,21 @@ func (r *repository) ListByPartType(ctx context.Context, partType model.PartType
 	}
 	defer rows.Close()
 
-	parts, err := scanRows(rows)
+	p, err := scanRows(rows)
 	if err != nil {
 		return nil, err
 	}
 
-	return converter.PartsToModel(parts), nil
+	parts, err := converter.PartsToModel(p)
+	if err != nil {
+		return nil, err
+	}
+	return parts, nil
 }
 
-func (r *repository) ListByUUIDs(ctx context.Context, uuids []uuid.UUID) ([]model.Part, error) {
+func (r *repository) ListByUUIDs(ctx context.Context, uuids []uuid.UUID) ([]entity.Part, error) {
 	query := `SELECT
-	uuid, name, description, part_type, price, stock_quantity, created_at
+	uuid, name, description, part_type, price, stock_quantity, reserved, properties, created_at
 	FROM parts WHERE uuid = ANY($1)`
 
 	rows, err := r.pool.Query(ctx, query, uuids)
@@ -92,15 +114,15 @@ func (r *repository) ListByUUIDs(ctx context.Context, uuids []uuid.UUID) ([]mode
 	}
 	defer rows.Close()
 
-	parts, err := scanRows(rows)
+	p, err := scanRows(rows)
 	if err != nil {
 		return nil, err
 	}
 
 	// Создаем set параметров UUID из ответа БД
 	foundUUIDs := make(map[uuid.UUID]struct{})
-	for _, p := range parts {
-		foundUUIDs[p.UUID] = struct{}{}
+	for _, part := range p {
+		foundUUIDs[part.UUID] = struct{}{}
 	}
 
 	// Проверяем, какие UUID из запроса не были найдены
@@ -115,7 +137,11 @@ func (r *repository) ListByUUIDs(ctx context.Context, uuids []uuid.UUID) ([]mode
 		return nil, fmt.Errorf("детали %s: %w", missingUUIDs, errs.ErrPartNotFound)
 	}
 
-	return converter.PartsToModel(parts), nil
+	parts, err := converter.PartsToModel(p)
+	if err != nil {
+		return nil, err
+	}
+	return parts, nil
 }
 
 func scanRows(rows pgx.Rows) ([]record.Part, error) {
