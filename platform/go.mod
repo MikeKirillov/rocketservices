@@ -1,6 +1,6 @@
 module github.com/MikeKirillov/rocketservices/platform
 
-go 1.26.2
+go 1.26.3
 
 require google.golang.org/grpc v1.81.0
 
