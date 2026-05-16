@@ -12,7 +12,9 @@ import (
 	"github.com/stretchr/testify/require"
 
 	errs "github.com/MikeKirillov/rocketservices/inventory/internal/errors"
-	"github.com/MikeKirillov/rocketservices/inventory/internal/model"
+	"github.com/MikeKirillov/rocketservices/inventory/internal/model/entity"
+	"github.com/MikeKirillov/rocketservices/inventory/internal/model/valueobject"
+	"github.com/MikeKirillov/rocketservices/inventory/internal/service/input"
 	"github.com/MikeKirillov/rocketservices/inventory/internal/service/part/mocks"
 )
 
@@ -20,11 +22,11 @@ func TestList(t *testing.T) {
 	t.Parallel()
 
 	type args struct {
-		filter model.PartFilter
+		filter input.PartFilter
 	}
 
 	type expected struct {
-		res      []model.Part
+		res      []entity.Part
 		errCheck func(t *testing.T, err error)
 	}
 
@@ -33,34 +35,37 @@ func TestList(t *testing.T) {
 		id      = uuid.New()
 		id2     = uuid.New()
 		str     = gofakeit.Word()
-		num     = gofakeit.Int64()
+		num64   = gofakeit.Int64()
+		num     = gofakeit.Int()
 		created = time.Now()
 
-		filter = model.PartFilter{
+		filter = input.PartFilter{
 			UUIDs: nil,
 		}
-		filterHull = model.PartFilter{
-			PartType: model.PartTypeHull,
+		filterHull = input.PartFilter{
+			PartType: valueobject.PartTypeHull,
 			UUIDs:    nil,
 		}
-		filterUuid = model.PartFilter{
+		filterUuid = input.PartFilter{
 			UUIDs: []uuid.UUID{id},
 		}
-		filterUuids = model.PartFilter{
+		filterUuids = input.PartFilter{
 			UUIDs: []uuid.UUID{id, id2},
 		}
 
-		expModel = []model.Part{
-			{
-				UUID:          id,
-				Name:          "дорогая деталь",
-				Description:   str,
-				Price:         num,
-				PartType:      model.PartTypeHull,
-				StockQuantity: num,
-				CreatedAt:     created,
-			},
-		}
+		hullProperty, _ = valueobject.NewHullProperties(num)
+		expModel        = entity.RestorePart(
+			id,
+			str,
+			str,
+			num64,
+			valueobject.PartTypeHull,
+			num64,
+			num64,
+			hullProperty,
+			created,
+		)
+		expModelSlice = []entity.Part{expModel}
 
 		errInternal = errors.New("внутренняя ошибка")
 	)
@@ -75,10 +80,10 @@ func TestList(t *testing.T) {
 			name: "без фильтра (все детали) - ошибок нет",
 			args: args{filter: filter},
 			setupMock: func(r *mocks.PartRepository) {
-				r.EXPECT().List(ctx).Return(expModel, nil)
+				r.EXPECT().List(ctx).Return(expModelSlice, nil)
 			},
 			expected: expected{
-				res: expModel,
+				res: expModelSlice,
 				errCheck: func(t *testing.T, err error) {
 					require.NoError(t, err)
 				},
@@ -88,10 +93,10 @@ func TestList(t *testing.T) {
 			name: "фильтр по типу HULL - все детали с типом HULL",
 			args: args{filter: filterHull},
 			setupMock: func(s *mocks.PartRepository) {
-				s.EXPECT().ListByPartType(ctx, model.PartTypeHull).Return(expModel, nil)
+				s.EXPECT().ListByPartType(ctx, valueobject.PartTypeHull).Return(expModelSlice, nil)
 			},
 			expected: expected{
-				res: expModel,
+				res: expModelSlice,
 				errCheck: func(t *testing.T, err error) {
 					require.NoError(t, err)
 				},
@@ -101,10 +106,10 @@ func TestList(t *testing.T) {
 			name: "фильтр по конкретным UUID - детали в порядке запрошенных",
 			args: args{filter: filterUuid},
 			setupMock: func(s *mocks.PartRepository) {
-				s.EXPECT().ListByUUIDs(ctx, []uuid.UUID{id}).Return(expModel, nil)
+				s.EXPECT().ListByUUIDs(ctx, []uuid.UUID{id}).Return(expModelSlice, nil)
 			},
 			expected: expected{
-				res: expModel,
+				res: expModelSlice,
 				errCheck: func(t *testing.T, err error) {
 					require.NoError(t, err)
 				},
@@ -131,7 +136,7 @@ func TestList(t *testing.T) {
 			args: args{filter: filterHull},
 			setupMock: func(s *mocks.PartRepository) {
 				s.EXPECT().
-					ListByPartType(ctx, model.PartTypeHull).
+					ListByPartType(ctx, valueobject.PartTypeHull).
 					Return(nil, errInternal)
 			},
 			expected: expected{
@@ -162,9 +167,9 @@ func TestList(t *testing.T) {
 			} else {
 				require.NotNil(t, res)
 				assert.Equal(t, 1, len(res))
-				assert.Equal(t, test.expected.res[0].Name, res[0].Name)
-				assert.Equal(t, test.expected.res[0].PartType, res[0].PartType)
-				assert.Equal(t, test.expected.res[0].UUID, res[0].UUID)
+				assert.Equal(t, test.expected.res[0].Name(), res[0].Name())
+				assert.Equal(t, test.expected.res[0].PartType(), res[0].PartType())
+				assert.Equal(t, test.expected.res[0].UUID(), res[0].UUID())
 			}
 		})
 	}

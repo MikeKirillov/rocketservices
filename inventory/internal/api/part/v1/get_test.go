@@ -15,7 +15,8 @@ import (
 	"github.com/MikeKirillov/rocketservices/inventory/internal/api/part/v1/mocks"
 	"github.com/MikeKirillov/rocketservices/inventory/internal/converter"
 	errs "github.com/MikeKirillov/rocketservices/inventory/internal/errors"
-	"github.com/MikeKirillov/rocketservices/inventory/internal/model"
+	"github.com/MikeKirillov/rocketservices/inventory/internal/model/entity"
+	"github.com/MikeKirillov/rocketservices/inventory/internal/model/valueobject"
 	sharedErrs "github.com/MikeKirillov/rocketservices/shared/pkg/errors"
 	inventoryv1 "github.com/MikeKirillov/rocketservices/shared/pkg/proto/inventory/v1"
 )
@@ -33,25 +34,30 @@ func TestGetPart(t *testing.T) {
 	}
 
 	var (
-		ctx     = context.Background()
-		id      = uuid.New()
-		str     = gofakeit.Word()
-		num     = gofakeit.Int64()
+		ctx   = context.Background()
+		id    = uuid.New()
+		str   = gofakeit.Word()
+		num64 = gofakeit.Int64()
+		num   = gofakeit.Int()
+
 		created = time.Now()
 
 		req = &inventoryv1.GetPartRequest{
 			Uuid: id.String(),
 		}
 
-		expModel = model.Part{
-			UUID:          id,
-			Name:          str,
-			Description:   str,
-			Price:         num,
-			PartType:      model.PartTypeHull,
-			StockQuantity: num,
-			CreatedAt:     created,
-		}
+		hullProperty, _ = valueobject.NewHullProperties(num)
+		expModel        = entity.RestorePart(
+			id,
+			str,
+			str,
+			num64,
+			valueobject.PartTypeHull,
+			num64,
+			num64,
+			hullProperty,
+			created,
+		)
 
 		expProto    = converter.PartToProto(expModel)
 		errInternal = errors.New("внутренняя ошибка")
@@ -82,7 +88,7 @@ func TestGetPart(t *testing.T) {
 			setupMock: func(s *mocks.PartService) {
 				s.EXPECT().
 					Get(ctx, id).
-					Return(model.Part{}, sharedErrs.NewNotFound(errs.ErrPartNotFound))
+					Return(entity.Part{}, sharedErrs.NewNotFound(errs.ErrPartNotFound))
 			},
 			expected: expected{
 				res: nil,
@@ -103,7 +109,7 @@ func TestGetPart(t *testing.T) {
 			setupMock: func(s *mocks.PartService) {
 				s.EXPECT().
 					Get(ctx, id).
-					Return(model.Part{}, sharedErrs.NewInvalidArgument(errs.ErrPartOmittedUUID))
+					Return(entity.Part{}, sharedErrs.NewInvalidArgument(errs.ErrPartOmittedUUID))
 			},
 			expected: expected{
 				res: nil,
@@ -124,7 +130,7 @@ func TestGetPart(t *testing.T) {
 			setupMock: func(s *mocks.PartService) {
 				s.EXPECT().
 					Get(ctx, id).
-					Return(model.Part{}, sharedErrs.NewInternal(errInternal))
+					Return(entity.Part{}, sharedErrs.NewInternal(errInternal))
 			},
 			expected: expected{
 				res: nil,
