@@ -15,8 +15,7 @@ func main() {
 	ctx := context.Background()
 
 	// Загружаем переменные окружения из .env
-	err := godotenv.Load("../inventory.env")
-	if err != nil {
+	if err := godotenv.Load("../inventory.env"); err != nil {
 		slog.Error("ошибка загрузки переменных окружения из inventory.env", "error", err)
 		os.Exit(1)
 	}
@@ -28,11 +27,4 @@ func main() {
 		slog.Error("ошибка при работе приложения", "error", err)
 		os.Exit(1)
 	}
-
-	// Подключаемся к PostgreSQL
-	// dbURI := os.Getenv("DB_URI")
-	// if dbURI == "" {
-	// 	slog.Error("переменная окружения DB_URI не установлена")
-	// 	os.Exit(1)
-	// }
 }
