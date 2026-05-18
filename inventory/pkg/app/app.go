@@ -3,20 +3,27 @@ package app
 import (
 	"log/slog"
 
+	"github.com/avito-tech/go-transaction-manager/trm/v2/manager"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"google.golang.org/grpc"
 
-	partAPIV1 "github.com/MikeKirillov/rocketservices/inventory/internal/api/part/v1"
+	partAPIV1 "github.com/MikeKirillov/rocketservices/inventory/internal/api/inventory/v1"
 	partRepository "github.com/MikeKirillov/rocketservices/inventory/internal/repository/part"
-	partService "github.com/MikeKirillov/rocketservices/inventory/internal/service/part"
+	partService "github.com/MikeKirillov/rocketservices/inventory/internal/service/application/part"
+	partComp "github.com/MikeKirillov/rocketservices/inventory/internal/service/domain"
 	interceptor "github.com/MikeKirillov/rocketservices/shared/interceptor"
 	sharedErrs "github.com/MikeKirillov/rocketservices/shared/pkg/errors"
 	inventoryv1 "github.com/MikeKirillov/rocketservices/shared/pkg/proto/inventory/v1"
 )
 
-func RegisterServices(grpcServer *grpc.Server, pool *pgxpool.Pool) {
+func RegisterServices(
+	grpcServer *grpc.Server,
+	pool *pgxpool.Pool,
+	txManager *manager.Manager,
+) {
 	repo := partRepository.NewRepository(pool)
-	svc := partService.NewService(repo)
+	comp := partComp.NewCompatibilityChecker()
+	svc := partService.NewService(repo, comp, txManager)
 	api := partAPIV1.NewAPI(svc)
 	inventoryv1.RegisterInventoryServiceServer(grpcServer, api)
 }

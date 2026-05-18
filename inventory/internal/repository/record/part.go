@@ -13,8 +13,8 @@ type Part struct {
 	Description   string    `db:"description"`
 	Price         int64     `db:"price"`
 	PartType      string    `db:"part_type"`
-	StockQuantity int64     `db:"stock_quantity"`
-	Reserved      int64     `db:"reserved"`
+	StockQuantity int       `db:"stock_quantity"`
+	Reserved      int       `db:"reserved"`
 	Properties    []byte    `db:"properties"` // JSONB из PostgreSQL
 	CreatedAt     time.Time `db:"created_at"`
 }
