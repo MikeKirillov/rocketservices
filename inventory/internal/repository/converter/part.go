@@ -4,28 +4,27 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/MikeKirillov/rocketservices/inventory/internal/model/entity"
-	"github.com/MikeKirillov/rocketservices/inventory/internal/model/valueobject"
+	"github.com/MikeKirillov/rocketservices/inventory/internal/model"
 	"github.com/MikeKirillov/rocketservices/inventory/internal/repository/record"
 )
 
-func PartRecordToModel(rec record.Part) (entity.Part, error) {
+func PartRecordToModel(rec record.Part) (model.Part, error) {
 	var propsRec record.PartPropertiesRecord
 	if err := json.Unmarshal(rec.Properties, &propsRec); err != nil {
-		return entity.Part{}, fmt.Errorf("десериализовать свойства: %w", err)
+		return model.Part{}, fmt.Errorf("десериализовать свойства: %w", err)
 	}
 
 	props, err := partPropertiesFromRecord(propsRec)
 	if err != nil {
-		return entity.Part{}, fmt.Errorf("конвертировать свойства: %w", err)
+		return model.Part{}, fmt.Errorf("конвертировать свойства: %w", err)
 	}
 
-	partType, err := valueobject.NewPartType(rec.PartType)
+	partType, err := model.NewPartType(rec.PartType)
 	if err != nil {
-		return entity.Part{}, fmt.Errorf("конвертировать тип детали: %w", err)
+		return model.Part{}, fmt.Errorf("конвертировать тип детали: %w", err)
 	}
 
-	return entity.RestorePart(
+	return model.RestorePart(
 		rec.UUID,
 		rec.Name,
 		rec.Description,
@@ -38,27 +37,27 @@ func PartRecordToModel(rec record.Part) (entity.Part, error) {
 	), nil
 }
 
-func partPropertiesFromRecord(rec record.PartPropertiesRecord) (valueobject.PartProperties, error) {
+func partPropertiesFromRecord(rec record.PartPropertiesRecord) (model.PartProperties, error) {
 	switch {
 	case rec.Hull != nil:
-		return valueobject.NewHullProperties(rec.Hull.Strength)
+		return model.NewHullProperties(rec.Hull.Strength)
 
 	case rec.Engine != nil:
-		return valueobject.NewEngineProperties(rec.Engine.Class, rec.Engine.RequiredStrength)
+		return model.NewEngineProperties(rec.Engine.Class, rec.Engine.RequiredStrength)
 
 	case rec.Shield != nil:
-		return valueobject.NewShieldProperties(rec.Shield.ShieldType)
+		return model.NewShieldProperties(rec.Shield.ShieldType)
 
 	case rec.Weapon != nil:
-		return valueobject.NewWeaponProperties(rec.Weapon.WeaponType)
+		return model.NewWeaponProperties(rec.Weapon.WeaponType)
 
 	default:
-		return valueobject.PartProperties{}, nil
+		return model.PartProperties{}, nil
 	}
 }
 
-func PartsToModel(parts []record.Part) ([]entity.Part, error) {
-	r := make([]entity.Part, 0, len(parts))
+func PartsToModel(parts []record.Part) ([]model.Part, error) {
+	r := make([]model.Part, 0, len(parts))
 	for _, p := range parts {
 		part, err := PartRecordToModel(p)
 		if err != nil {

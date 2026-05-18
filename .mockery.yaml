@@ -36,12 +36,12 @@ packages:
       include-interface-regex: ".*(Repository|Client)"
 
   # Inventory service
-  github.com/MikeKirillov/rocketservices/inventory/internal/api/part/v1:
+  github.com/MikeKirillov/rocketservices/inventory/internal/api/inventory/v1:
     config:
       include-interface-regex: ".*Service"
-  github.com/MikeKirillov/rocketservices/inventory/internal/service/part:
+  github.com/MikeKirillov/rocketservices/inventory/internal/service/application/part:
     config:
-      include-interface-regex: ".*Repository"
+      include-interface-regex: ".*(Repository|Checker|Manager)"
 
   # Payment service
   github.com/MikeKirillov/rocketservices/payment/internal/api/payment/v1:
