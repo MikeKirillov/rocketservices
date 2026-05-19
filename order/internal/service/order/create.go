@@ -2,6 +2,7 @@ package order
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	errs "github.com/MikeKirillov/rocketservices/order/internal/errors"
@@ -31,6 +32,32 @@ func (s *service) Create(ctx context.Context, orderRq model.CreateOrderRq) (mode
 			return model.CreateOrderRs{}, sharedErrs.NewConflict(fmt.Errorf("деталь %s: %w", *p.Name, errs.ErrOutOfStock))
 		}
 		totalPrice += p.Price
+	}
+
+	// Запросить проверку на валидацию совместимости деталей между собой
+	err = s.inventoryClient.ValidateCompatibility(ctx, parts)
+	if err != nil {
+		switch {
+		case errors.Is(err, errs.ErrGrpcNotFound):
+			return model.CreateOrderRs{}, sharedErrs.NewNotFound(err)
+		case errors.Is(err, errs.ErrGrpcInvalidArgument):
+			return model.CreateOrderRs{}, sharedErrs.NewInvalidArgument(err)
+		default:
+			return model.CreateOrderRs{}, sharedErrs.NewInternal(err)
+		}
+	}
+
+	// Зарезервировать детали на складе
+	err = s.inventoryClient.ReserveParts(ctx, rqParts)
+	if err != nil {
+		switch {
+		case errors.Is(err, errs.ErrGrpcNotFound):
+			return model.CreateOrderRs{}, sharedErrs.NewNotFound(err)
+		case errors.Is(err, errs.ErrGrpcInvalidArgument):
+			return model.CreateOrderRs{}, sharedErrs.NewInvalidArgument(err)
+		default:
+			return model.CreateOrderRs{}, sharedErrs.NewInternal(err)
+		}
 	}
 
 	// 5. Сгенерировать order_uuid (UUID v4)

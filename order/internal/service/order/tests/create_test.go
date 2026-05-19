@@ -1,4 +1,4 @@
-package order
+package tests
 
 import (
 	"context"
@@ -13,6 +13,7 @@ import (
 
 	errs "github.com/MikeKirillov/rocketservices/order/internal/errors"
 	"github.com/MikeKirillov/rocketservices/order/internal/model"
+	service "github.com/MikeKirillov/rocketservices/order/internal/service/order"
 	"github.com/MikeKirillov/rocketservices/order/internal/service/order/mocks"
 )
 
@@ -132,6 +133,8 @@ func TestCreate(t *testing.T) {
 			args: args{req: req},
 			setupMock: func(r *mocks.OrderRepository, i *mocks.InventoryServiceClient) {
 				i.EXPECT().ListParts(ctx, rqItems).Return(rsItems, nil)
+				i.EXPECT().ValidateCompatibility(ctx, rsItems).Return(nil)
+				i.EXPECT().ReserveParts(ctx, rqItems).Return(nil)
 				r.EXPECT().Create(ctx, mock.MatchedBy(func(o model.Order) bool {
 					return o.OrderUUID != uuid.Nil &&
 						o.Items != nil &&
@@ -157,6 +160,8 @@ func TestCreate(t *testing.T) {
 			args: args{req: reqOpt},
 			setupMock: func(r *mocks.OrderRepository, i *mocks.InventoryServiceClient) {
 				i.EXPECT().ListParts(ctx, rqItemsOpt).Return(rsPartsOpt, nil)
+				i.EXPECT().ValidateCompatibility(ctx, rsPartsOpt).Return(nil)
+				i.EXPECT().ReserveParts(ctx, rqItemsOpt).Return(nil)
 				r.EXPECT().Create(ctx, mock.MatchedBy(func(o model.Order) bool {
 					return o.OrderUUID != uuid.Nil &&
 						o.Items != nil &&
@@ -229,6 +234,8 @@ func TestCreate(t *testing.T) {
 			args: args{req: req},
 			setupMock: func(r *mocks.OrderRepository, i *mocks.InventoryServiceClient) {
 				i.EXPECT().ListParts(ctx, rqItems).Return(rsItems, nil)
+				i.EXPECT().ValidateCompatibility(ctx, rsItems).Return(nil)
+				i.EXPECT().ReserveParts(ctx, rqItems).Return(nil)
 				r.EXPECT().Create(ctx, mock.MatchedBy(func(o model.Order) bool {
 					return o.OrderUUID != uuid.Nil &&
 						o.Items != nil &&
@@ -256,7 +263,8 @@ func TestCreate(t *testing.T) {
 			r := mocks.NewOrderRepository(t)
 			i := mocks.NewInventoryServiceClient(t)
 			p := mocks.NewPaymentServiceClient(t)
-			s := NewService(r, i, p)
+			m := mocks.NewTxManager(t)
+			s := service.NewService(r, i, p, m)
 
 			test.setupMock(r, i)
 
