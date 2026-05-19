@@ -1,4 +1,4 @@
-package v1
+package tests
 
 import (
 	"context"
@@ -10,8 +10,9 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/MikeKirillov/rocketservices/order/internal/api/converter"
+	api "github.com/MikeKirillov/rocketservices/order/internal/api/order/v1"
 	"github.com/MikeKirillov/rocketservices/order/internal/api/order/v1/mocks"
-	"github.com/MikeKirillov/rocketservices/order/internal/converter"
 	errs "github.com/MikeKirillov/rocketservices/order/internal/errors"
 	sharedErrs "github.com/MikeKirillov/rocketservices/shared/pkg/errors"
 	orderv1 "github.com/MikeKirillov/rocketservices/shared/pkg/openapi/order/v1"
@@ -141,7 +142,7 @@ func TestPayOrder(t *testing.T) {
 			t.Parallel()
 
 			s := mocks.NewOrderService(t)
-			h := NewOrderHandler(s)
+			h := api.NewOrderHandler(s)
 
 			test.setupMock(s)
 

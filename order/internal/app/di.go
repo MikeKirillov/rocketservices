@@ -4,6 +4,7 @@ import (
 	"context"
 	"log/slog"
 	"os"
+	"time"
 
 	trmpgx "github.com/avito-tech/go-transaction-manager/drivers/pgxv5/v2"
 	"github.com/avito-tech/go-transaction-manager/trm/v2/manager"
@@ -15,7 +16,7 @@ import (
 	orderV1API "github.com/MikeKirillov/rocketservices/order/internal/api/order/v1"
 	inventoryClientV1 "github.com/MikeKirillov/rocketservices/order/internal/client/grpc/inventory/v1"
 	paymentClientV1 "github.com/MikeKirillov/rocketservices/order/internal/client/grpc/payment/v1"
-	"github.com/MikeKirillov/rocketservices/order/internal/config"
+	orderConfig "github.com/MikeKirillov/rocketservices/order/internal/config"
 	orderRepository "github.com/MikeKirillov/rocketservices/order/internal/repository/order"
 	orderService "github.com/MikeKirillov/rocketservices/order/internal/service/order"
 	"github.com/MikeKirillov/rocketservices/platform/pkg/closer"
@@ -36,7 +37,7 @@ type diContainer struct {
 
 func (d *diContainer) PGPool(ctx context.Context) *pgxpool.Pool {
 	if d.pgPool == nil {
-		pool, err := pgxpool.New(ctx, config.AppConfig().PG.DSN())
+		pool, err := pgxpool.New(ctx, orderConfig.AppConfig().PG.DSN())
 		if err != nil {
 			slog.Error("ошибка подключения к БД", "error", err)
 			os.Exit(1)
@@ -83,14 +84,10 @@ func (d *diContainer) OrderRepository(ctx context.Context) orderService.OrderRep
 }
 
 func (d *diContainer) InventoryClient(ctx context.Context) orderService.InventoryServiceClient {
+	config := orderConfig.AppConfig().GRPC.InventoryGRPCConfig
+
 	if d.inventoryClient == nil {
-		conn, err := grpc.NewClient(config.AppConfig().GRPC.InventoryGRPCConfig.Address(),
-			grpc.WithTransportCredentials(insecure.NewCredentials()),
-			grpc.WithKeepaliveParams(keepalive.ClientParameters{
-				Time:                config.AppConfig().GRPC.InventoryGRPCConfig.Time(),    // Интервал ping'ов
-				Timeout:             config.AppConfig().GRPC.InventoryGRPCConfig.Timeout(), // Таймаут ожидания pong
-				PermitWithoutStream: true,                                                  // Пинговать даже без активных RPC
-			}))
+		conn, err := newGRPCClient(config.Address(), config.Time(), config.Timeout())
 		if err != nil {
 			slog.Error("не удалось подключиться к gRPC: InventoryService", "error", err)
 			os.Exit(1)
@@ -107,18 +104,16 @@ func (d *diContainer) InventoryClient(ctx context.Context) orderService.Inventor
 		grpcClient := inventoryv1.NewInventoryServiceClient(conn)
 		d.inventoryClient = inventoryClientV1.New(grpcClient)
 	}
+	slog.Info("установлено подключение к gRPC: InventoryService", "host", config.Host, "port", config.Port)
+
 	return d.inventoryClient
 }
 
 func (d *diContainer) PaymentClient(ctx context.Context) orderService.PaymentServiceClient {
+	config := orderConfig.AppConfig().GRPC.PaymentGRPCConfig
+
 	if d.paymentClient == nil {
-		conn, err := grpc.NewClient(config.AppConfig().GRPC.PaymentGRPCConfig.Address(),
-			grpc.WithTransportCredentials(insecure.NewCredentials()),
-			grpc.WithKeepaliveParams(keepalive.ClientParameters{
-				Time:                config.AppConfig().GRPC.PaymentGRPCConfig.Time(),    // Интервал ping'ов
-				Timeout:             config.AppConfig().GRPC.PaymentGRPCConfig.Timeout(), // Таймаут ожидания pong
-				PermitWithoutStream: true,                                                // Пинговать даже без активных RPC
-			}))
+		conn, err := newGRPCClient(config.Address(), config.Time(), config.Timeout())
 		if err != nil {
 			slog.Error("не удалось подключиться к gRPC: PaymentService", "error", err)
 			os.Exit(1)
@@ -135,7 +130,21 @@ func (d *diContainer) PaymentClient(ctx context.Context) orderService.PaymentSer
 		grpcClient := paymentv1.NewPaymentServiceClient(conn)
 		d.paymentClient = paymentClientV1.New(grpcClient)
 	}
+	slog.Info("установлено подключение к gRPC: PaymentService", "host", config.Host, "port", config.Port)
+
 	return d.paymentClient
+}
+
+func newGRPCClient(address string, time, timeout time.Duration) (conn *grpc.ClientConn, err error) {
+	return grpc.NewClient(
+		address,
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
+		grpc.WithKeepaliveParams(keepalive.ClientParameters{
+			Time:                time,    // Интервал ping'ов
+			Timeout:             timeout, // Таймаут ожидания pong
+			PermitWithoutStream: true,    // Пинговать даже без активных RPC
+		}),
+	)
 }
 
 func (d *diContainer) OrderService(ctx context.Context) orderV1API.OrderService {
@@ -144,6 +153,7 @@ func (d *diContainer) OrderService(ctx context.Context) orderV1API.OrderService 
 			d.OrderRepository(ctx),
 			d.InventoryClient(ctx),
 			d.PaymentClient(ctx),
+			d.TxManager(ctx),
 		)
 	}
 	return d.orderSvc
