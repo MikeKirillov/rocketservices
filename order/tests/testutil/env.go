@@ -81,7 +81,8 @@ func NewEnv(t *testing.T) *Env {
 	go func() { _ = invServer.Serve(invLis) }()
 	t.Cleanup(invServer.Stop)
 
-	invConn, err := grpc.NewClient("passthrough:///bufnet",
+	invConn, err := grpc.NewClient(
+		"passthrough:///bufnet",
 		grpc.WithContextDialer(func(context.Context, string) (net.Conn, error) {
 			return invLis.Dial()
 		}),
@@ -100,7 +101,8 @@ func NewEnv(t *testing.T) *Env {
 	go func() { _ = payServer.Serve(payLis) }()
 	t.Cleanup(payServer.Stop)
 
-	payConn, err := grpc.NewClient("passthrough:///bufnet",
+	payConn, err := grpc.NewClient(
+		"passthrough:///bufnet",
 		grpc.WithContextDialer(func(context.Context, string) (net.Conn, error) {
 			return payLis.Dial()
 		}),

@@ -1,4 +1,4 @@
-package v1
+package tests
 
 import (
 	"context"
@@ -9,6 +9,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	api "github.com/MikeKirillov/rocketservices/order/internal/api/order/v1"
 	"github.com/MikeKirillov/rocketservices/order/internal/api/order/v1/mocks"
 	errs "github.com/MikeKirillov/rocketservices/order/internal/errors"
 	sharedErrs "github.com/MikeKirillov/rocketservices/shared/pkg/errors"
@@ -120,7 +121,7 @@ func TestCancelOrder(t *testing.T) {
 			t.Parallel()
 
 			s := mocks.NewOrderService(t)
-			h := NewOrderHandler(s)
+			h := api.NewOrderHandler(s)
 
 			test.setupMock(s)
 

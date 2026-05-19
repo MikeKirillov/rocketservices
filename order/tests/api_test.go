@@ -24,7 +24,7 @@ func TestMain(m *testing.M) {
 	os.Exit(code)
 }
 
-// Тесты InventoryService (gRPC)
+// Тесты InventoryService (gRPC).
 
 func TestInventory_GetPart_Success(t *testing.T) {
 	t.Parallel()
@@ -193,7 +193,7 @@ func TestInventory_ListParts_SortedByName(t *testing.T) {
 	}
 }
 
-// Тесты ListParts.uuids
+// Тесты ListParts.uuids.
 
 func TestInventory_ListParts_ByUuids_Success(t *testing.T) {
 	t.Parallel()
@@ -332,7 +332,7 @@ func TestInventory_ListParts_ByUuids_EmptyList(t *testing.T) {
 	assert.Len(t, resp.GetParts(), 7)
 }
 
-// Тесты PaymentService (gRPC)
+// Тесты PaymentService (gRPC).
 
 func TestPayment_PayOrder_Success_Card(t *testing.T) {
 	t.Parallel()
@@ -432,7 +432,7 @@ func TestPayment_PayOrder_UniqueTransactions(t *testing.T) {
 		"каждый платёж должен генерировать уникальный UUID транзакции")
 }
 
-// Тесты OrderService (HTTP)
+// Тесты OrderService (HTTP).
 
 func TestOrder_Create_Success_MinimalParts(t *testing.T) {
 	t.Parallel()
@@ -825,7 +825,7 @@ func TestOrder_Cancel_AlreadyCancelled(t *testing.T) {
 	require.Equal(t, http.StatusConflict, cancelResp2.StatusCode)
 }
 
-// Дополнительные тесты валидации
+// Дополнительные тесты валидации.
 
 func TestOrder_Create_WithWeaponOnly(t *testing.T) {
 	t.Parallel()
@@ -921,7 +921,7 @@ func TestPayment_PayOrder_InvalidUUIDFormat(t *testing.T) {
 	testutil.AssertGRPCStatus(t, err, codes.InvalidArgument)
 }
 
-// Тесты полного жизненного цикла
+// Тесты полного жизненного цикла.
 
 func TestOrder_FullLifecycle_CreatePayGet(t *testing.T) {
 	t.Parallel()
@@ -1042,7 +1042,7 @@ func TestOrder_FullLifecycle_AllPartsPayGet(t *testing.T) {
 	assert.Equal(t, "CREDIT_CARD", *order2.PaymentMethod)
 }
 
-// Тесты ogen-валидации (400 Bad Request)
+// Тесты ogen-валидации (400 Bad Request).
 
 func TestOrder_Create_InvalidBody_EmptyJSON(t *testing.T) {
 	t.Parallel()
@@ -1245,7 +1245,7 @@ func TestOrder_Cancel_InvalidUUIDInPath(t *testing.T) {
 	require.Equal(t, http.StatusBadRequest, resp.StatusCode)
 }
 
-// Тесты out of stock
+// Тесты out of stock.
 
 func TestOrder_Create_OutOfStock_Hull(t *testing.T) {
 	t.Parallel()
@@ -1281,7 +1281,7 @@ func TestOrder_Create_OutOfStock_WithOptionalParts(t *testing.T) {
 	assert.NotEqual(t, http.StatusCreated, resp.StatusCode)
 }
 
-// Тесты Inventory: out of stock деталь присутствует в списке
+// Тесты Inventory: out of stock деталь присутствует в списке.
 
 func TestInventory_GetPart_OutOfStock(t *testing.T) {
 	t.Parallel()
@@ -1317,7 +1317,7 @@ func TestInventory_ListParts_ByUuids_IncludesOutOfStock(t *testing.T) {
 	assert.Equal(t, int64(0), resp.GetParts()[1].GetStockQuantity())
 }
 
-// Тесты Order: проверка created_at
+// Тесты Order: проверка created_at.
 
 func TestOrder_Get_VerifyCreatedAt(t *testing.T) {
 	t.Parallel()
@@ -1349,7 +1349,7 @@ func TestOrder_Get_VerifyCreatedAt(t *testing.T) {
 	assert.False(t, createdAt.IsZero(), "created_at не должен быть нулевым")
 }
 
-// Тесты с shield only (без weapon)
+// Тесты с shield only (без weapon).
 
 func TestOrder_Create_WithShieldOnly(t *testing.T) {
 	t.Parallel()
@@ -1370,7 +1370,7 @@ func TestOrder_Create_WithShieldOnly(t *testing.T) {
 	assert.Equal(t, expectedTotal, result.TotalPrice)
 }
 
-// Тесты соответствия типа детали слоту корабля
+// Тесты соответствия типа детали слоту корабля.
 
 func TestOrder_Create_WrongPartType_WeaponAsHull(t *testing.T) {
 	t.Parallel()
@@ -1439,7 +1439,7 @@ func TestOrder_Create_DuplicateUUID_HullAndEngine(t *testing.T) {
 	require.Equal(t, http.StatusBadRequest, resp.StatusCode)
 }
 
-// Тесты ValidateCompatibility (gRPC)
+// Тесты ValidateCompatibility (gRPC).
 
 func TestInventory_ValidateCompatibility_Success_Compatible(t *testing.T) {
 	t.Parallel()
@@ -1568,7 +1568,7 @@ func TestInventory_ValidateCompatibility_NotFound(t *testing.T) {
 	testutil.AssertGRPCStatus(t, err, codes.NotFound)
 }
 
-// Тесты ReserveParts (gRPC)
+// Тесты ReserveParts (gRPC).
 
 func TestInventory_ReserveParts_Success(t *testing.T) {
 	t.Parallel()
@@ -1627,7 +1627,7 @@ func TestInventory_ReserveParts_SinglePart(t *testing.T) {
 	require.NoError(t, err)
 }
 
-// Тесты ReleaseParts (gRPC)
+// Тесты ReleaseParts (gRPC).
 
 func TestInventory_ReleaseParts_Success(t *testing.T) {
 	t.Parallel()
@@ -1670,7 +1670,7 @@ func TestInventory_ReleaseParts_NotFound(t *testing.T) {
 	testutil.AssertGRPCStatus(t, err, codes.NotFound)
 }
 
-// Тесты Order Create с несовместимыми деталями (HTTP)
+// Тесты Order Create с несовместимыми деталями (HTTP).
 
 func TestOrder_Create_IncompatibleParts_WeakHullStrongEngine(t *testing.T) {
 	t.Parallel()
@@ -1728,7 +1728,7 @@ func TestOrder_Create_CompatibleParts_StrongHullStrongEngine(t *testing.T) {
 	assert.Equal(t, int64(testutil.HullTitaniumPrice+testutil.EngineIonBPrice), result.TotalPrice)
 }
 
-// Тесты Reserve/Release через полный жизненный цикл заказа
+// Тесты Reserve/Release через полный жизненный цикл заказа.
 
 func TestInventory_ReserveRelease_FullCycle(t *testing.T) {
 	t.Parallel()

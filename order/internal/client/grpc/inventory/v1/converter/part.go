@@ -1,7 +1,11 @@
 package converter
 
 import (
+	"log/slog"
+
 	"github.com/google/uuid"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 
 	errs "github.com/MikeKirillov/rocketservices/order/internal/errors"
 	"github.com/MikeKirillov/rocketservices/order/internal/model"
@@ -51,4 +55,59 @@ func PartUuidsToStr(partsUuids []uuid.UUID) []string {
 		ids = append(ids, id.String())
 	}
 	return ids
+}
+
+func OrderToPartUuids(order model.Order) []string {
+	ids := make([]string, 0, len(order.Items))
+	for _, i := range order.Items {
+		ids = append(ids, i.Uuid.String())
+	}
+	return ids
+}
+
+// GrpcErrToDomain маппит gRPC ошибок в доменные ошибки.
+func GrpcErrToDomain(st *status.Status) error {
+	switch st.Code() {
+	case codes.NotFound:
+		return errs.ErrGrpcNotFound
+
+	case codes.InvalidArgument:
+		return errs.ErrGrpcInvalidArgument
+
+	case codes.DeadlineExceeded: // Таймаут — клиент может повторить запрос
+		slog.Error("таймаут", "message", st.Message())
+		return errs.ErrGrpcTimeout
+
+	case codes.Unavailable: // gRPC сервис недоступен
+		slog.Error("gRPC сервис недоступен", "message", st.Message())
+		return errs.ErrGrpcUnavailable
+
+	case codes.Canceled: // Запрос был отменён (например, клиент закрыл соединение)
+		slog.Error("запрос отменен", "message", st.Message())
+		return errs.ErrGrpcUnavailable
+
+	default:
+		slog.Error("ошибка gRPC", "code", st.Code(), "message", st.Message())
+		return errs.ErrGrpcInternal
+	}
+}
+
+func ItemsToProto(items []model.OrderItem) *inventoryv1.ValidateCompatibilityRequest {
+	r := &inventoryv1.ValidateCompatibilityRequest{}
+
+	for _, i := range items {
+		id := i.Uuid.String()
+		switch i.Type {
+		case model.PartTypeHull:
+			r.HullUuid = id
+		case model.PartTypeEngine:
+			r.EngineUuid = id
+		case model.PartTypeShield:
+			r.ShieldUuid = id
+		case model.PartTypeWeapon:
+			r.WeaponUuid = id
+		}
+	}
+
+	return r
 }
