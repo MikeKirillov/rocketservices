@@ -3,7 +3,7 @@ package v1
 import (
 	"context"
 
-	"github.com/MikeKirillov/rocketservices/order/internal/api/converter"
+	"github.com/MikeKirillov/rocketservices/order/internal/converter"
 	sharedErrs "github.com/MikeKirillov/rocketservices/shared/pkg/errors"
 	orderv1 "github.com/MikeKirillov/rocketservices/shared/pkg/openapi/order/v1"
 )

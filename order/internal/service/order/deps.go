@@ -16,9 +16,6 @@ type OrderRepository interface {
 
 type InventoryServiceClient interface {
 	ListParts(ctx context.Context, partsUuids []uuid.UUID) ([]model.OrderItem, error)
-	ValidateCompatibility(ctx context.Context, items []model.OrderItem) error
-	ReserveParts(ctx context.Context, partsUuids []uuid.UUID) error
-	ReleaseParts(ctx context.Context, order model.Order) error
 }
 
 type PaymentServiceClient interface {

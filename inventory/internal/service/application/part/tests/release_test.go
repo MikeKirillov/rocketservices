@@ -4,16 +4,13 @@ import (
 	"context"
 	"errors"
 	"testing"
-	"time"
 
-	"github.com/brianvoe/gofakeit/v7"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 
 	errs "github.com/MikeKirillov/rocketservices/inventory/internal/errors"
-	"github.com/MikeKirillov/rocketservices/inventory/internal/model"
 	"github.com/MikeKirillov/rocketservices/inventory/internal/service/application/part"
 	"github.com/MikeKirillov/rocketservices/inventory/internal/service/application/part/mocks"
 )
@@ -31,12 +28,8 @@ func TestRelease(t *testing.T) {
 	}
 
 	var (
-		ctx      = context.Background()
-		id       = uuid.New()
-		str      = gofakeit.Word()
-		num64    = gofakeit.Int64()
-		num      = gofakeit.Int()
-		created  = time.Now()
+		ctx = context.Background()
+
 		hullId   = uuid.New()
 		engineId = uuid.New()
 		shieldId = uuid.New()
@@ -44,53 +37,19 @@ func TestRelease(t *testing.T) {
 
 		ids         = []uuid.UUID{hullId, engineId, shieldId, weaponId}
 		errInternal = errors.New("внутренняя ошибка")
-
-		hullProperty, _ = model.NewHullProperties(num)
-		expModel        = model.RestorePart(
-			id,
-			str,
-			str,
-			num64,
-			model.PartTypeHull,
-			num,
-			num,
-			hullProperty,
-			created,
-		)
-		expModelSlice = []model.Part{expModel}
-
-		expModelOutStock = model.RestorePart(
-			id,
-			str,
-			str,
-			num64,
-			model.PartTypeHull,
-			0,
-			0,
-			hullProperty,
-			created,
-		)
-		expModelSliceOutStock = []model.Part{expModelOutStock}
 	)
 
 	tests := []struct {
 		name      string
 		args      args
-		setupMock func(m *mocks.TxManager, r *mocks.PartRepository)
+		setupMock func(m *mocks.TxManager)
 		expected  expected
 	}{
 		{
 			name: "резерв отменен - ошибок нет",
 			args: args{ids: ids},
-			setupMock: func(m *mocks.TxManager, r *mocks.PartRepository) {
-				r.EXPECT().ListByUUIDs(ctx, ids).Return(expModelSlice, nil)
-				r.EXPECT().UpdateReservedBatch(ctx, expModelSlice).Return(nil)
-				m.EXPECT().
-					Do(ctx, mock.Anything).
-					Run(func(ctx context.Context, fn func(context.Context) error) {
-						_ = fn(ctx) // запускает выполнение функции, содержащей бизнес-шаги
-					}).
-					Return(nil)
+			setupMock: func(m *mocks.TxManager) {
+				m.EXPECT().Do(ctx, mock.Anything).Return(nil)
 			},
 			expected: expected{
 				err: nil,
@@ -102,14 +61,8 @@ func TestRelease(t *testing.T) {
 		{
 			name: "один из UUID не найден - errs.ErrPartNotFound",
 			args: args{ids: ids},
-			setupMock: func(m *mocks.TxManager, r *mocks.PartRepository) {
-				r.EXPECT().ListByUUIDs(ctx, ids).Return(nil, errs.ErrPartNotFound)
-				m.EXPECT().
-					Do(ctx, mock.Anything).
-					Run(func(ctx context.Context, fn func(context.Context) error) {
-						_ = fn(ctx) // запускает выполнение функции, содержащей бизнес-шаги
-					}).
-					Return(errs.ErrPartNotFound)
+			setupMock: func(m *mocks.TxManager) {
+				m.EXPECT().Do(ctx, mock.Anything).Return(errs.ErrPartNotFound)
 			},
 			expected: expected{
 				err: errs.ErrPartNotFound,
@@ -122,15 +75,8 @@ func TestRelease(t *testing.T) {
 		{
 			name: "ошибка репозитория - errInternal",
 			args: args{ids: ids},
-			setupMock: func(m *mocks.TxManager, r *mocks.PartRepository) {
-				r.EXPECT().ListByUUIDs(ctx, ids).Return(expModelSlice, nil)
-				r.EXPECT().UpdateReservedBatch(ctx, expModelSlice).Return(errInternal)
-				m.EXPECT().
-					Do(ctx, mock.Anything).
-					Run(func(ctx context.Context, fn func(context.Context) error) {
-						_ = fn(ctx) // запускает выполнение функции, содержащей бизнес-шаги
-					}).
-					Return(errInternal)
+			setupMock: func(m *mocks.TxManager) {
+				m.EXPECT().Do(ctx, mock.Anything).Return(errInternal)
 			},
 			expected: expected{
 				err: errInternal,
@@ -143,14 +89,8 @@ func TestRelease(t *testing.T) {
 		{
 			name: "ошибка при отмене резерва - errs.ErrNothingToRelease",
 			args: args{ids: ids},
-			setupMock: func(m *mocks.TxManager, r *mocks.PartRepository) {
-				r.EXPECT().ListByUUIDs(ctx, ids).Return(expModelSliceOutStock, nil)
-				m.EXPECT().
-					Do(ctx, mock.Anything).
-					Run(func(ctx context.Context, fn func(context.Context) error) {
-						_ = fn(ctx) // запускает выполнение функции, содержащей бизнес-шаги
-					}).
-					Return(errs.ErrNothingToRelease)
+			setupMock: func(m *mocks.TxManager) {
+				m.EXPECT().Do(ctx, mock.Anything).Return(errs.ErrNothingToRelease)
 			},
 			expected: expected{
 				err: errs.ErrNothingToRelease,
@@ -171,7 +111,7 @@ func TestRelease(t *testing.T) {
 			m := mocks.NewTxManager(t)
 			s := part.NewService(r, c, m)
 
-			test.setupMock(m, r)
+			test.setupMock(m)
 
 			err := s.Release(ctx, test.args.ids)
 

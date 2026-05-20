@@ -27,7 +27,7 @@ func NewHTTPHandler(
 	repo := orderRepo.NewRepository(pool, txManager)
 	inventoryClient := inventoryClientV1.New(inventoryGRPCClient)
 	paymentClient := paymentClientV1.New(paymentGRPCClient)
-	service := orderService.NewService(repo, inventoryClient, paymentClient, txManager)
+	service := orderService.NewService(repo, inventoryClient, paymentClient)
 	orderHandler := orderAPIV1.NewOrderHandler(service)
 
 	// Создать OpenAPI сервер на основе обработчика

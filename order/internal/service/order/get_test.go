@@ -1,4 +1,4 @@
-package tests
+package order
 
 import (
 	"context"
@@ -13,7 +13,6 @@ import (
 
 	errs "github.com/MikeKirillov/rocketservices/order/internal/errors"
 	"github.com/MikeKirillov/rocketservices/order/internal/model"
-	service "github.com/MikeKirillov/rocketservices/order/internal/service/order"
 	"github.com/MikeKirillov/rocketservices/order/internal/service/order/mocks"
 )
 
@@ -111,8 +110,7 @@ func TestGet(t *testing.T) {
 			r := mocks.NewOrderRepository(t)
 			i := mocks.NewInventoryServiceClient(t)
 			p := mocks.NewPaymentServiceClient(t)
-			m := mocks.NewTxManager(t)
-			s := service.NewService(r, i, p, m)
+			s := NewService(r, i, p)
 
 			test.setupMock(r)
 

@@ -20,19 +20,6 @@ func (s *service) Cancel(ctx context.Context, id uuid.UUID) error {
 		return sharedErrs.NewInternal(err)
 	}
 
-	// Отменить резерв деталей на складе
-	err = s.inventoryClient.ReleaseParts(ctx, order)
-	if err != nil {
-		switch {
-		case errors.Is(err, errs.ErrGrpcNotFound):
-			return sharedErrs.NewNotFound(err)
-		case errors.Is(err, errs.ErrGrpcInvalidArgument):
-			return sharedErrs.NewInvalidArgument(err)
-		default:
-			return sharedErrs.NewInternal(err)
-		}
-	}
-
 	// Обновить статус на CANELLED
 	err = order.Cancel()
 	if err != nil {

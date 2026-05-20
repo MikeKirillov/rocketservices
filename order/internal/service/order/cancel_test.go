@@ -1,4 +1,4 @@
-package tests
+package order
 
 import (
 	"context"
@@ -14,7 +14,6 @@ import (
 
 	errs "github.com/MikeKirillov/rocketservices/order/internal/errors"
 	"github.com/MikeKirillov/rocketservices/order/internal/model"
-	service "github.com/MikeKirillov/rocketservices/order/internal/service/order"
 	"github.com/MikeKirillov/rocketservices/order/internal/service/order/mocks"
 )
 
@@ -31,16 +30,16 @@ func TestCancel(t *testing.T) {
 
 	var (
 		ctx   = context.Background()
-		id    = uuid.New()
+		uuid  = uuid.New()
 		num   = gofakeit.Int64()
 		date  = time.Now()
 		items = []model.OrderItem{
-			{Uuid: id, Type: model.PartTypeHull},
-			{Uuid: id, Type: model.PartTypeEngine},
+			{Uuid: uuid, Type: model.PartTypeHull},
+			{Uuid: uuid, Type: model.PartTypeEngine},
 		}
 
 		modelToSave = model.Order{
-			OrderUUID:       id,
+			OrderUUID:       uuid,
 			Items:           items,
 			TotalPrice:      num,
 			TransactionUUID: nil,
@@ -56,15 +55,14 @@ func TestCancel(t *testing.T) {
 	tests := []struct {
 		name      string
 		args      args
-		setupMock func(i *mocks.InventoryServiceClient, r *mocks.OrderRepository)
+		setupMock func(r *mocks.OrderRepository)
 		expected  expected
 	}{
 		{
 			name: "успешная отмена - ошибок нет",
-			args: args{id: id},
-			setupMock: func(i *mocks.InventoryServiceClient, r *mocks.OrderRepository) {
-				r.EXPECT().Get(ctx, id).Return(modelToSave, nil)
-				i.EXPECT().ReleaseParts(ctx, []uuid.UUID{id}).Return(nil)
+			args: args{id: uuid},
+			setupMock: func(r *mocks.OrderRepository) {
+				r.EXPECT().Get(ctx, uuid).Return(modelToSave, nil)
 				r.EXPECT().Update(ctx, mock.MatchedBy(func(o model.Order) bool {
 					return o.Status == model.OrderStatusCancelled &&
 						!o.UpdatedAt.IsZero()
@@ -78,9 +76,9 @@ func TestCancel(t *testing.T) {
 		},
 		{
 			name: "заказ не найден - errs.ErrOrderConflict",
-			args: args{id: id},
-			setupMock: func(i *mocks.InventoryServiceClient, r *mocks.OrderRepository) {
-				r.EXPECT().Get(ctx, id).Return(model.Order{}, errs.ErrOrderConflict)
+			args: args{id: uuid},
+			setupMock: func(r *mocks.OrderRepository) {
+				r.EXPECT().Get(ctx, uuid).Return(model.Order{}, errs.ErrOrderConflict)
 			},
 			expected: expected{
 				errCheck: func(t *testing.T, err error) {
@@ -91,10 +89,9 @@ func TestCancel(t *testing.T) {
 		},
 		{
 			name: "ошибка репозитория - errInternal",
-			args: args{id: id},
-			setupMock: func(i *mocks.InventoryServiceClient, r *mocks.OrderRepository) {
-				r.EXPECT().Get(ctx, id).Return(modelToSave, nil)
-				i.EXPECT().ReleaseParts(ctx, []uuid.UUID{id}).Return(nil)
+			args: args{id: uuid},
+			setupMock: func(r *mocks.OrderRepository) {
+				r.EXPECT().Get(ctx, uuid).Return(modelToSave, nil)
 				r.EXPECT().Update(ctx, mock.MatchedBy(func(o model.Order) bool {
 					return o.Status == model.OrderStatusCancelled &&
 						!o.UpdatedAt.IsZero()
@@ -116,10 +113,9 @@ func TestCancel(t *testing.T) {
 			r := mocks.NewOrderRepository(t)
 			i := mocks.NewInventoryServiceClient(t)
 			p := mocks.NewPaymentServiceClient(t)
-			m := mocks.NewTxManager(t)
-			s := service.NewService(r, i, p, m)
+			s := NewService(r, i, p)
 
-			test.setupMock(i, r)
+			test.setupMock(r)
 
 			err := s.Cancel(ctx, test.args.id)
 

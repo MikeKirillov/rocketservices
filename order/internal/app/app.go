@@ -27,7 +27,7 @@ func (a *App) Run() error {
 
 	a.startGracefulShutdown(ctx)
 
-	return a.runHTTPServer()
+	return a.runGRPCServer()
 }
 
 func (a *App) startGracefulShutdown(ctx context.Context) {
@@ -49,7 +49,7 @@ func (a *App) startGracefulShutdown(ctx context.Context) {
 	}()
 }
 
-func (a *App) runHTTPServer() error {
+func (a *App) runGRPCServer() error {
 	slog.Info("запуск сервера OrderService", "port", config.AppConfig().HTTP.Address())
 
 	if err := a.httpServer.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
