@@ -6,8 +6,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-
-	"github.com/MikeKirillov/rocketservices/order/tests/testutil"
+	"github.com/student/order/tests/testutil"
 )
 
 // Тесты этого файла дополняют api_test.go: после публичных API-вызовов

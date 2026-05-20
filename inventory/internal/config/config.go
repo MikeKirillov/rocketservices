@@ -8,7 +8,7 @@ import (
 	"github.com/ilyakaznacheev/cleanenv"
 )
 
-const defaultConfigPath = "config.local.yaml"
+const defaultConfig = "config.local.yaml"
 
 type config struct {
 	GRPC   grpcConfig   `yaml:"grpc"`
@@ -31,7 +31,7 @@ func ResolveConfigPath() string {
 		return envPath
 	}
 
-	return defaultConfigPath
+	return defaultConfig
 }
 
 func Load(path string) (*config, error) {

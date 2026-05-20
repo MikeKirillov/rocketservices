@@ -11,11 +11,10 @@ import (
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"github.com/student/order/tests/testutil"
+	inventoryv1 "github.com/student/shared/pkg/proto/inventory/v1"
+	paymentv1 "github.com/student/shared/pkg/proto/payment/v1"
 	"google.golang.org/grpc/codes"
-
-	"github.com/MikeKirillov/rocketservices/order/tests/testutil"
-	inventoryv1 "github.com/MikeKirillov/rocketservices/shared/pkg/proto/inventory/v1"
-	paymentv1 "github.com/MikeKirillov/rocketservices/shared/pkg/proto/payment/v1"
 )
 
 func TestMain(m *testing.M) {
