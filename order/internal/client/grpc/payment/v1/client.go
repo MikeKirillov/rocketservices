@@ -42,6 +42,7 @@ func (c *client) PayOrder(ctx context.Context, orderRq model.PayOrderRq) (uuid.U
 		st, ok := status.FromError(err)
 		if !ok {
 			// Неизвестная ошибка
+			slog.Error("неизвестная ошибка", "error", err)
 			return uuid.Nil, errs.ErrGrpcInternal
 		}
 		// Маппинг gRPC ошибок в доменные ошибки

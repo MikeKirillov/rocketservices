@@ -16,7 +16,6 @@ func (o *orderHandler) CancelOrder(ctx context.Context, params orderv1.CancelOrd
 			err,
 			sharedErrs.WithNotFound[orderv1.CancelOrderNotFound](),
 			sharedErrs.WithConflict[orderv1.CancelOrderConflict](),
-			sharedErrs.WithInternal[orderv1.CancelOrderInternalServerError](),
 		)
 	}
 
