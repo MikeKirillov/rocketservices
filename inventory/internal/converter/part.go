@@ -7,36 +7,34 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 
 	errs "github.com/MikeKirillov/rocketservices/inventory/internal/errors"
-	"github.com/MikeKirillov/rocketservices/inventory/internal/model/entity"
-	"github.com/MikeKirillov/rocketservices/inventory/internal/model/valueobject"
-	"github.com/MikeKirillov/rocketservices/inventory/internal/service/input"
+	"github.com/MikeKirillov/rocketservices/inventory/internal/model"
 	inventoryv1 "github.com/MikeKirillov/rocketservices/shared/pkg/proto/inventory/v1"
 )
 
-func PartToProto(part entity.Part) *inventoryv1.Part {
+func PartToProto(part model.Part) *inventoryv1.Part {
 	return &inventoryv1.Part{
-		Uuid:          part.UUID().String(),
-		Name:          part.Name(),
-		Description:   part.Description(),
-		Price:         part.Price(),
-		PartType:      PartTypeToProto(part.PartType()),
-		StockQuantity: part.StockQuantity(),
-		CreatedAt:     timestamppb.New(part.CreatedAt()),
+		Uuid:          part.UUID.String(),
+		Name:          part.Name,
+		Description:   part.Description,
+		Price:         part.Price,
+		PartType:      PartTypeToProto(part.PartType),
+		StockQuantity: part.StockQuantity,
+		CreatedAt:     timestamppb.New(part.CreatedAt),
 	}
 }
 
-func PartTypeToProto(partType valueobject.PartType) inventoryv1.PartType {
+func PartTypeToProto(partType model.PartType) inventoryv1.PartType {
 	switch partType {
-	case valueobject.PartTypeHull:
+	case model.PartTypeHull:
 		return inventoryv1.PartType_PART_TYPE_HULL
 
-	case valueobject.PartTypeEngine:
+	case model.PartTypeEngine:
 		return inventoryv1.PartType_PART_TYPE_ENGINE
 
-	case valueobject.PartTypeShield:
+	case model.PartTypeShield:
 		return inventoryv1.PartType_PART_TYPE_SHIELD
 
-	case valueobject.PartTypeWeapon:
+	case model.PartTypeWeapon:
 		return inventoryv1.PartType_PART_TYPE_WEAPON
 
 	default:
@@ -44,7 +42,7 @@ func PartTypeToProto(partType valueobject.PartType) inventoryv1.PartType {
 	}
 }
 
-func PartsRqToModel(req *inventoryv1.ListPartsRequest) (input.PartFilter, error) {
+func PartsRqToModel(req *inventoryv1.ListPartsRequest) (model.PartFilter, error) {
 	var uuids []uuid.UUID
 
 	if req.Uuids != nil {
@@ -52,30 +50,30 @@ func PartsRqToModel(req *inventoryv1.ListPartsRequest) (input.PartFilter, error)
 		for _, v := range req.Uuids {
 			id, err := uuid.Parse(v)
 			if err != nil {
-				return input.PartFilter{}, fmt.Errorf("деталь %s: %w", v, errs.ErrPartInvalidUUID)
+				return model.PartFilter{}, fmt.Errorf("деталь %s: %w", v, errs.ErrPartInvalidUUID)
 			}
 			uuids = append(uuids, id)
 		}
 	}
-	return input.PartFilter{
+	return model.PartFilter{
 		UUIDs:    uuids,
 		PartType: partTypeToModel(req.PartType),
 	}, nil
 }
 
-func partTypeToModel(partType inventoryv1.PartType) valueobject.PartType {
+func partTypeToModel(partType inventoryv1.PartType) model.PartType {
 	switch partType {
 	case inventoryv1.PartType_PART_TYPE_HULL:
-		return valueobject.PartTypeHull
+		return model.PartTypeHull
 
 	case inventoryv1.PartType_PART_TYPE_ENGINE:
-		return valueobject.PartTypeEngine
+		return model.PartTypeEngine
 
 	case inventoryv1.PartType_PART_TYPE_SHIELD:
-		return valueobject.PartTypeShield
+		return model.PartTypeShield
 
 	case inventoryv1.PartType_PART_TYPE_WEAPON:
-		return valueobject.PartTypeWeapon
+		return model.PartTypeWeapon
 
 	default:
 		return ""
