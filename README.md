@@ -7,23 +7,8 @@
 
 ### server start
 ```
-$ go run cmd/grpc_server/main.go
+$ go run payment/cmd/grpc_server/main.go
 ```
-если файл `.env` (в данном случае `payment.env`) отсутствует, то по умолчанию будет определяться значение пути 
-к файлу с конфигом по умолчанию - в коде. если установлен, то будет браться из него, если не переданы дополнительные
-атрибуты при старте приложения, как в примерах ниже:
-
-* старт приложения с передачей env пути к файлу с конфигом и gRPC-порта
-```
-$ CONFIG_PATH=config.production.yaml GRPC_PORT=50051 go run cmd/grpc_server/main.go
-```
-* старт приложения с передачей флага пути к файлу с конфигом
-```
-$ go run cmd/grpc_server/main.go -config=config.production.yaml
-```
-при этом приоритет подгрузки параметров для текущего приложения, исходя из реализации, следующий:
-`env` в команде старта > `flag` в команде старта > `.env`-file > `.yaml`-file > если ничего не определено, то
-дефолтный файл, если указан, или дефолтные значения `env`
 
 ### провести оплату
 ```
@@ -37,7 +22,7 @@ $ grpcurl -plaintext -d '{
 
 ### server start
 ```
-$ go run cmd/grpc_server/main.go
+$ go run inventory/cmd/grpc_server/main.go
 ```
 
 ### получить все детали
