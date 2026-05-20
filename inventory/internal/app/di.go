@@ -5,24 +5,19 @@ import (
 	"log/slog"
 	"os"
 
-	trmpgx "github.com/avito-tech/go-transaction-manager/drivers/pgxv5/v2"
-	"github.com/avito-tech/go-transaction-manager/trm/v2/manager"
 	"github.com/jackc/pgx/v5/pgxpool"
 
-	invV1API "github.com/MikeKirillov/rocketservices/inventory/internal/api/inventory/v1"
+	invV1API "github.com/MikeKirillov/rocketservices/inventory/internal/api/part/v1"
 	"github.com/MikeKirillov/rocketservices/inventory/internal/config"
 	invRepository "github.com/MikeKirillov/rocketservices/inventory/internal/repository/part"
-	invService "github.com/MikeKirillov/rocketservices/inventory/internal/service/application/part"
-	"github.com/MikeKirillov/rocketservices/inventory/internal/service/domain"
+	invService "github.com/MikeKirillov/rocketservices/inventory/internal/service/part"
 	"github.com/MikeKirillov/rocketservices/platform/pkg/closer"
 	inventoryv1 "github.com/MikeKirillov/rocketservices/shared/pkg/proto/inventory/v1"
 )
 
 type diContainer struct {
 	pgPool       *pgxpool.Pool
-	txManager    *manager.Manager
 	invRepo      invService.PartRepository
-	compChecker  invService.CompatibilityChecker
 	invSvc       invV1API.PartService
 	invV1Handler inventoryv1.InventoryServiceServer
 }
@@ -60,32 +55,9 @@ func (d *diContainer) InventoryRepository(ctx context.Context) invService.PartRe
 	return d.invRepo
 }
 
-func (d *diContainer) CompatibilityChecker() invService.CompatibilityChecker {
-	if d.compChecker == nil {
-		d.compChecker = domain.NewCompatibilityChecker()
-	}
-	return d.compChecker
-}
-
-func (d *diContainer) TxManager(ctx context.Context) *manager.Manager {
-	if d.txManager == nil {
-		txManager, err := manager.New(trmpgx.NewDefaultFactory(d.PGPool(ctx)))
-		if err != nil {
-			slog.Error("создание transaction manager", "error", err)
-			os.Exit(1)
-		}
-		d.txManager = txManager
-	}
-	return d.txManager
-}
-
 func (d *diContainer) InventoryService(ctx context.Context) invV1API.PartService {
 	if d.invSvc == nil {
-		d.invSvc = invService.NewService(
-			d.InventoryRepository(ctx),
-			d.CompatibilityChecker(),
-			d.TxManager(ctx),
-		)
+		d.invSvc = invService.NewService(d.InventoryRepository(ctx))
 	}
 	return d.invSvc
 }

@@ -60,21 +60,6 @@ $ grpcurl -plaintext -d '{"uuids": ["550e8400-e29b-41d4-a716-446655440001", "550
 $ grpcurl -plaintext -d '{"uuid": "550e8400-e29b-41d4-a716-446655440001"}' localhost:50051 inventory.v1.InventoryService/GetPart
 ```
 
-### провалидировать детали по UUID
-```
-$ grpcurl -plaintext -d '{"hull_uuid": "550e8400-e29b-41d4-a716-446655440002", "engine_uuid": "550e8400-e29b-41d4-a716-446655440004"}' localhost:50051 inventory.v1.InventoryService/ValidateCompatibility
-```
-
-### зарезервировать деталь по UUID
-```
-$ grpcurl -plaintext -d '{"uuids": ["550e8400-e29b-41d4-a716-446655440001"]}' localhost:50051 inventory.v1.InventoryService/ReserveParts
-```
-
-### отменить резерв детали по UUID
-```
-$ grpcurl -plaintext -d '{"uuids": ["550e8400-e29b-41d4-a716-446655440001"]}' localhost:50051 inventory.v1.InventoryService/ReleaseParts
-```
-
 ## order
 
 ### server start
