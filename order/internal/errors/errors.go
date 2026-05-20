@@ -21,13 +21,11 @@ var (
 	ErrInvalidUUID          = errors.New("неверный формат UUID")
 	ErrInvalidPaymentMethod = errors.New("неизвестный способ оплаты")
 	ErrUnknown              = errors.New("неизвестная ошибка")
-	ErrPartTypeMismatch     = errors.New("тип детали не соответствует слоту корабля")
 
 	// Ошибки интеграционных сервисов.
-	ErrGrpcInternal           = errors.New("внутренняя ошибка сервера")
-	ErrGrpcTimeout            = errors.New("таймаут grpc сервера")
-	ErrGrpcInvalidArgument    = errors.New("некорректный запрос на grpc сервер")
-	ErrGrpcUnavailable        = errors.New("сервис недоступен")
-	ErrGrpcNotFound           = errors.New("детали не найдены")
-	ErrGrpcCancelledOperation = errors.New("операция отклонена")
+	ErrGrpcInternal        = errors.New("внутренняя ошибка сервера")
+	ErrGrpcTimeout         = errors.New("таймаут grpc сервера")
+	ErrGrpcInvalidArgument = errors.New("некорректный запрос на grpc сервер")
+	ErrGrpcUnavailable     = errors.New("сервис недоступен")
+	ErrGrpcNotFound        = errors.New("детали не найдены")
 )

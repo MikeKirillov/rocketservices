@@ -64,7 +64,7 @@ func TestCancel(t *testing.T) {
 			args: args{id: id},
 			setupMock: func(i *mocks.InventoryServiceClient, r *mocks.OrderRepository) {
 				r.EXPECT().Get(ctx, id).Return(modelToSave, nil)
-				i.EXPECT().ReleaseParts(ctx, modelToSave).Return(nil)
+				i.EXPECT().ReleaseParts(ctx, []uuid.UUID{id}).Return(nil)
 				r.EXPECT().Update(ctx, mock.MatchedBy(func(o model.Order) bool {
 					return o.Status == model.OrderStatusCancelled &&
 						!o.UpdatedAt.IsZero()
@@ -94,7 +94,7 @@ func TestCancel(t *testing.T) {
 			args: args{id: id},
 			setupMock: func(i *mocks.InventoryServiceClient, r *mocks.OrderRepository) {
 				r.EXPECT().Get(ctx, id).Return(modelToSave, nil)
-				i.EXPECT().ReleaseParts(ctx, modelToSave).Return(nil)
+				i.EXPECT().ReleaseParts(ctx, []uuid.UUID{id}).Return(nil)
 				r.EXPECT().Update(ctx, mock.MatchedBy(func(o model.Order) bool {
 					return o.Status == model.OrderStatusCancelled &&
 						!o.UpdatedAt.IsZero()
