@@ -1,7 +1,6 @@
 package converter
 
 import (
-	"fmt"
 	"log/slog"
 
 	"github.com/google/uuid"
@@ -67,13 +66,10 @@ func OrderToPartUuids(order model.Order) []string {
 }
 
 // GrpcErrToDomain маппит gRPC ошибок в доменные ошибки.
-func GrpcErrToDomain(st *status.Status, err error) error {
+func GrpcErrToDomain(st *status.Status) error {
 	switch st.Code() {
 	case codes.NotFound:
 		return errs.ErrGrpcNotFound
-
-	case codes.FailedPrecondition, codes.ResourceExhausted:
-		return fmt.Errorf("%w: %w", errs.ErrGrpcCancelledOperation, err)
 
 	case codes.InvalidArgument:
 		return errs.ErrGrpcInvalidArgument

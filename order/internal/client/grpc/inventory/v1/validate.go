@@ -23,7 +23,7 @@ func (c *client) ValidateCompatibility(ctx context.Context, items []model.OrderI
 			slog.Error("неизвестная ошибка", "error", err)
 			return errs.ErrGrpcInternal
 		}
-		if err = converter.GrpcErrToDomain(st, err); err != nil {
+		if err = converter.GrpcErrToDomain(st); err != nil {
 			return err
 		}
 	}

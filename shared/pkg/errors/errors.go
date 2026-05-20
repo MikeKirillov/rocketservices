@@ -55,7 +55,7 @@ func (c Code) HTTPCode() int {
 		return http.StatusBadRequest
 	case CodeNotFound:
 		return http.StatusNotFound
-	case CodeConflict, CodeFailedPrecondition:
+	case CodeConflict:
 		return http.StatusConflict
 	case CodeForbidden:
 		return http.StatusForbidden
