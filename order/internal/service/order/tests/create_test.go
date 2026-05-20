@@ -61,15 +61,17 @@ func TestCreate(t *testing.T) {
 		rsItems    = []model.OrderItem{
 			{
 				Uuid:          id,
-				Name:          new("hull"),
+				Name:          new("HULL"),
 				Price:         num,
 				StockQuantity: num,
+				Type:          model.PartTypeHull,
 			},
 			{
 				Uuid:          id2,
-				Name:          new("engine"),
+				Name:          new("ENGINE"),
 				Price:         num,
 				StockQuantity: num,
+				Type:          model.PartTypeEngine,
 			},
 		}
 		rsPartsOut = []model.OrderItem{

@@ -24,7 +24,7 @@ func (c *client) ReserveParts(ctx context.Context, partsUuids []uuid.UUID) error
 			slog.Error("неизвестная ошибка", "error", err)
 			return errs.ErrGrpcInternal
 		}
-		if err = converter.GrpcErrToDomain(st); err != nil {
+		if err = converter.GrpcErrToDomain(st, err); err != nil {
 			return err
 		}
 	}

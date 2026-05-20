@@ -5,6 +5,8 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/google/uuid"
+
 	errs "github.com/MikeKirillov/rocketservices/order/internal/errors"
 	"github.com/MikeKirillov/rocketservices/order/internal/model"
 	sharedErrs "github.com/MikeKirillov/rocketservices/shared/pkg/errors"
@@ -17,6 +19,12 @@ func (s *service) Create(ctx context.Context, orderRq model.CreateOrderRq) (mode
 	parts, err := s.inventoryClient.ListParts(ctx, rqParts)
 	if err != nil {
 		return model.CreateOrderRs{}, sharedErrs.NewNotFound(err) // клиент уже завернул в BusinessError у себя
+	}
+
+	// Запретите использование одного UUID в разных слотах → тоже ErrPartTypeMismatch.
+	err = resolvedShipSlots(parts, orderRq)
+	if err != nil {
+		return model.CreateOrderRs{}, sharedErrs.NewInvalidArgument(err)
 	}
 
 	// Проверяет, что все детали существуют (иначе 404)
@@ -42,6 +50,8 @@ func (s *service) Create(ctx context.Context, orderRq model.CreateOrderRq) (mode
 			return model.CreateOrderRs{}, sharedErrs.NewNotFound(err)
 		case errors.Is(err, errs.ErrGrpcInvalidArgument):
 			return model.CreateOrderRs{}, sharedErrs.NewInvalidArgument(err)
+		case errors.Is(err, errs.ErrGrpcCancelledOperation):
+			return model.CreateOrderRs{}, sharedErrs.NewFailedPrecondition(err)
 		default:
 			return model.CreateOrderRs{}, sharedErrs.NewInternal(err)
 		}
@@ -55,6 +65,8 @@ func (s *service) Create(ctx context.Context, orderRq model.CreateOrderRq) (mode
 			return model.CreateOrderRs{}, sharedErrs.NewNotFound(err)
 		case errors.Is(err, errs.ErrGrpcInvalidArgument):
 			return model.CreateOrderRs{}, sharedErrs.NewInvalidArgument(err)
+		case errors.Is(err, errs.ErrGrpcCancelledOperation):
+			return model.CreateOrderRs{}, sharedErrs.NewFailedPrecondition(err)
 		default:
 			return model.CreateOrderRs{}, sharedErrs.NewInternal(err)
 		}
@@ -72,4 +84,21 @@ func (s *service) Create(ctx context.Context, orderRq model.CreateOrderRq) (mode
 
 	// 7. Вернуть order_uuid и total_price
 	return model.CreateOrderRs{OrderUUID: order.OrderUUID, TotalPrice: totalPrice}, nil
+}
+
+// resolvedShipSlots проверяет каждую деталь, полученную из БД, на соответствие типа
+// детали согласно запрошенным слотам.
+func resolvedShipSlots(parts []model.OrderItem, orderRq model.CreateOrderRq) error {
+	pMap := make(map[uuid.UUID]model.OrderItem, len(parts))
+	for _, p := range parts {
+		pMap[p.Uuid] = p
+	}
+
+	for _, i := range orderRq.Items {
+		if p, ok := pMap[i.Uuid]; ok && p.Type != i.Type {
+			return errs.ErrPartTypeMismatch
+		}
+	}
+
+	return nil
 }

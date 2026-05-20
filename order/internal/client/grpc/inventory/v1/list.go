@@ -30,7 +30,7 @@ func (c *client) ListParts(ctx context.Context, partsUuids []uuid.UUID) ([]model
 			slog.Error("неизвестная ошибка", "error", err)
 			return []model.OrderItem{}, errs.ErrGrpcInternal
 		}
-		if err = converter.GrpcErrToDomain(st); err != nil {
+		if err = converter.GrpcErrToDomain(st, err); err != nil {
 			return []model.OrderItem{}, err
 		}
 	}
