@@ -92,10 +92,6 @@ $ curl -v -X POST http://localhost:8080/api/v1/orders/{order_uuid}/cancel -H "Co
 ```
 $ bin/goose -dir migrations/inventory create create_parts_table sql
 $ bin/goose -dir migrations/inventory create seed_parts sql
-$ bin/goose -dir migrations/inventory create add_properties_reserved sql
-$ bin/goose -dir migrations/inventory create update_seed_properties sql
-$ bin/goose -dir migrations/inventory create increase_stock_quantity sql
-
 $ bin/goose -dir migrations/order create create_orders_table sql
 $ bin/goose -dir migrations/order create create_order_items_table sql
 ```
