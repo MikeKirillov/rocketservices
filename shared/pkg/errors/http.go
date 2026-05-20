@@ -96,7 +96,7 @@ func buildResponse(err error, cfg *httpErrorConfig) any {
 		if cfg.notFound != nil {
 			return cfg.notFound(code, msg)
 		}
-	case CodeConflict:
+	case CodeConflict, CodeFailedPrecondition:
 		if cfg.conflict != nil {
 			return cfg.conflict(code, msg)
 		}

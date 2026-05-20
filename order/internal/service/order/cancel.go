@@ -28,6 +28,8 @@ func (s *service) Cancel(ctx context.Context, id uuid.UUID) error {
 			return sharedErrs.NewNotFound(err)
 		case errors.Is(err, errs.ErrGrpcInvalidArgument):
 			return sharedErrs.NewInvalidArgument(err)
+		case errors.Is(err, errs.ErrGrpcCancelledOperation):
+			return sharedErrs.NewFailedPrecondition(err)
 		default:
 			return sharedErrs.NewInternal(err)
 		}
