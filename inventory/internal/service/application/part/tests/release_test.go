@@ -19,8 +19,6 @@ import (
 )
 
 func TestRelease(t *testing.T) {
-	t.Parallel()
-
 	type args struct {
 		ids []uuid.UUID
 	}
@@ -47,28 +45,14 @@ func TestRelease(t *testing.T) {
 
 		hullProperty, _ = model.NewHullProperties(num)
 		expModel        = model.RestorePart(
-			id,
-			str,
-			str,
-			num64,
-			model.PartTypeHull,
-			num,
-			num,
-			hullProperty,
-			created,
+			id, str, str, num64, model.PartTypeHull,
+			num, num, hullProperty, created,
 		)
 		expModelSlice = []model.Part{expModel}
 
 		expModelOutStock = model.RestorePart(
-			id,
-			str,
-			str,
-			num64,
-			model.PartTypeHull,
-			0,
-			0,
-			hullProperty,
-			created,
+			id, str, str, num64, model.PartTypeHull,
+			0, 0, hullProperty, created,
 		)
 		expModelSliceOutStock = []model.Part{expModelOutStock}
 	)
@@ -164,8 +148,6 @@ func TestRelease(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			t.Parallel()
-
 			r := mocks.NewPartRepository(t)
 			c := mocks.NewCompatibilityChecker(t)
 			m := mocks.NewTxManager(t)
