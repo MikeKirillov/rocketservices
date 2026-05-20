@@ -13,15 +13,13 @@ import (
 type Code string
 
 const (
-	CodeUnknown            Code = "unknown"
-	CodeInvalidArgument    Code = "invalid_argument"
-	CodeNotFound           Code = "not_found"
-	CodeConflict           Code = "conflict"
-	CodeForbidden          Code = "forbidden"
-	CodeUnauthorized       Code = "unauthorized"
-	CodeInternal           Code = "internal"
-	CodeFailedPrecondition Code = "failed_precondition"
-	CodeResourceExhausted  Code = "resource_exhausted"
+	CodeUnknown         Code = "unknown"
+	CodeInvalidArgument Code = "invalid_argument"
+	CodeNotFound        Code = "not_found"
+	CodeConflict        Code = "conflict"
+	CodeForbidden       Code = "forbidden"
+	CodeUnauthorized    Code = "unauthorized"
+	CodeInternal        Code = "internal"
 )
 
 // Маппинги в коды транспортов для GRPC.
@@ -39,10 +37,6 @@ func (c Code) GRPCCode() codes.Code {
 		return codes.Unauthenticated
 	case CodeInternal:
 		return codes.Internal
-	case CodeFailedPrecondition:
-		return codes.FailedPrecondition
-	case CodeResourceExhausted:
-		return codes.ResourceExhausted
 	default:
 		return codes.Internal
 	}
@@ -146,14 +140,6 @@ func NewNotFound(err error) error {
 
 func NewConflict(err error) error {
 	return NewBusinessError(CodeConflict, err)
-}
-
-func NewFailedPrecondition(err error) error {
-	return NewBusinessError(CodeFailedPrecondition, err)
-}
-
-func NewResourceExhausted(err error) error {
-	return NewBusinessError(CodeResourceExhausted, err)
 }
 
 func NewForbidden(err error) error {
