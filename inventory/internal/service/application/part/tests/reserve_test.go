@@ -19,6 +19,8 @@ import (
 )
 
 func TestReserve(t *testing.T) {
+	t.Parallel()
+
 	type args struct {
 		ids []uuid.UUID
 	}
@@ -159,6 +161,8 @@ func TestReserve(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
+			t.Parallel()
+
 			r := mocks.NewPartRepository(t)
 			c := mocks.NewCompatibilityChecker(t)
 			m := mocks.NewTxManager(t)
