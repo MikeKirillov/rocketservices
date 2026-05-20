@@ -12,8 +12,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	errs "github.com/MikeKirillov/rocketservices/inventory/internal/errors"
-	"github.com/MikeKirillov/rocketservices/inventory/internal/model/entity"
-	"github.com/MikeKirillov/rocketservices/inventory/internal/model/valueobject"
+	"github.com/MikeKirillov/rocketservices/inventory/internal/model"
 	"github.com/MikeKirillov/rocketservices/inventory/internal/service/part/mocks"
 )
 
@@ -25,7 +24,7 @@ func TestGet(t *testing.T) {
 	}
 
 	type expected struct {
-		res      entity.Part
+		res      model.Part
 		hasErr   bool
 		errCheck func(t *testing.T, err error)
 	}
@@ -34,22 +33,18 @@ func TestGet(t *testing.T) {
 		ctx     = context.Background()
 		uuid    = uuid.New()
 		str     = gofakeit.Word()
-		num64   = gofakeit.Int64()
-		num     = gofakeit.Int()
+		num     = gofakeit.Int64()
 		created = time.Now()
 
-		hullProperty, _ = valueobject.NewHullProperties(num)
-		expModel        = entity.RestorePart(
-			uuid,
-			str,
-			str,
-			num64,
-			valueobject.PartTypeHull,
-			num64,
-			num64,
-			hullProperty,
-			created,
-		)
+		expModel = model.Part{
+			UUID:          uuid,
+			Name:          str,
+			Description:   str,
+			Price:         num,
+			PartType:      model.PartTypeHull,
+			StockQuantity: num,
+			CreatedAt:     created,
+		}
 
 		errInternal = errors.New("внутренняя ошибка")
 	)
@@ -78,10 +73,10 @@ func TestGet(t *testing.T) {
 			name: "деталь не найдена - errs.ErrPartNotFound",
 			args: args{id: uuid},
 			setupMock: func(r *mocks.PartRepository) {
-				r.EXPECT().Get(ctx, uuid).Return(entity.Part{}, errs.ErrPartNotFound)
+				r.EXPECT().Get(ctx, uuid).Return(model.Part{}, errs.ErrPartNotFound)
 			},
 			expected: expected{
-				res:    entity.Part{},
+				res:    model.Part{},
 				hasErr: true,
 				errCheck: func(t *testing.T, err error) {
 					require.Error(t, err)
@@ -93,10 +88,10 @@ func TestGet(t *testing.T) {
 			name: "ошибка репозитория - errInternal",
 			args: args{id: uuid},
 			setupMock: func(r *mocks.PartRepository) {
-				r.EXPECT().Get(ctx, uuid).Return(entity.Part{}, errInternal)
+				r.EXPECT().Get(ctx, uuid).Return(model.Part{}, errInternal)
 			},
 			expected: expected{
-				res:    entity.Part{},
+				res:    model.Part{},
 				hasErr: true,
 				errCheck: func(t *testing.T, err error) {
 					require.Error(t, err)
@@ -123,13 +118,13 @@ func TestGet(t *testing.T) {
 				require.Empty(t, res)
 			} else {
 				require.NotEmpty(t, res)
-				assert.Equal(t, test.expected.res.UUID(), res.UUID())
-				assert.Equal(t, test.expected.res.Name(), res.Name())
-				assert.Equal(t, test.expected.res.Description(), res.Description())
-				assert.Equal(t, test.expected.res.Price(), res.Price())
-				assert.Equal(t, test.expected.res.PartType(), res.PartType())
-				assert.Equal(t, test.expected.res.StockQuantity(), res.StockQuantity())
-				assert.Equal(t, test.expected.res.CreatedAt(), res.CreatedAt())
+				assert.Equal(t, test.expected.res.UUID, res.UUID)
+				assert.Equal(t, test.expected.res.Name, res.Name)
+				assert.Equal(t, test.expected.res.Description, res.Description)
+				assert.Equal(t, test.expected.res.Price, res.Price)
+				assert.Equal(t, test.expected.res.PartType, res.PartType)
+				assert.Equal(t, test.expected.res.StockQuantity, res.StockQuantity)
+				assert.Equal(t, test.expected.res.CreatedAt, res.CreatedAt)
 			}
 		})
 	}

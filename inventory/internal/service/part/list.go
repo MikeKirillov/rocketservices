@@ -7,12 +7,11 @@ import (
 	"strings"
 
 	errs "github.com/MikeKirillov/rocketservices/inventory/internal/errors"
-	"github.com/MikeKirillov/rocketservices/inventory/internal/model/entity"
-	"github.com/MikeKirillov/rocketservices/inventory/internal/service/input"
+	"github.com/MikeKirillov/rocketservices/inventory/internal/model"
 	sharedErrs "github.com/MikeKirillov/rocketservices/shared/pkg/errors"
 )
 
-func (s *service) List(ctx context.Context, filter input.PartFilter) ([]entity.Part, error) {
+func (s *service) List(ctx context.Context, filter model.PartFilter) ([]model.Part, error) {
 	if filter.UUIDs != nil {
 		partsUnordered, err := s.partRepository.ListByUUIDs(ctx, filter.UUIDs)
 		if err != nil {
@@ -26,11 +25,11 @@ func (s *service) List(ctx context.Context, filter input.PartFilter) ([]entity.P
 			}
 		}
 
-		return entity.OrderPartsByIds(partsUnordered, filter.UUIDs), nil
+		return model.OrderPartsByIds(partsUnordered, filter.UUIDs), nil
 	}
 
 	var (
-		parts []entity.Part
+		parts []model.Part
 		err   error
 	)
 
@@ -49,8 +48,8 @@ func (s *service) List(ctx context.Context, filter input.PartFilter) ([]entity.P
 
 	// Отсортировать по имени (только для фильтрации по типу, не для uuids)
 	if parts != nil {
-		slices.SortFunc(parts, func(a, b entity.Part) int {
-			return strings.Compare(a.Name(), b.Name())
+		slices.SortFunc(parts, func(a, b model.Part) int {
+			return strings.Compare(a.Name, b.Name)
 		})
 	}
 	return parts, nil

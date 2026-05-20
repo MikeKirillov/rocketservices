@@ -15,8 +15,7 @@ import (
 	"github.com/MikeKirillov/rocketservices/inventory/internal/api/part/v1/mocks"
 	"github.com/MikeKirillov/rocketservices/inventory/internal/converter"
 	errs "github.com/MikeKirillov/rocketservices/inventory/internal/errors"
-	"github.com/MikeKirillov/rocketservices/inventory/internal/model/entity"
-	"github.com/MikeKirillov/rocketservices/inventory/internal/model/valueobject"
+	"github.com/MikeKirillov/rocketservices/inventory/internal/model"
 	sharedErrs "github.com/MikeKirillov/rocketservices/shared/pkg/errors"
 	inventoryv1 "github.com/MikeKirillov/rocketservices/shared/pkg/proto/inventory/v1"
 )
@@ -39,8 +38,7 @@ func TestListParts(t *testing.T) {
 		uuid    = gofakeit.UUID()
 		uuid2   = gofakeit.UUID()
 		str     = gofakeit.Word()
-		num64   = gofakeit.Int64()
-		num     = gofakeit.Int()
+		num     = gofakeit.Int64()
 		created = time.Now()
 
 		req = &inventoryv1.ListPartsRequest{
@@ -63,21 +61,19 @@ func TestListParts(t *testing.T) {
 		rqModelUuid, _  = converter.PartsRqToModel(reqUuid)
 		rqModelUuids, _ = converter.PartsRqToModel(reqUuids)
 
-		hullProperty, _ = valueobject.NewHullProperties(num)
-		expModel        = entity.RestorePart(
-			id,
-			str,
-			str,
-			num64,
-			valueobject.PartTypeHull,
-			num64,
-			num64,
-			hullProperty,
-			created,
-		)
-		expModelSlice = []entity.Part{expModel}
+		expModel = []model.Part{
+			{
+				UUID:          id,
+				Name:          "дорогая деталь",
+				Description:   str,
+				Price:         num,
+				PartType:      model.PartTypeHull,
+				StockQuantity: num,
+				CreatedAt:     created,
+			},
+		}
 
-		expProto    = []*inventoryv1.Part{converter.PartToProto(expModelSlice[0])}
+		expProto    = []*inventoryv1.Part{converter.PartToProto(expModel[0])}
 		errInternal = errors.New("внутренняя ошибка")
 	)
 
@@ -91,7 +87,7 @@ func TestListParts(t *testing.T) {
 			name: "без фильтра (все детали) - ошибок нет",
 			args: args{req: req},
 			setupMock: func(s *mocks.PartService) {
-				s.EXPECT().List(ctx, rqModel).Return(expModelSlice, nil)
+				s.EXPECT().List(ctx, rqModel).Return(expModel, nil)
 			},
 			expected: expected{
 				res: &inventoryv1.ListPartsResponse{Parts: expProto},
@@ -104,7 +100,7 @@ func TestListParts(t *testing.T) {
 			name: "фильтр по типу HULL - все детали с типом HULL",
 			args: args{req: reqHull},
 			setupMock: func(s *mocks.PartService) {
-				s.EXPECT().List(ctx, rqModelHull).Return(expModelSlice, nil)
+				s.EXPECT().List(ctx, rqModelHull).Return(expModel, nil)
 			},
 			expected: expected{
 				res: &inventoryv1.ListPartsResponse{Parts: expProto},
@@ -117,7 +113,7 @@ func TestListParts(t *testing.T) {
 			name: "фильтр по конкретным UUID - детали в порядке запрошенных",
 			args: args{req: reqUuid},
 			setupMock: func(s *mocks.PartService) {
-				s.EXPECT().List(ctx, rqModelUuid).Return(expModelSlice, nil)
+				s.EXPECT().List(ctx, rqModelUuid).Return(expModel, nil)
 			},
 			expected: expected{
 				res: &inventoryv1.ListPartsResponse{Parts: expProto},
