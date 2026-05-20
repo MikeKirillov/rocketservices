@@ -64,7 +64,7 @@ $ grpcurl -plaintext -d '{"uuid": "550e8400-e29b-41d4-a716-446655440001"}' local
 
 ### server start
 ```
-$ go run cmd/main.go
+$ go run order/cmd/main.go
 ```
 
 ### создание заказа

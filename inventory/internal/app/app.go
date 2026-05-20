@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/keepalive"
@@ -18,6 +19,17 @@ import (
 	"github.com/MikeKirillov/rocketservices/shared/interceptor"
 	sharedErrs "github.com/MikeKirillov/rocketservices/shared/pkg/errors"
 	inventoryv1 "github.com/MikeKirillov/rocketservices/shared/pkg/proto/inventory/v1"
+)
+
+const (
+	// gRPC keepalive параметры.
+	grpcMaxConnectionIdle     = 15 * time.Minute // Закрыть idle-соединения (нет активных RPC)
+	grpcMaxConnectionAge      = 30 * time.Minute // Принудительная ротация для балансировки
+	grpcMaxConnectionAgeGrace = 5 * time.Second  // Время на завершение активных RPC
+	grpcKeepaliveTime         = 5 * time.Minute  // Интервал ping'ов для обнаружения мёртвых соединений
+	grpcKeepaliveTimeout      = 1 * time.Second  // Таймаут ожидания pong
+	grpcMinPingInterval       = 5 * time.Minute  // Минимальный интервал ping'ов от клиента (защита от DoS)
+	shutdownTimeout           = 5 * time.Second
 )
 
 type App struct {
@@ -40,12 +52,8 @@ func (a *App) startGracefulShutdown(ctx context.Context, cancel context.CancelFu
 		<-ctx.Done()
 		cancel()
 		slog.Info("получен сигнал завершения, начинаем graceful shutdown")
-		shutdownCtx, shutdownCancel := context.WithTimeout(
-			context.Background(),
-			config.AppConfig().GRPC.ShutdownTimeout(),
-		)
+		shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), shutdownTimeout)
 		defer shutdownCancel()
-
 		if closeErr := closer.CloseAll(shutdownCtx); closeErr != nil {
 			slog.Error("ошибка при завершении работы", "error", closeErr)
 		}
@@ -89,7 +97,6 @@ func (a *App) initConfig(ctx context.Context) {
 		"конфигурация загружена",
 		"config_path", a.configPath,
 		"grpc_address", cfg.GRPC.Address(),
-		"pg_host", cfg.PG.Host,
 	)
 }
 
@@ -113,14 +120,14 @@ func (a *App) initListener(ctx context.Context) {
 func (a *App) initGRPCServer(ctx context.Context) {
 	a.grpcServer = grpc.NewServer(
 		grpc.KeepaliveParams(keepalive.ServerParameters{
-			MaxConnectionIdle:     config.AppConfig().GRPC.MaxConnectionIdle(),
-			MaxConnectionAge:      config.AppConfig().GRPC.MaxConnectionAge(),
-			MaxConnectionAgeGrace: config.AppConfig().GRPC.MaxConnectionAgeGrace(),
-			Time:                  config.AppConfig().GRPC.Time(),
-			Timeout:               config.AppConfig().GRPC.Timeout(),
+			MaxConnectionIdle:     grpcMaxConnectionIdle,
+			MaxConnectionAge:      grpcMaxConnectionAge,
+			MaxConnectionAgeGrace: grpcMaxConnectionAgeGrace,
+			Time:                  grpcKeepaliveTime,
+			Timeout:               grpcKeepaliveTimeout,
 		}),
 		grpc.KeepaliveEnforcementPolicy(keepalive.EnforcementPolicy{
-			MinTime:             config.AppConfig().GRPC.MinPingInterval(),
+			MinTime:             grpcMinPingInterval,
 			PermitWithoutStream: true, // Разрешить "тёплые" соединения без активных RPC
 		}),
 		grpc.ChainUnaryInterceptor(
@@ -130,12 +137,10 @@ func (a *App) initGRPCServer(ctx context.Context) {
 		),
 	)
 	api := a.diContainer.InventoryV1API(ctx)
-
 	closer.Add("gRPC server", func(_ context.Context) error {
 		a.grpcServer.GracefulStop()
 		return nil
 	})
-
 	reflection.Register(a.grpcServer)
 	inventoryv1.RegisterInventoryServiceServer(a.grpcServer, api)
 }
