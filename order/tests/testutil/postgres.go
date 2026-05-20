@@ -27,7 +27,7 @@ var (
 	pgOnce       sync.Once
 	pgContainer  *tcpostgres.PostgresContainer
 	pgBaseDSN    string
-	pgInitErr    error
+	pgInitErr    error //nolint:errname // тест
 	pgDBCounter  uint64
 	pgPostgresDB = "postgres" // системная БД для CREATE DATABASE
 )
@@ -100,7 +100,7 @@ func createIsolatedDB(ctx context.Context, t *testing.T, prefix, migrationsDir s
 	if err != nil {
 		t.Fatalf("открыть admin connection: %v", err)
 	}
-	defer func() { _ = adminDB.Close() }()
+	defer func() { _ = adminDB.Close() }() //nolint:gosec // тест
 
 	if _, err = adminDB.ExecContext(ctx, fmt.Sprintf(`CREATE DATABASE %q`, dbName)); err != nil {
 		t.Fatalf("создать БД %s: %v", dbName, err)
@@ -118,14 +118,14 @@ func createIsolatedDB(ctx context.Context, t *testing.T, prefix, migrationsDir s
 	}
 	absDir, err := filepath.Abs(migrationsDir)
 	if err != nil {
-		_ = migrateDB.Close()
+		_ = migrateDB.Close() //nolint:gosec // тест
 		t.Fatalf("filepath.Abs: %v", err)
 	}
 	if err = goose.Up(migrateDB, absDir); err != nil {
-		_ = migrateDB.Close()
+		_ = migrateDB.Close() //nolint:gosec // тест
 		t.Fatalf("goose up: %v", err)
 	}
-	_ = migrateDB.Close()
+	_ = migrateDB.Close() //nolint:gosec // тест
 
 	cleanup := func() {
 		// Подключаемся к admin БД, чтобы дропнуть рабочую.
@@ -133,14 +133,16 @@ func createIsolatedDB(ctx context.Context, t *testing.T, prefix, migrationsDir s
 		if err != nil {
 			return
 		}
-		defer func() { _ = admin.Close() }()
+		defer func() { _ = admin.Close() }() //nolint:gosec // тест
 
 		// Завершаем активные коннекты и удаляем БД.
-		_, _ = admin.Exec(fmt.Sprintf(
+		//nolint:gosec // тест
+		_, _ = admin.Exec(fmt.Sprintf( //nolint:noctx // тест
 			`SELECT pg_terminate_backend(pid) FROM pg_stat_activity
 			 WHERE datname = '%s' AND pid <> pg_backend_pid()`, dbName,
 		))
-		_, _ = admin.Exec(fmt.Sprintf(`DROP DATABASE IF EXISTS %q`, dbName))
+		//nolint:noctx // тест
+		_, _ = admin.Exec(fmt.Sprintf(`DROP DATABASE IF EXISTS %q`, dbName)) //nolint:gosec // тест
 	}
 
 	return dbInfo{Name: dbName, DSN: dsn, cleanup: cleanup}
