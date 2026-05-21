@@ -7,8 +7,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/MikeKirillov/rocketservices/inventory/internal/domain/model"
 	errs "github.com/MikeKirillov/rocketservices/inventory/internal/errors"
-	"github.com/MikeKirillov/rocketservices/inventory/internal/model"
 )
 
 func TestNewShieldType(t *testing.T) {

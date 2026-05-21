@@ -1,8 +1,8 @@
 package domain
 
 import (
+	"github.com/MikeKirillov/rocketservices/inventory/internal/domain/model"
 	errs "github.com/MikeKirillov/rocketservices/inventory/internal/errors"
-	"github.com/MikeKirillov/rocketservices/inventory/internal/model"
 )
 
 // componentSet хранит типизированные свойства комплектующих, извлечённые из набора.

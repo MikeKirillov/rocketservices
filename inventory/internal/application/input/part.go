@@ -3,7 +3,7 @@ package input
 import (
 	"github.com/google/uuid"
 
-	"github.com/MikeKirillov/rocketservices/inventory/internal/model"
+	"github.com/MikeKirillov/rocketservices/inventory/internal/domain/model"
 )
 
 type PartFilter struct {

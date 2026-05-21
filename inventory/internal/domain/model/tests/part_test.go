@@ -10,8 +10,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/MikeKirillov/rocketservices/inventory/internal/domain/model"
 	errs "github.com/MikeKirillov/rocketservices/inventory/internal/errors"
-	"github.com/MikeKirillov/rocketservices/inventory/internal/model"
 )
 
 func TestReserve(t *testing.T) {
@@ -23,7 +23,7 @@ func TestReserve(t *testing.T) {
 		now     = time.Now()
 		hull, _ = model.NewHullProperties(num)
 
-		part    = model.RestorePart(id, str, str, num64, model.PartTypeHull, num, num, hull, now)
+		part    = model.RestorePart(id, str, str, num64, model.PartTypeHull, 100, 0, hull, now)
 		partErr = model.RestorePart(id, str, str, num64, model.PartTypeHull, 0, 0, hull, now)
 	)
 

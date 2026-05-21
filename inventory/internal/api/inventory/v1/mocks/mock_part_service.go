@@ -10,8 +10,8 @@ package mocks
 import (
 	"context"
 
-	"github.com/MikeKirillov/rocketservices/inventory/internal/model"
-	"github.com/MikeKirillov/rocketservices/inventory/internal/service/input"
+	"github.com/MikeKirillov/rocketservices/inventory/internal/application/input"
+	"github.com/MikeKirillov/rocketservices/inventory/internal/domain/model"
 	"github.com/google/uuid"
 	mock "github.com/stretchr/testify/mock"
 )

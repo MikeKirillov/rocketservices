@@ -6,8 +6,8 @@ import (
 
 	"github.com/google/uuid"
 
+	"github.com/MikeKirillov/rocketservices/inventory/internal/domain/model"
 	errs "github.com/MikeKirillov/rocketservices/inventory/internal/errors"
-	"github.com/MikeKirillov/rocketservices/inventory/internal/model"
 	sharedErrs "github.com/MikeKirillov/rocketservices/shared/pkg/errors"
 )
 

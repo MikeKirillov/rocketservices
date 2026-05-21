@@ -8,9 +8,9 @@ import (
 	"google.golang.org/grpc"
 
 	partAPIV1 "github.com/MikeKirillov/rocketservices/inventory/internal/api/inventory/v1"
+	partService "github.com/MikeKirillov/rocketservices/inventory/internal/application/service"
+	partComp "github.com/MikeKirillov/rocketservices/inventory/internal/domain/service"
 	partRepository "github.com/MikeKirillov/rocketservices/inventory/internal/repository/part"
-	partService "github.com/MikeKirillov/rocketservices/inventory/internal/service/application/part"
-	partComp "github.com/MikeKirillov/rocketservices/inventory/internal/service/domain"
 	interceptor "github.com/MikeKirillov/rocketservices/shared/interceptor"
 	sharedErrs "github.com/MikeKirillov/rocketservices/shared/pkg/errors"
 	inventoryv1 "github.com/MikeKirillov/rocketservices/shared/pkg/proto/inventory/v1"

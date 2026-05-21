@@ -11,8 +11,8 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 
+	"github.com/MikeKirillov/rocketservices/inventory/internal/domain/model"
 	errs "github.com/MikeKirillov/rocketservices/inventory/internal/errors"
-	"github.com/MikeKirillov/rocketservices/inventory/internal/model"
 	"github.com/MikeKirillov/rocketservices/inventory/internal/repository/converter"
 	"github.com/MikeKirillov/rocketservices/inventory/internal/repository/record"
 )

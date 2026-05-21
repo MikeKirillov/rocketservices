@@ -11,10 +11,10 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	part "github.com/MikeKirillov/rocketservices/inventory/internal/application/service"
+	"github.com/MikeKirillov/rocketservices/inventory/internal/application/service/mocks"
+	"github.com/MikeKirillov/rocketservices/inventory/internal/domain/model"
 	errs "github.com/MikeKirillov/rocketservices/inventory/internal/errors"
-	"github.com/MikeKirillov/rocketservices/inventory/internal/model"
-	"github.com/MikeKirillov/rocketservices/inventory/internal/service/application/part"
-	"github.com/MikeKirillov/rocketservices/inventory/internal/service/application/part/mocks"
 )
 
 func TestGet(t *testing.T) {

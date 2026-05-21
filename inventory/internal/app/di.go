@@ -10,10 +10,10 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	invV1API "github.com/MikeKirillov/rocketservices/inventory/internal/api/inventory/v1"
+	invService "github.com/MikeKirillov/rocketservices/inventory/internal/application/service"
 	"github.com/MikeKirillov/rocketservices/inventory/internal/config"
+	domain "github.com/MikeKirillov/rocketservices/inventory/internal/domain/service"
 	invRepository "github.com/MikeKirillov/rocketservices/inventory/internal/repository/part"
-	invService "github.com/MikeKirillov/rocketservices/inventory/internal/service/application/part"
-	"github.com/MikeKirillov/rocketservices/inventory/internal/service/domain"
 	"github.com/MikeKirillov/rocketservices/platform/pkg/closer"
 	inventoryv1 "github.com/MikeKirillov/rocketservices/shared/pkg/proto/inventory/v1"
 )

@@ -14,8 +14,8 @@ import (
 
 	api "github.com/MikeKirillov/rocketservices/inventory/internal/api/inventory/v1"
 	"github.com/MikeKirillov/rocketservices/inventory/internal/api/inventory/v1/mocks"
+	"github.com/MikeKirillov/rocketservices/inventory/internal/application/input"
 	errs "github.com/MikeKirillov/rocketservices/inventory/internal/errors"
-	"github.com/MikeKirillov/rocketservices/inventory/internal/service/input"
 	sharedErrs "github.com/MikeKirillov/rocketservices/shared/pkg/errors"
 	inventoryv1 "github.com/MikeKirillov/rocketservices/shared/pkg/proto/inventory/v1"
 )
