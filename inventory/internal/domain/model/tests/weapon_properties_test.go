@@ -7,15 +7,15 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/MikeKirillov/rocketservices/inventory/internal/domain/model"
 	errs "github.com/MikeKirillov/rocketservices/inventory/internal/errors"
-	"github.com/MikeKirillov/rocketservices/inventory/internal/model"
 )
 
-func TestNewEngineClass(t *testing.T) {
+func TestNewWeaponType(t *testing.T) {
 	t.Parallel()
 
 	type expected struct {
-		result   model.EngineClass
+		result   model.WeaponType
 		errCheck func(t *testing.T, err error)
 	}
 
@@ -26,9 +26,9 @@ func TestNewEngineClass(t *testing.T) {
 	}{
 		{
 			name:  "конвертация типа без ошибок",
-			input: "A",
+			input: "laser",
 			expected: expected{
-				result: model.EngineClassA,
+				result: model.WeaponTypeLaser,
 				errCheck: func(t *testing.T, err error) {
 					require.NoError(t, err)
 				},
@@ -51,7 +51,7 @@ func TestNewEngineClass(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			t.Parallel()
 
-			res, err := model.NewEngineClass(test.input)
+			res, err := model.NewWeaponType(test.input)
 
 			test.expected.errCheck(t, err)
 
@@ -63,54 +63,34 @@ func TestNewEngineClass(t *testing.T) {
 	}
 }
 
-func TestNewEngineProperties(t *testing.T) {
+func TestNewWeaponProperties(t *testing.T) {
 	t.Parallel()
 
-	type args struct {
-		class    string
-		strength int
-	}
-
 	type expected struct {
-		result   model.EngineClass
-		strength int
+		result   model.WeaponType
 		errCheck func(t *testing.T, err error)
 	}
 
 	tests := []struct {
 		name     string
-		input    args
+		input    string
 		expected expected
 	}{
 		{
 			name:  "конвертация типа без ошибок",
-			input: args{class: "A", strength: 100},
+			input: "laser",
 			expected: expected{
-				result:   model.EngineClassA,
-				strength: 100,
+				result: model.WeaponTypeLaser,
 				errCheck: func(t *testing.T, err error) {
 					require.NoError(t, err)
 				},
 			},
 		},
 		{
-			name:  "конвертация типа с ошибкой - errs.ErrInvalidProperties",
-			input: args{class: "yo", strength: 100},
+			name:  "конвертация с ошибкой - errs.ErrInvalidProperties",
+			input: "yo",
 			expected: expected{
-				result:   "",
-				strength: 0,
-				errCheck: func(t *testing.T, err error) {
-					require.Error(t, err)
-					assert.True(t, errors.Is(err, errs.ErrInvalidProperties))
-				},
-			},
-		},
-		{
-			name:  "проверка прочности корпуса с ошибкой - errs.ErrInvalidProperties",
-			input: args{class: "yo", strength: 10},
-			expected: expected{
-				result:   "",
-				strength: 0,
+				result: "",
 				errCheck: func(t *testing.T, err error) {
 					require.Error(t, err)
 					assert.True(t, errors.Is(err, errs.ErrInvalidProperties))
@@ -123,16 +103,13 @@ func TestNewEngineProperties(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			t.Parallel()
 
-			res, err := model.NewEngineProperties(test.input.class, test.input.strength)
+			res, err := model.NewWeaponProperties(test.input)
 
 			test.expected.errCheck(t, err)
 
 			if err == nil {
 				require.NotEmpty(t, res)
-				assert.Equal(t, test.expected.result, res.Engine().Class())
-				assert.Equal(t, test.expected.strength, res.Engine().RequiredStrength())
-			} else {
-				require.Empty(t, res)
+				assert.Equal(t, test.expected.result, res.Weapon().WeaponType())
 			}
 		})
 	}

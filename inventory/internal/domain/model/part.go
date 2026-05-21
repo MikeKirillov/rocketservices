@@ -55,7 +55,7 @@ func (p *part) CreatedAt() time.Time { return p.createdAt }
 // Не может превысить stockQuantity и не может стать отрицательным.
 // Возвращает ErrOutOfStock, если свободных единиц нет.
 func (p *part) Reserve() error {
-	if p.stockQuantity <= 0 {
+	if p.reserved >= p.stockQuantity {
 		return errs.ErrOutOfStock
 	}
 	p.reserved++

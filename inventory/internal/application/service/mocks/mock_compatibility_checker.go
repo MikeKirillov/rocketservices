@@ -8,7 +8,7 @@
 package mocks
 
 import (
-	"github.com/MikeKirillov/rocketservices/inventory/internal/model"
+	"github.com/MikeKirillov/rocketservices/inventory/internal/domain/model"
 	mock "github.com/stretchr/testify/mock"
 )
 

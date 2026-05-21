@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/MikeKirillov/rocketservices/inventory/internal/model"
+	"github.com/MikeKirillov/rocketservices/inventory/internal/domain/model"
 	"github.com/MikeKirillov/rocketservices/inventory/internal/repository/record"
 )
 

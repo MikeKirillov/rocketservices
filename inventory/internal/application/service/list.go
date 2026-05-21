@@ -6,9 +6,9 @@ import (
 	"slices"
 	"strings"
 
+	"github.com/MikeKirillov/rocketservices/inventory/internal/application/input"
+	"github.com/MikeKirillov/rocketservices/inventory/internal/domain/model"
 	errs "github.com/MikeKirillov/rocketservices/inventory/internal/errors"
-	"github.com/MikeKirillov/rocketservices/inventory/internal/model"
-	"github.com/MikeKirillov/rocketservices/inventory/internal/service/input"
 	sharedErrs "github.com/MikeKirillov/rocketservices/shared/pkg/errors"
 )
 

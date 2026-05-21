@@ -6,9 +6,9 @@ import (
 
 	"github.com/google/uuid"
 
+	"github.com/MikeKirillov/rocketservices/inventory/internal/application/input"
+	"github.com/MikeKirillov/rocketservices/inventory/internal/domain/model"
 	errs "github.com/MikeKirillov/rocketservices/inventory/internal/errors"
-	"github.com/MikeKirillov/rocketservices/inventory/internal/model"
-	"github.com/MikeKirillov/rocketservices/inventory/internal/service/input"
 	sharedErrs "github.com/MikeKirillov/rocketservices/shared/pkg/errors"
 )
 
@@ -79,16 +79,22 @@ func resolvedShipSlots(pMap map[uuid.UUID]model.Part, slots input.ShipSlots) (mo
 		resolved.Engine = p
 	}
 
-	if p, ok := pMap[slots.ShieldUUID]; ok && p.PartType() != model.PartTypeShield {
-		return model.ResolvedShipSlots{}, errs.ErrPartTypeMismatch
-	} else {
-		resolved.Shield = &p
+	if slots.ShieldUUID != uuid.Nil {
+		p := pMap[slots.ShieldUUID]
+		if p.PartType() != model.PartTypeShield {
+			return model.ResolvedShipSlots{}, errs.ErrPartTypeMismatch
+		} else {
+			resolved.Shield = &p
+		}
 	}
 
-	if p, ok := pMap[slots.WeaponUUID]; ok && p.PartType() != model.PartTypeWeapon {
-		return model.ResolvedShipSlots{}, errs.ErrPartTypeMismatch
-	} else {
-		resolved.Weapon = &p
+	if slots.WeaponUUID != uuid.Nil {
+		p := pMap[slots.WeaponUUID]
+		if p.PartType() != model.PartTypeWeapon {
+			return model.ResolvedShipSlots{}, errs.ErrPartTypeMismatch
+		} else {
+			resolved.Weapon = &p
+		}
 	}
 
 	return resolved, nil
