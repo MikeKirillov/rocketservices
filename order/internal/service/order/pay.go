@@ -6,12 +6,12 @@ import (
 
 	"github.com/google/uuid"
 
+	"github.com/MikeKirillov/rocketservices/order/internal/api/input"
 	errs "github.com/MikeKirillov/rocketservices/order/internal/errors"
-	"github.com/MikeKirillov/rocketservices/order/internal/model"
 	sharedErrs "github.com/MikeKirillov/rocketservices/shared/pkg/errors"
 )
 
-func (s *service) Pay(ctx context.Context, orderRq model.PayOrderRq) (uuid.UUID, error) {
+func (s *service) Pay(ctx context.Context, orderRq input.PayOrderRq) (uuid.UUID, error) {
 	var transactionResult uuid.UUID
 
 	err := s.txManager.Do(ctx, func(ctx context.Context) error {

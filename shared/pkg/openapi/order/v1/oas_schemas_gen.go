@@ -58,6 +58,8 @@ type CreateOrderRequest struct {
 	ShieldUUID OptNilUUID `json:"shield_uuid"`
 	// UUID вооружения (опциональный, v4).
 	WeaponUUID OptNilUUID `json:"weapon_uuid"`
+	// UUID пользователя.
+	UserUUID uuid.UUID `json:"user_uuid"`
 }
 
 // GetHullUUID returns the value of HullUUID.
@@ -80,6 +82,11 @@ func (s *CreateOrderRequest) GetWeaponUUID() OptNilUUID {
 	return s.WeaponUUID
 }
 
+// GetUserUUID returns the value of UserUUID.
+func (s *CreateOrderRequest) GetUserUUID() uuid.UUID {
+	return s.UserUUID
+}
+
 // SetHullUUID sets the value of HullUUID.
 func (s *CreateOrderRequest) SetHullUUID(val uuid.UUID) {
 	s.HullUUID = val
@@ -98,6 +105,11 @@ func (s *CreateOrderRequest) SetShieldUUID(val OptNilUUID) {
 // SetWeaponUUID sets the value of WeaponUUID.
 func (s *CreateOrderRequest) SetWeaponUUID(val OptNilUUID) {
 	s.WeaponUUID = val
+}
+
+// SetUserUUID sets the value of UserUUID.
+func (s *CreateOrderRequest) SetUserUUID(val uuid.UUID) {
+	s.UserUUID = val
 }
 
 // Ref: #
@@ -317,6 +329,8 @@ type OrderDto struct {
 	Status        OrderStatus         `json:"status"`
 	// Дата создания заказа.
 	CreatedAt time.Time `json:"created_at"`
+	// UUID пользователя.
+	UserUUID uuid.UUID `json:"user_uuid"`
 }
 
 // GetOrderUUID returns the value of OrderUUID.
@@ -369,6 +383,11 @@ func (s *OrderDto) GetCreatedAt() time.Time {
 	return s.CreatedAt
 }
 
+// GetUserUUID returns the value of UserUUID.
+func (s *OrderDto) GetUserUUID() uuid.UUID {
+	return s.UserUUID
+}
+
 // SetOrderUUID sets the value of OrderUUID.
 func (s *OrderDto) SetOrderUUID(val uuid.UUID) {
 	s.OrderUUID = val
@@ -417,6 +436,11 @@ func (s *OrderDto) SetStatus(val OrderStatus) {
 // SetCreatedAt sets the value of CreatedAt.
 func (s *OrderDto) SetCreatedAt(val time.Time) {
 	s.CreatedAt = val
+}
+
+// SetUserUUID sets the value of UserUUID.
+func (s *OrderDto) SetUserUUID(val uuid.UUID) {
+	s.UserUUID = val
 }
 
 func (*OrderDto) getOrderRes() {}

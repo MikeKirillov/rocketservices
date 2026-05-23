@@ -10,6 +10,7 @@ package mocks
 import (
 	"context"
 
+	"github.com/MikeKirillov/rocketservices/order/internal/api/input"
 	"github.com/MikeKirillov/rocketservices/order/internal/model"
 	"github.com/google/uuid"
 	mock "github.com/stretchr/testify/mock"
@@ -100,24 +101,24 @@ func (_c *OrderService_Cancel_Call) RunAndReturn(run func(ctx context.Context, i
 }
 
 // Create provides a mock function for the type OrderService
-func (_mock *OrderService) Create(ctx context.Context, orderRq model.CreateOrderRq) (model.CreateOrderRs, error) {
+func (_mock *OrderService) Create(ctx context.Context, orderRq input.CreateOrderRq) (input.CreateOrderRs, error) {
 	ret := _mock.Called(ctx, orderRq)
 
 	if len(ret) == 0 {
 		panic("no return value specified for Create")
 	}
 
-	var r0 model.CreateOrderRs
+	var r0 input.CreateOrderRs
 	var r1 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, model.CreateOrderRq) (model.CreateOrderRs, error)); ok {
+	if returnFunc, ok := ret.Get(0).(func(context.Context, input.CreateOrderRq) (input.CreateOrderRs, error)); ok {
 		return returnFunc(ctx, orderRq)
 	}
-	if returnFunc, ok := ret.Get(0).(func(context.Context, model.CreateOrderRq) model.CreateOrderRs); ok {
+	if returnFunc, ok := ret.Get(0).(func(context.Context, input.CreateOrderRq) input.CreateOrderRs); ok {
 		r0 = returnFunc(ctx, orderRq)
 	} else {
-		r0 = ret.Get(0).(model.CreateOrderRs)
+		r0 = ret.Get(0).(input.CreateOrderRs)
 	}
-	if returnFunc, ok := ret.Get(1).(func(context.Context, model.CreateOrderRq) error); ok {
+	if returnFunc, ok := ret.Get(1).(func(context.Context, input.CreateOrderRq) error); ok {
 		r1 = returnFunc(ctx, orderRq)
 	} else {
 		r1 = ret.Error(1)
@@ -132,20 +133,20 @@ type OrderService_Create_Call struct {
 
 // Create is a helper method to define mock.On call
 //   - ctx context.Context
-//   - orderRq model.CreateOrderRq
+//   - orderRq input.CreateOrderRq
 func (_e *OrderService_Expecter) Create(ctx interface{}, orderRq interface{}) *OrderService_Create_Call {
 	return &OrderService_Create_Call{Call: _e.mock.On("Create", ctx, orderRq)}
 }
 
-func (_c *OrderService_Create_Call) Run(run func(ctx context.Context, orderRq model.CreateOrderRq)) *OrderService_Create_Call {
+func (_c *OrderService_Create_Call) Run(run func(ctx context.Context, orderRq input.CreateOrderRq)) *OrderService_Create_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		var arg0 context.Context
 		if args[0] != nil {
 			arg0 = args[0].(context.Context)
 		}
-		var arg1 model.CreateOrderRq
+		var arg1 input.CreateOrderRq
 		if args[1] != nil {
-			arg1 = args[1].(model.CreateOrderRq)
+			arg1 = args[1].(input.CreateOrderRq)
 		}
 		run(
 			arg0,
@@ -155,12 +156,12 @@ func (_c *OrderService_Create_Call) Run(run func(ctx context.Context, orderRq mo
 	return _c
 }
 
-func (_c *OrderService_Create_Call) Return(createOrderRs model.CreateOrderRs, err error) *OrderService_Create_Call {
+func (_c *OrderService_Create_Call) Return(createOrderRs input.CreateOrderRs, err error) *OrderService_Create_Call {
 	_c.Call.Return(createOrderRs, err)
 	return _c
 }
 
-func (_c *OrderService_Create_Call) RunAndReturn(run func(ctx context.Context, orderRq model.CreateOrderRq) (model.CreateOrderRs, error)) *OrderService_Create_Call {
+func (_c *OrderService_Create_Call) RunAndReturn(run func(ctx context.Context, orderRq input.CreateOrderRq) (input.CreateOrderRs, error)) *OrderService_Create_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -232,7 +233,7 @@ func (_c *OrderService_Get_Call) RunAndReturn(run func(ctx context.Context, id u
 }
 
 // Pay provides a mock function for the type OrderService
-func (_mock *OrderService) Pay(ctx context.Context, orderRq model.PayOrderRq) (uuid.UUID, error) {
+func (_mock *OrderService) Pay(ctx context.Context, orderRq input.PayOrderRq) (uuid.UUID, error) {
 	ret := _mock.Called(ctx, orderRq)
 
 	if len(ret) == 0 {
@@ -241,17 +242,17 @@ func (_mock *OrderService) Pay(ctx context.Context, orderRq model.PayOrderRq) (u
 
 	var r0 uuid.UUID
 	var r1 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, model.PayOrderRq) (uuid.UUID, error)); ok {
+	if returnFunc, ok := ret.Get(0).(func(context.Context, input.PayOrderRq) (uuid.UUID, error)); ok {
 		return returnFunc(ctx, orderRq)
 	}
-	if returnFunc, ok := ret.Get(0).(func(context.Context, model.PayOrderRq) uuid.UUID); ok {
+	if returnFunc, ok := ret.Get(0).(func(context.Context, input.PayOrderRq) uuid.UUID); ok {
 		r0 = returnFunc(ctx, orderRq)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(uuid.UUID)
 		}
 	}
-	if returnFunc, ok := ret.Get(1).(func(context.Context, model.PayOrderRq) error); ok {
+	if returnFunc, ok := ret.Get(1).(func(context.Context, input.PayOrderRq) error); ok {
 		r1 = returnFunc(ctx, orderRq)
 	} else {
 		r1 = ret.Error(1)
@@ -266,20 +267,20 @@ type OrderService_Pay_Call struct {
 
 // Pay is a helper method to define mock.On call
 //   - ctx context.Context
-//   - orderRq model.PayOrderRq
+//   - orderRq input.PayOrderRq
 func (_e *OrderService_Expecter) Pay(ctx interface{}, orderRq interface{}) *OrderService_Pay_Call {
 	return &OrderService_Pay_Call{Call: _e.mock.On("Pay", ctx, orderRq)}
 }
 
-func (_c *OrderService_Pay_Call) Run(run func(ctx context.Context, orderRq model.PayOrderRq)) *OrderService_Pay_Call {
+func (_c *OrderService_Pay_Call) Run(run func(ctx context.Context, orderRq input.PayOrderRq)) *OrderService_Pay_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		var arg0 context.Context
 		if args[0] != nil {
 			arg0 = args[0].(context.Context)
 		}
-		var arg1 model.PayOrderRq
+		var arg1 input.PayOrderRq
 		if args[1] != nil {
-			arg1 = args[1].(model.PayOrderRq)
+			arg1 = args[1].(input.PayOrderRq)
 		}
 		run(
 			arg0,
@@ -294,7 +295,7 @@ func (_c *OrderService_Pay_Call) Return(uUID uuid.UUID, err error) *OrderService
 	return _c
 }
 
-func (_c *OrderService_Pay_Call) RunAndReturn(run func(ctx context.Context, orderRq model.PayOrderRq) (uuid.UUID, error)) *OrderService_Pay_Call {
+func (_c *OrderService_Pay_Call) RunAndReturn(run func(ctx context.Context, orderRq input.PayOrderRq) (uuid.UUID, error)) *OrderService_Pay_Call {
 	_c.Call.Return(run)
 	return _c
 }

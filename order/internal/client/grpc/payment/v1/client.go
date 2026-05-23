@@ -10,9 +10,9 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
+	"github.com/MikeKirillov/rocketservices/order/internal/api/input"
 	"github.com/MikeKirillov/rocketservices/order/internal/client/grpc/payment/v1/converter"
 	errs "github.com/MikeKirillov/rocketservices/order/internal/errors"
-	"github.com/MikeKirillov/rocketservices/order/internal/model"
 	paymentv1 "github.com/MikeKirillov/rocketservices/shared/pkg/proto/payment/v1"
 )
 
@@ -31,7 +31,7 @@ func New(grpcClient paymentv1.PaymentServiceClient) *client {
 }
 
 // PayOrder обрабатывает оплату заказа.
-func (c *client) PayOrder(ctx context.Context, orderRq model.PayOrderRq) (uuid.UUID, error) {
+func (c *client) PayOrder(ctx context.Context, orderRq input.PayOrderRq) (uuid.UUID, error) {
 	// ПАТТЕРН 1: Контекст с таймаутом
 	ctx, cancel := context.WithTimeout(ctx, grpcCallTimeout)
 	defer cancel()

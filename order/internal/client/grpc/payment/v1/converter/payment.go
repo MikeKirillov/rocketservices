@@ -1,11 +1,12 @@
 package converter
 
 import (
+	"github.com/MikeKirillov/rocketservices/order/internal/api/input"
 	"github.com/MikeKirillov/rocketservices/order/internal/model"
 	paymentv1 "github.com/MikeKirillov/rocketservices/shared/pkg/proto/payment/v1"
 )
 
-func PaymentToProto(orderRq model.PayOrderRq) *paymentv1.PayOrderRequest {
+func PaymentToProto(orderRq input.PayOrderRq) *paymentv1.PayOrderRequest {
 	return &paymentv1.PayOrderRequest{
 		OrderUuid:     orderRq.OrderUUID.String(),
 		PaymentMethod: paymentMethodToProto(orderRq.PaymentMethod),

@@ -84,7 +84,7 @@ $ go run cmd/main.go
 
 ### создание заказа
 ```
-$ curl -v -X POST http://localhost:8080/api/v1/orders -H "Content-Type: application/json" -d '{"hull_uuid": "550e8400-e29b-41d4-a716-446655440001", "engine_uuid": "550e8400-e29b-41d4-a716-446655440003", "shield_uuid": "550e8400-e29b-41d4-a716-446655440005", "weapon_uuid": null}'
+$ curl -v -X POST http://localhost:8080/api/v1/orders -H "Content-Type: application/json" -d '{"hull_uuid": "550e8400-e29b-41d4-a716-446655440001", "engine_uuid": "550e8400-e29b-41d4-a716-446655440003", "shield_uuid": "550e8400-e29b-41d4-a716-446655440005", "weapon_uuid": null, "user_uuid": "550e8400-e29b-41d4-a716-446655440000"}'
 ```
 
 ### получить заказ
@@ -113,4 +113,7 @@ $ bin/goose -dir migrations/inventory create increase_stock_quantity sql
 
 $ bin/goose -dir migrations/order create create_orders_table sql
 $ bin/goose -dir migrations/order create create_order_items_table sql
+$ bin/goose -dir migrations/order create add_user_uuid_column_to_orders sql
+$ bin/goose -dir migrations/order create backfill_user_uuid_in_orders sql
+$ bin/goose -dir migrations/order create set_user_uuid_not_null_in_orders sql
 ```

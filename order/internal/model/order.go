@@ -47,11 +47,13 @@ type Order struct {
 	CreatedAt       time.Time
 	UpdatedAt       *time.Time
 	Version         int64
+	UserUUID        uuid.UUID
 }
 
 func NewOrderToCreate(
 	parts []OrderItem,
 	totalPrice int64,
+	userUUID uuid.UUID,
 ) Order {
 	return Order{
 		OrderUUID:  uuid.New(),
@@ -59,6 +61,7 @@ func NewOrderToCreate(
 		TotalPrice: totalPrice,
 		Status:     OrderStatusPendingPayment,
 		CreatedAt:  time.Now(),
+		UserUUID:   userUUID,
 	}
 }
 
@@ -95,26 +98,4 @@ func (o *Order) Cancel() error {
 	o.Status = OrderStatusCancelled
 	o.UpdatedAt = new(time.Now())
 	return nil
-}
-
-type CreateOrderRq struct {
-	Items []OrderItem
-}
-
-func (r *CreateOrderRq) PartUUIDsAsSlice() []uuid.UUID {
-	uuids := make([]uuid.UUID, 0, len(r.Items))
-	for _, v := range r.Items {
-		uuids = append(uuids, v.Uuid)
-	}
-	return uuids
-}
-
-type CreateOrderRs struct {
-	OrderUUID  uuid.UUID
-	TotalPrice int64 // в копейках
-}
-
-type PayOrderRq struct {
-	OrderUUID     uuid.UUID
-	PaymentMethod PaymentMethod
 }

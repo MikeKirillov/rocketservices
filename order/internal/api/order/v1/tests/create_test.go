@@ -12,10 +12,10 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/MikeKirillov/rocketservices/order/internal/api/converter"
+	"github.com/MikeKirillov/rocketservices/order/internal/api/input"
 	api "github.com/MikeKirillov/rocketservices/order/internal/api/order/v1"
 	"github.com/MikeKirillov/rocketservices/order/internal/api/order/v1/mocks"
 	errs "github.com/MikeKirillov/rocketservices/order/internal/errors"
-	"github.com/MikeKirillov/rocketservices/order/internal/model"
 	sharedErrs "github.com/MikeKirillov/rocketservices/shared/pkg/errors"
 	orderv1 "github.com/MikeKirillov/rocketservices/shared/pkg/openapi/order/v1"
 )
@@ -49,16 +49,16 @@ func TestCreateOrder(t *testing.T) {
 		}
 
 		orderRq, _ = converter.OrderCreateRqToModel(req)
-		orderRs    = model.CreateOrderRs{
+		orderRs    = input.CreateOrderRs{
 			OrderUUID:  orderId,
 			TotalPrice: num * 2,
 		}
 		orderRqOpt, _ = converter.OrderCreateRqToModel(reqOpt)
-		orderRsOpt    = model.CreateOrderRs{
+		orderRsOpt    = input.CreateOrderRs{
 			OrderUUID:  orderId,
 			TotalPrice: num * 4,
 		}
-		orderRsEmpty = model.CreateOrderRs{}
+		orderRsEmpty = input.CreateOrderRs{}
 
 		errInternal = errors.New("внутренняя ошибка")
 	)

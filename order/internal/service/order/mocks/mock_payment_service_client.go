@@ -10,7 +10,7 @@ package mocks
 import (
 	"context"
 
-	"github.com/MikeKirillov/rocketservices/order/internal/model"
+	"github.com/MikeKirillov/rocketservices/order/internal/api/input"
 	"github.com/google/uuid"
 	mock "github.com/stretchr/testify/mock"
 )
@@ -43,7 +43,7 @@ func (_m *PaymentServiceClient) EXPECT() *PaymentServiceClient_Expecter {
 }
 
 // PayOrder provides a mock function for the type PaymentServiceClient
-func (_mock *PaymentServiceClient) PayOrder(ctx context.Context, orderRq model.PayOrderRq) (uuid.UUID, error) {
+func (_mock *PaymentServiceClient) PayOrder(ctx context.Context, orderRq input.PayOrderRq) (uuid.UUID, error) {
 	ret := _mock.Called(ctx, orderRq)
 
 	if len(ret) == 0 {
@@ -52,17 +52,17 @@ func (_mock *PaymentServiceClient) PayOrder(ctx context.Context, orderRq model.P
 
 	var r0 uuid.UUID
 	var r1 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, model.PayOrderRq) (uuid.UUID, error)); ok {
+	if returnFunc, ok := ret.Get(0).(func(context.Context, input.PayOrderRq) (uuid.UUID, error)); ok {
 		return returnFunc(ctx, orderRq)
 	}
-	if returnFunc, ok := ret.Get(0).(func(context.Context, model.PayOrderRq) uuid.UUID); ok {
+	if returnFunc, ok := ret.Get(0).(func(context.Context, input.PayOrderRq) uuid.UUID); ok {
 		r0 = returnFunc(ctx, orderRq)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(uuid.UUID)
 		}
 	}
-	if returnFunc, ok := ret.Get(1).(func(context.Context, model.PayOrderRq) error); ok {
+	if returnFunc, ok := ret.Get(1).(func(context.Context, input.PayOrderRq) error); ok {
 		r1 = returnFunc(ctx, orderRq)
 	} else {
 		r1 = ret.Error(1)
@@ -77,20 +77,20 @@ type PaymentServiceClient_PayOrder_Call struct {
 
 // PayOrder is a helper method to define mock.On call
 //   - ctx context.Context
-//   - orderRq model.PayOrderRq
+//   - orderRq input.PayOrderRq
 func (_e *PaymentServiceClient_Expecter) PayOrder(ctx interface{}, orderRq interface{}) *PaymentServiceClient_PayOrder_Call {
 	return &PaymentServiceClient_PayOrder_Call{Call: _e.mock.On("PayOrder", ctx, orderRq)}
 }
 
-func (_c *PaymentServiceClient_PayOrder_Call) Run(run func(ctx context.Context, orderRq model.PayOrderRq)) *PaymentServiceClient_PayOrder_Call {
+func (_c *PaymentServiceClient_PayOrder_Call) Run(run func(ctx context.Context, orderRq input.PayOrderRq)) *PaymentServiceClient_PayOrder_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		var arg0 context.Context
 		if args[0] != nil {
 			arg0 = args[0].(context.Context)
 		}
-		var arg1 model.PayOrderRq
+		var arg1 input.PayOrderRq
 		if args[1] != nil {
-			arg1 = args[1].(model.PayOrderRq)
+			arg1 = args[1].(input.PayOrderRq)
 		}
 		run(
 			arg0,
@@ -105,7 +105,7 @@ func (_c *PaymentServiceClient_PayOrder_Call) Return(uUID uuid.UUID, err error) 
 	return _c
 }
 
-func (_c *PaymentServiceClient_PayOrder_Call) RunAndReturn(run func(ctx context.Context, orderRq model.PayOrderRq) (uuid.UUID, error)) *PaymentServiceClient_PayOrder_Call {
+func (_c *PaymentServiceClient_PayOrder_Call) RunAndReturn(run func(ctx context.Context, orderRq input.PayOrderRq) (uuid.UUID, error)) *PaymentServiceClient_PayOrder_Call {
 	_c.Call.Return(run)
 	return _c
 }

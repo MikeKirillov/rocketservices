@@ -43,6 +43,7 @@ type Order struct {
 	CreatedAt       time.Time   `db:"created_at"`
 	UpdatedAt       *time.Time  `db:"updated_at"`
 	Version         int64       `db:"version"`
+	UserUUID        uuid.UUID   `db:"user_uuid"`
 }
 
 type OrderItem struct {
