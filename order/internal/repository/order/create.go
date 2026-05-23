@@ -23,10 +23,10 @@ func (r *repository) Create(ctx context.Context, order model.Order) error {
 func (r *repository) createOrder(ctx context.Context, order model.Order) error {
 	o := converter.OrderToRecord(order)
 
-	query := `INSERT INTO orders (uuid, status, created_at) VALUES ($1, $2, $3)`
+	query := `INSERT INTO orders (uuid, status, created_at, user_uuid) VALUES ($1, $2, $3, $4)`
 
 	db := r.getter.DefaultTrOrDB(ctx, r.pool)
-	_, err := db.Exec(ctx, query, o.UUID, o.Status, o.CreatedAt)
+	_, err := db.Exec(ctx, query, o.UUID, o.Status, o.CreatedAt, o.UserUUID)
 	if err != nil {
 		return fmt.Errorf("создание записи заказа %s: %w", order.OrderUUID, err)
 	}

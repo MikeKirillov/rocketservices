@@ -11,6 +11,7 @@ import (
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 
+	"github.com/MikeKirillov/rocketservices/order/internal/api/input"
 	errs "github.com/MikeKirillov/rocketservices/order/internal/errors"
 	"github.com/MikeKirillov/rocketservices/order/internal/model"
 	service "github.com/MikeKirillov/rocketservices/order/internal/service/order"
@@ -21,11 +22,11 @@ func TestCreate(t *testing.T) {
 	t.Parallel()
 
 	type args struct {
-		req model.CreateOrderRq
+		req input.CreateOrderRq
 	}
 
 	type expected struct {
-		res      model.CreateOrderRs
+		res      input.CreateOrderRs
 		hasErr   bool
 		errCheck func(t *testing.T, err error)
 	}
@@ -49,10 +50,10 @@ func TestCreate(t *testing.T) {
 			{Uuid: id4, Type: model.PartTypeWeapon},
 		}
 
-		req = model.CreateOrderRq{
+		req = input.CreateOrderRq{
 			Items: items,
 		}
-		reqOpt = model.CreateOrderRq{
+		reqOpt = input.CreateOrderRq{
 			Items: itemsOpt,
 		}
 
@@ -147,7 +148,7 @@ func TestCreate(t *testing.T) {
 				})).Return(nil)
 			},
 			expected: expected{
-				res: model.CreateOrderRs{
+				res: input.CreateOrderRs{
 					OrderUUID:  orderId,
 					TotalPrice: num * int64(len(rsItems)),
 				},
@@ -174,7 +175,7 @@ func TestCreate(t *testing.T) {
 				})).Return(nil)
 			},
 			expected: expected{
-				res: model.CreateOrderRs{
+				res: input.CreateOrderRs{
 					OrderUUID:  orderId,
 					TotalPrice: num * int64(len(rsPartsOpt)),
 				},
@@ -193,7 +194,7 @@ func TestCreate(t *testing.T) {
 				// если значение в ответе меньше, чем в запросе, то будет выброшена соответствующая ошибка
 			},
 			expected: expected{
-				res:    model.CreateOrderRs{},
+				res:    input.CreateOrderRs{},
 				hasErr: true,
 				errCheck: func(t *testing.T, err error) {
 					require.Error(t, err)
@@ -208,7 +209,7 @@ func TestCreate(t *testing.T) {
 				i.EXPECT().ListParts(ctx, rqItems).Return(rsPartsOut, nil)
 			},
 			expected: expected{
-				res:    model.CreateOrderRs{},
+				res:    input.CreateOrderRs{},
 				hasErr: true,
 				errCheck: func(t *testing.T, err error) {
 					require.Error(t, err)
@@ -223,7 +224,7 @@ func TestCreate(t *testing.T) {
 				i.EXPECT().ListParts(ctx, rqItems).Return(nil, errInternal)
 			},
 			expected: expected{
-				res:    model.CreateOrderRs{},
+				res:    input.CreateOrderRs{},
 				hasErr: true,
 				errCheck: func(t *testing.T, err error) {
 					require.Error(t, err)
@@ -248,7 +249,7 @@ func TestCreate(t *testing.T) {
 				})).Return(errInternal)
 			},
 			expected: expected{
-				res:    model.CreateOrderRs{},
+				res:    input.CreateOrderRs{},
 				hasErr: true,
 				errCheck: func(t *testing.T, err error) {
 					require.Error(t, err)

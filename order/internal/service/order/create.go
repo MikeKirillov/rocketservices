@@ -7,29 +7,30 @@ import (
 
 	"github.com/google/uuid"
 
+	"github.com/MikeKirillov/rocketservices/order/internal/api/input"
 	errs "github.com/MikeKirillov/rocketservices/order/internal/errors"
 	"github.com/MikeKirillov/rocketservices/order/internal/model"
 	sharedErrs "github.com/MikeKirillov/rocketservices/shared/pkg/errors"
 )
 
-func (s *service) Create(ctx context.Context, orderRq model.CreateOrderRq) (model.CreateOrderRs, error) {
+func (s *service) Create(ctx context.Context, orderRq input.CreateOrderRq) (input.CreateOrderRs, error) {
 	rqParts := orderRq.PartUUIDsAsSlice()
 
 	// 2. Получить детали через InventoryService.ListParts
 	parts, err := s.inventoryClient.ListParts(ctx, rqParts)
 	if err != nil {
-		return model.CreateOrderRs{}, sharedErrs.NewNotFound(err) // клиент уже завернул в BusinessError у себя
+		return input.CreateOrderRs{}, sharedErrs.NewNotFound(err) // клиент уже завернул в BusinessError у себя
 	}
 
 	// Запретите использование одного UUID в разных слотах → тоже ErrPartTypeMismatch.
 	err = resolvedShipSlots(parts, orderRq)
 	if err != nil {
-		return model.CreateOrderRs{}, sharedErrs.NewInvalidArgument(err)
+		return input.CreateOrderRs{}, sharedErrs.NewInvalidArgument(err)
 	}
 
 	// Проверяет, что все детали существуют (иначе 404)
 	if parts == nil || len(parts) < len(rqParts) {
-		return model.CreateOrderRs{}, sharedErrs.NewNotFound(errs.ErrPartNotFound)
+		return input.CreateOrderRs{}, sharedErrs.NewNotFound(errs.ErrPartNotFound)
 	}
 
 	// 3. Проверить stock_quantity > 0
@@ -37,7 +38,7 @@ func (s *service) Create(ctx context.Context, orderRq model.CreateOrderRq) (mode
 	var totalPrice int64
 	for _, p := range parts {
 		if p.StockQuantity <= 0 {
-			return model.CreateOrderRs{}, sharedErrs.NewConflict(fmt.Errorf("деталь %s: %w", *p.Name, errs.ErrOutOfStock))
+			return input.CreateOrderRs{}, sharedErrs.NewConflict(fmt.Errorf("деталь %s: %w", *p.Name, errs.ErrOutOfStock))
 		}
 		totalPrice += p.Price
 	}
@@ -47,13 +48,13 @@ func (s *service) Create(ctx context.Context, orderRq model.CreateOrderRq) (mode
 	if err != nil {
 		switch {
 		case errors.Is(err, errs.ErrGrpcNotFound):
-			return model.CreateOrderRs{}, sharedErrs.NewNotFound(err)
+			return input.CreateOrderRs{}, sharedErrs.NewNotFound(err)
 		case errors.Is(err, errs.ErrGrpcInvalidArgument):
-			return model.CreateOrderRs{}, sharedErrs.NewInvalidArgument(err)
+			return input.CreateOrderRs{}, sharedErrs.NewInvalidArgument(err)
 		case errors.Is(err, errs.ErrGrpcCancelledOperation):
-			return model.CreateOrderRs{}, sharedErrs.NewFailedPrecondition(err)
+			return input.CreateOrderRs{}, sharedErrs.NewFailedPrecondition(err)
 		default:
-			return model.CreateOrderRs{}, sharedErrs.NewInternal(err)
+			return input.CreateOrderRs{}, sharedErrs.NewInternal(err)
 		}
 	}
 
@@ -62,33 +63,33 @@ func (s *service) Create(ctx context.Context, orderRq model.CreateOrderRq) (mode
 	if err != nil {
 		switch {
 		case errors.Is(err, errs.ErrGrpcNotFound):
-			return model.CreateOrderRs{}, sharedErrs.NewNotFound(err)
+			return input.CreateOrderRs{}, sharedErrs.NewNotFound(err)
 		case errors.Is(err, errs.ErrGrpcInvalidArgument):
-			return model.CreateOrderRs{}, sharedErrs.NewInvalidArgument(err)
+			return input.CreateOrderRs{}, sharedErrs.NewInvalidArgument(err)
 		case errors.Is(err, errs.ErrGrpcCancelledOperation):
-			return model.CreateOrderRs{}, sharedErrs.NewFailedPrecondition(err)
+			return input.CreateOrderRs{}, sharedErrs.NewFailedPrecondition(err)
 		default:
-			return model.CreateOrderRs{}, sharedErrs.NewInternal(err)
+			return input.CreateOrderRs{}, sharedErrs.NewInternal(err)
 		}
 	}
 
 	// 5. Сгенерировать order_uuid (UUID v4)
 	// Создать заказ со статусом PENDING_PAYMENT
-	order := model.NewOrderToCreate(parts, totalPrice)
+	order := model.NewOrderToCreate(parts, totalPrice, orderRq.UserUUID)
 
 	// 6. Сохранить в store
 	err = s.orderRepository.Create(ctx, order)
 	if err != nil {
-		return model.CreateOrderRs{}, sharedErrs.NewInternal(err)
+		return input.CreateOrderRs{}, sharedErrs.NewInternal(err)
 	}
 
 	// 7. Вернуть order_uuid и total_price
-	return model.CreateOrderRs{OrderUUID: order.OrderUUID, TotalPrice: totalPrice}, nil
+	return input.CreateOrderRs{OrderUUID: order.OrderUUID, TotalPrice: totalPrice}, nil
 }
 
 // resolvedShipSlots проверяет каждую деталь, полученную из БД, на соответствие типа
 // детали согласно запрошенным слотам.
-func resolvedShipSlots(parts []model.OrderItem, orderRq model.CreateOrderRq) error {
+func resolvedShipSlots(parts []model.OrderItem, orderRq input.CreateOrderRq) error {
 	pMap := make(map[uuid.UUID]model.OrderItem, len(parts))
 	for _, p := range parts {
 		pMap[p.Uuid] = p

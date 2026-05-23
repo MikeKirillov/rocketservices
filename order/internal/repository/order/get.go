@@ -17,7 +17,7 @@ import (
 func (r *repository) Get(ctx context.Context, id uuid.UUID) (model.Order, error) {
 	query := `SELECT
 	o.uuid, o.status, o.transaction_uuid, o.payment_method,
-	o.created_at, o.updated_at, o.version,
+	o.created_at, o.updated_at, o.version, o.user_uuid,
 	COALESCE(
 	    jsonb_agg(
 	        jsonb_build_object(

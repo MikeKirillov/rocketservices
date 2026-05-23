@@ -5,6 +5,7 @@ import (
 
 	"github.com/google/uuid"
 
+	"github.com/MikeKirillov/rocketservices/order/internal/api/input"
 	errs "github.com/MikeKirillov/rocketservices/order/internal/errors"
 	"github.com/MikeKirillov/rocketservices/order/internal/model"
 	orderv1 "github.com/MikeKirillov/rocketservices/shared/pkg/openapi/order/v1"
@@ -16,6 +17,7 @@ func OrderToDTO(order model.Order) (*orderv1.OrderDto, error) {
 		TotalPrice: order.TotalPrice,
 		Status:     orderv1.OrderStatus(order.Status),
 		CreatedAt:  order.CreatedAt,
+		UserUUID:   order.UserUUID,
 	}
 	for _, p := range order.Items {
 		switch p.Type {
@@ -41,13 +43,13 @@ func OrderToDTO(order model.Order) (*orderv1.OrderDto, error) {
 	return result, nil
 }
 
-func OrderCreateRqToModel(orderRq *orderv1.CreateOrderRequest) (model.CreateOrderRq, error) {
+func OrderCreateRqToModel(orderRq *orderv1.CreateOrderRequest) (input.CreateOrderRq, error) {
 	// Валидация: hull_uuid и engine_uuid обязательны
 	if err := checkRequiredField(orderRq.HullUUID, "hull_uuid"); err != nil {
-		return model.CreateOrderRq{}, err
+		return input.CreateOrderRq{}, err
 	}
 	if err := checkRequiredField(orderRq.EngineUUID, "engine_uuid"); err != nil {
-		return model.CreateOrderRq{}, err
+		return input.CreateOrderRq{}, err
 	}
 
 	items := []model.OrderItem{
@@ -67,7 +69,7 @@ func OrderCreateRqToModel(orderRq *orderv1.CreateOrderRequest) (model.CreateOrde
 	if v, ok := orderRq.GetWeaponUUID().Get(); ok {
 		items = append(items, model.OrderItem{Uuid: v, Type: model.PartTypeWeapon})
 	}
-	return model.CreateOrderRq{Items: items}, nil
+	return input.CreateOrderRq{Items: items, UserUUID: orderRq.UserUUID}, nil
 }
 
 func checkRequiredField(field uuid.UUID, fieldName string) error {
@@ -78,19 +80,19 @@ func checkRequiredField(field uuid.UUID, fieldName string) error {
 	return nil
 }
 
-func OrderCreateRsToDTO(order model.CreateOrderRs) *orderv1.CreateOrderResponse {
+func OrderCreateRsToDTO(order input.CreateOrderRs) *orderv1.CreateOrderResponse {
 	return &orderv1.CreateOrderResponse{
 		OrderUUID:  order.OrderUUID,
 		TotalPrice: order.TotalPrice,
 	}
 }
 
-func PayOrderRqToModel(id uuid.UUID, paymentMethod orderv1.PaymentMethod) (model.PayOrderRq, error) {
+func PayOrderRqToModel(id uuid.UUID, paymentMethod orderv1.PaymentMethod) (input.PayOrderRq, error) {
 	payment, err := model.NewPaymentMethod(string(paymentMethod))
 	if err != nil {
-		return model.PayOrderRq{}, err
+		return input.PayOrderRq{}, err
 	}
-	return model.PayOrderRq{
+	return input.PayOrderRq{
 		OrderUUID:     id,
 		PaymentMethod: payment,
 	}, nil

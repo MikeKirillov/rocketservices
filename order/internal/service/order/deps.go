@@ -5,6 +5,7 @@ import (
 
 	"github.com/google/uuid"
 
+	"github.com/MikeKirillov/rocketservices/order/internal/api/input"
 	"github.com/MikeKirillov/rocketservices/order/internal/model"
 )
 
@@ -22,5 +23,5 @@ type InventoryServiceClient interface {
 }
 
 type PaymentServiceClient interface {
-	PayOrder(ctx context.Context, orderRq model.PayOrderRq) (uuid.UUID, error)
+	PayOrder(ctx context.Context, orderRq input.PayOrderRq) (uuid.UUID, error)
 }

@@ -12,6 +12,7 @@ import (
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 
+	"github.com/MikeKirillov/rocketservices/order/internal/api/input"
 	errs "github.com/MikeKirillov/rocketservices/order/internal/errors"
 	"github.com/MikeKirillov/rocketservices/order/internal/model"
 	service "github.com/MikeKirillov/rocketservices/order/internal/service/order"
@@ -22,7 +23,7 @@ func TestPay(t *testing.T) {
 	t.Parallel()
 
 	type args struct {
-		req model.PayOrderRq
+		req input.PayOrderRq
 	}
 
 	type expected struct {
@@ -37,7 +38,7 @@ func TestPay(t *testing.T) {
 		num    = gofakeit.Int64()
 		date   = time.Now()
 
-		req = model.PayOrderRq{
+		req = input.PayOrderRq{
 			OrderUUID:     id,
 			PaymentMethod: model.PaymentMethodCard,
 		}

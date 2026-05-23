@@ -17,12 +17,13 @@ func (r *repository) Update(ctx context.Context, order model.Order) error {
 		transaction_uuid = $2,
 		payment_method = $3,
 		updated_at = $4,
-		version = version + 1
-		WHERE uuid = $5 AND version = $6`
+		version = version + 1,
+		user_uuid = $5
+		WHERE uuid = $6 AND version = $7`
 
 	db := r.getter.DefaultTrOrDB(ctx, r.pool)
 	tag, err := db.Exec(
-		ctx, query, o.Status, o.TransactionUUID, o.PaymentMethod, o.UpdatedAt, o.UUID, o.Version,
+		ctx, query, o.Status, o.TransactionUUID, o.PaymentMethod, o.UpdatedAt, o.UUID, o.Version, o.UserUUID,
 	)
 	if err != nil {
 		return fmt.Errorf("обновление записи %s: %w", o.UUID, err)

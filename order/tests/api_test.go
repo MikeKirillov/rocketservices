@@ -38,7 +38,7 @@ import (
 	paymentv1 "github.com/MikeKirillov/rocketservices/shared/pkg/proto/payment/v1"
 )
 
-// Предзагруженные UUID и цены деталей (из migrations/inventory/00002_seed_parts.sql)
+// Предзагруженные UUID и цены деталей (из migrations/inventory/00002_seed_parts.sql).
 const (
 	HullAluminumUUID   = "550e8400-e29b-41d4-a716-446655440001" // 500000 kopecks (5000 RUB)
 	HullTitaniumUUID   = "550e8400-e29b-41d4-a716-446655440002" // 1500000 kopecks (15000 RUB)
@@ -48,7 +48,7 @@ const (
 	WeaponLaserUUID    = "550e8400-e29b-41d4-a716-446655440006" // 250000 kopecks (2500 RUB)
 	HullOutOfStockUUID = "550e8400-e29b-41d4-a716-446655440007" // 2000000 kopecks (20000 RUB), stock=0
 
-	// Цены в копейках
+	// Цены в копейках.
 	HullAluminumPrice   = 500000
 	HullTitaniumPrice   = 1500000
 	EngineIonCPrice     = 300000
@@ -71,11 +71,11 @@ var (
 
 	// orderDBPool нужен в тестах, где статус заказа нужно обновить в обход API —
 	// например, чтобы проверить Cancel по ASSEMBLED (через API статус туда не попадает
-	// без Kafka-цепочки, а её в API-тестах нет)
+	// без Kafka-цепочки, а её в API-тестах нет).
 	orderDBPool *pgxpool.Pool
 
 	// inventoryDBPool нужен в тестах конкурентности, где требуется подготовить
-	// деталь с конкретным stock_quantity напрямую в БД
+	// деталь с конкретным stock_quantity напрямую в БД.
 	inventoryDBPool *pgxpool.Pool
 )
 
@@ -87,12 +87,12 @@ func payBufDialer(context.Context, string) (net.Conn, error) {
 	return payLis.Dial()
 }
 
-// orderBaseURL возвращает базовый URL для HTTP тестов заказов
+// orderBaseURL возвращает базовый URL для HTTP тестов заказов.
 func orderBaseURL() string {
 	return ts.URL
 }
 
-// startPostgres запускает PostgreSQL контейнер и возвращает DSN подключения
+// startPostgres запускает PostgreSQL контейнер и возвращает DSN подключения.
 func startPostgres(ctx context.Context, dbName, user, password string) (*tcpostgres.PostgresContainer, string, error) {
 	container, err := tcpostgres.Run(
 		ctx,
@@ -118,7 +118,7 @@ func startPostgres(ctx context.Context, dbName, user, password string) (*tcpostg
 	return container, dsn, nil
 }
 
-// runMigrations запускает goose-миграции из указанной директории
+// runMigrations запускает goose-миграции из указанной директории.
 func runMigrations(dsn, migrationsDir string) error {
 	db, err := sql.Open("pgx", dsn)
 	if err != nil {
@@ -134,7 +134,7 @@ func runMigrations(dsn, migrationsDir string) error {
 	return goose.Up(db, absDir)
 }
 
-// TestMain запускает все сервисы перед тестами и останавливает после
+// TestMain запускает все сервисы перед тестами и останавливает после.
 func TestMain(m *testing.M) {
 	ctx := context.Background()
 
@@ -190,10 +190,16 @@ func TestMain(m *testing.M) {
 		panic(err)
 	}
 
+	// Создаём TxManager для inventory-сервиса
+	txManagerInventory, err := manager.New(trmpgx.NewDefaultFactory(inventoryPool))
+	if err != nil {
+		panic(err)
+	}
+
 	// 8. Inventory gRPC через bufconn
 	invLis = bufconn.Listen(bufSize)
 	invGRPCServer := grpc.NewServer(invApp.Interceptors()...)
-	invApp.RegisterServices(invGRPCServer, inventoryPool)
+	invApp.RegisterServices(invGRPCServer, inventoryPool, txManagerInventory)
 	go func() {
 		if invServeErr := invGRPCServer.Serve(invLis); invServeErr != nil {
 			panic(invServeErr)
@@ -262,9 +268,9 @@ func TestMain(m *testing.M) {
 	os.Exit(code)
 }
 
-// HTTP типы запросов/ответов
+// HTTP типы запросов/ответов.
 
-// CreateOrderRequest представляет тело запроса для создания заказа
+// CreateOrderRequest представляет тело запроса для создания заказа.
 type CreateOrderRequest struct {
 	UserUUID   string  `json:"user_uuid"`
 	HullUUID   string  `json:"hull_uuid"`
@@ -273,26 +279,26 @@ type CreateOrderRequest struct {
 	WeaponUUID *string `json:"weapon_uuid,omitempty"`
 }
 
-// CreateOrderResponse представляет ответ на создание заказа
+// CreateOrderResponse представляет ответ на создание заказа.
 type CreateOrderResponse struct {
 	OrderUUID  string `json:"order_uuid"`
 	TotalPrice int64  `json:"total_price"`
 }
 
-// PayOrderRequest представляет тело запроса для оплаты заказа
+// PayOrderRequest представляет тело запроса для оплаты заказа.
 type PayOrderRequest struct {
 	PaymentMethod string `json:"payment_method"`
 }
 
-// PayOrderResponse представляет ответ на оплату заказа
+// PayOrderResponse представляет ответ на оплату заказа.
 type PayOrderResponse struct {
 	TransactionUUID string `json:"transaction_uuid"`
 }
 
-// CancelOrderResponse представляет ответ на отмену заказа (пустой)
+// CancelOrderResponse представляет ответ на отмену заказа (пустой).
 type CancelOrderResponse struct{}
 
-// OrderDTO представляет заказ в ответе API
+// OrderDTO представляет заказ в ответе API.
 type OrderDTO struct {
 	OrderUUID       string  `json:"order_uuid"`
 	UserUUID        string  `json:"user_uuid"`
@@ -307,13 +313,13 @@ type OrderDTO struct {
 	CreatedAt       string  `json:"created_at"`
 }
 
-// ErrorResponse представляет ответ с ошибкой от API
+// ErrorResponse представляет ответ с ошибкой от API.
 type ErrorResponse struct {
 	Code    int    `json:"code"`
 	Message string `json:"message"`
 }
 
-// Вспомогательные HTTP функции
+// Вспомогательные HTTP функции.
 
 func createOrder(t *testing.T, req *CreateOrderRequest) (*CreateOrderResponse, *http.Response) {
 	t.Helper()
@@ -396,7 +402,7 @@ func cancelOrder(t *testing.T, orderUUID string) (*CancelOrderResponse, *http.Re
 	return nil, resp
 }
 
-// Тесты InventoryService (gRPC)
+// Тесты InventoryService (gRPC).
 
 func TestInventory_GetPart_Success(t *testing.T) {
 	resp, err := inventoryClient.GetPart(context.Background(), &inventoryv1.GetPartRequest{
@@ -532,7 +538,7 @@ func TestInventory_ListParts_SortedByName(t *testing.T) {
 	}
 }
 
-// Тесты ListParts.uuids
+// Тесты ListParts.uuids.
 
 func TestInventory_ListParts_ByUuids_Success(t *testing.T) {
 	uuids := []string{HullAluminumUUID, EngineIonCUUID, ShieldEnergyUUID}
@@ -647,7 +653,7 @@ func TestInventory_ListParts_ByUuids_EmptyList(t *testing.T) {
 	assert.Len(t, resp.GetParts(), 7)
 }
 
-// Тесты PaymentService (gRPC)
+// Тесты PaymentService (gRPC).
 
 func TestPayment_PayOrder_Success_Card(t *testing.T) {
 	resp, err := paymentClient.PayOrder(context.Background(), &paymentv1.PayOrderRequest{
@@ -726,7 +732,7 @@ func TestPayment_PayOrder_UniqueTransactions(t *testing.T) {
 		"каждый платёж должен генерировать уникальный UUID транзакции")
 }
 
-// Тесты OrderService (HTTP)
+// Тесты OrderService (HTTP).
 
 func TestOrder_Create_Success_MinimalParts(t *testing.T) {
 	req := &CreateOrderRequest{
@@ -1076,7 +1082,7 @@ func TestOrder_Cancel_AlreadyCancelled(t *testing.T) {
 	require.Equal(t, http.StatusConflict, cancelResp2.StatusCode)
 }
 
-// Дополнительные тесты валидации
+// Дополнительные тесты валидации.
 
 func TestOrder_Create_WithWeaponOnly(t *testing.T) {
 	req := &CreateOrderRequest{
@@ -1163,7 +1169,7 @@ func TestPayment_PayOrder_InvalidUUIDFormat(t *testing.T) {
 	testutil.AssertGRPCStatus(t, err, codes.InvalidArgument)
 }
 
-// Тесты полного жизненного цикла
+// Тесты полного жизненного цикла.
 
 func TestOrder_FullLifecycle_CreatePayGet(t *testing.T) {
 	// 1. Создаём заказ
@@ -1278,7 +1284,7 @@ func TestOrder_FullLifecycle_AllPartsPayGet(t *testing.T) {
 	assert.Equal(t, "CREDIT_CARD", *order2.PaymentMethod)
 }
 
-// Тесты ogen-валидации (400 Bad Request)
+// Тесты ogen-валидации (400 Bad Request).
 
 func TestOrder_Create_InvalidBody_EmptyJSON(t *testing.T) {
 	httpReq, err := http.NewRequest(http.MethodPost, orderBaseURL()+"/api/v1/orders", bytes.NewReader([]byte("{}")))
@@ -1451,7 +1457,7 @@ func TestOrder_Cancel_InvalidUUIDInPath(t *testing.T) {
 	require.Equal(t, http.StatusBadRequest, resp.StatusCode)
 }
 
-// Тесты out of stock
+// Тесты out of stock.
 
 func TestOrder_Create_OutOfStock_Hull(t *testing.T) {
 	// Плазменный корпус — stock_quantity=0, заказ должен быть отклонён
@@ -1483,7 +1489,7 @@ func TestOrder_Create_OutOfStock_WithOptionalParts(t *testing.T) {
 	assert.NotEqual(t, http.StatusCreated, resp.StatusCode)
 }
 
-// Тесты Inventory: out of stock деталь присутствует в списке
+// Тесты Inventory: out of stock деталь присутствует в списке.
 
 func TestInventory_GetPart_OutOfStock(t *testing.T) {
 	resp, err := inventoryClient.GetPart(context.Background(), &inventoryv1.GetPartRequest{
@@ -1513,7 +1519,7 @@ func TestInventory_ListParts_ByUuids_IncludesOutOfStock(t *testing.T) {
 	assert.Equal(t, int64(0), resp.GetParts()[1].GetStockQuantity())
 }
 
-// Тесты Order: проверка created_at
+// Тесты Order: проверка created_at.
 
 func TestOrder_Get_VerifyCreatedAt(t *testing.T) {
 	createReq := &CreateOrderRequest{
@@ -1543,7 +1549,7 @@ func TestOrder_Get_VerifyCreatedAt(t *testing.T) {
 	assert.False(t, createdAt.IsZero(), "created_at не должен быть нулевым")
 }
 
-// Тесты с shield only (без weapon)
+// Тесты с shield only (без weapon).
 
 func TestOrder_Create_WithShieldOnly(t *testing.T) {
 	req := &CreateOrderRequest{
@@ -1562,7 +1568,7 @@ func TestOrder_Create_WithShieldOnly(t *testing.T) {
 	assert.Equal(t, expectedTotal, result.TotalPrice)
 }
 
-// Тесты соответствия типа детали слоту корабля
+// Тесты соответствия типа детали слоту корабля.
 
 func TestOrder_Create_WrongPartType_WeaponAsHull(t *testing.T) {
 	// В слот корпуса передан UUID оружия — InventoryService возвращает InvalidArgument,
@@ -1623,7 +1629,7 @@ func TestOrder_Create_DuplicateUUID_HullAndEngine(t *testing.T) {
 	require.Equal(t, http.StatusBadRequest, resp.StatusCode)
 }
 
-// Тесты ValidateCompatibility (gRPC)
+// Тесты ValidateCompatibility (gRPC).
 
 func TestInventory_ValidateCompatibility_Success_Compatible(t *testing.T) {
 	// Алюминиевый корпус (strength=50) + Ионный двигатель C (required_strength=30) — совместимы
@@ -1722,7 +1728,7 @@ func TestInventory_ValidateCompatibility_NotFound(t *testing.T) {
 	testutil.AssertGRPCStatus(t, err, codes.NotFound)
 }
 
-// Тесты ReserveParts (gRPC)
+// Тесты ReserveParts (gRPC).
 
 func TestInventory_ReserveParts_Success(t *testing.T) {
 	// Резервируем доступные детали — ожидаем успех
@@ -1769,7 +1775,7 @@ func TestInventory_ReserveParts_SinglePart(t *testing.T) {
 	require.NoError(t, err)
 }
 
-// Тесты ReleaseParts (gRPC)
+// Тесты ReleaseParts (gRPC).
 
 func TestInventory_ReleaseParts_Success(t *testing.T) {
 	// Сначала резервируем, потом освобождаем — полный цикл
@@ -1803,7 +1809,7 @@ func TestInventory_ReleaseParts_NotFound(t *testing.T) {
 	testutil.AssertGRPCStatus(t, err, codes.NotFound)
 }
 
-// Тесты Order Create с несовместимыми деталями (HTTP)
+// Тесты Order Create с несовместимыми деталями (HTTP).
 
 func TestOrder_Create_IncompatibleParts_WeakHullStrongEngine(t *testing.T) {
 	// Алюминиевый корпус (strength=50) + Ионный двигатель B (required_strength=70)
@@ -1855,7 +1861,7 @@ func TestOrder_Create_CompatibleParts_StrongHullStrongEngine(t *testing.T) {
 	assert.Equal(t, int64(HullTitaniumPrice+EngineIonBPrice), result.TotalPrice)
 }
 
-// Тесты Reserve/Release через полный жизненный цикл заказа
+// Тесты Reserve/Release через полный жизненный цикл заказа.
 
 func TestInventory_ReserveRelease_FullCycle(t *testing.T) {
 	// Резервируем → освобождаем → снова резервируем — проверяем, что счётчики корректны
@@ -1886,7 +1892,7 @@ func TestInventory_ReserveRelease_FullCycle(t *testing.T) {
 	require.NoError(t, err)
 }
 
-// Тесты user_uuid (валидация и проброс через всю цепочку)
+// Тесты user_uuid (валидация и проброс через всю цепочку).
 
 func TestOrder_Create_MissingUserUUID(t *testing.T) {
 	// Без user_uuid — ogen отклоняет запрос ещё до сервиса
@@ -1940,7 +1946,7 @@ func TestOrder_Get_ReturnsUserUUID(t *testing.T) {
 //
 // В API-тестах Kafka нет (noopProducer), поэтому статус ASSEMBLED через обычную
 // цепочку Pay → OrderPaid → AssemblyService → ShipAssembled получить нельзя
-// Обновляем статус напрямую в БД — это честная проверка именно Cancel-логики
+// Обновляем статус напрямую в БД — это честная проверка именно Cancel-логики.
 
 func TestOrder_Cancel_AlreadyAssembled(t *testing.T) {
 	// Создаём и оплачиваем заказ, чтобы детали были зарезервированы
@@ -1977,7 +1983,7 @@ func TestOrder_Cancel_AlreadyAssembled(t *testing.T) {
 	assert.Equal(t, "ASSEMBLED", order.Status)
 }
 
-// Тесты CommitParts (gRPC)
+// Тесты CommitParts (gRPC).
 
 func TestInventory_CommitParts_Success(t *testing.T) {
 	// Полный цикл: резервируем → списываем. После Commit stock должен уменьшиться на 1.
@@ -2064,7 +2070,7 @@ func TestInventory_CommitParts_PartialCommit_RollbackOnMissing(t *testing.T) {
 	require.NoError(t, err)
 }
 
-// Тесты Cancel: возврат резерва
+// Тесты Cancel: возврат резерва.
 
 func TestOrder_Cancel_ReleasesReservedParts(t *testing.T) {
 	// После Cancel зарезервированные детали должны освободиться

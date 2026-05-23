@@ -13,6 +13,7 @@ func OrderToRecord(order model.Order) record.Order {
 		Status:    string(order.Status),
 		CreatedAt: order.CreatedAt,
 		Version:   order.Version,
+		UserUUID:  order.UserUUID,
 	}
 
 	if order.TransactionUUID != nil {
@@ -44,6 +45,7 @@ func OrderToModel(order record.Order) model.Order {
 		Status:    model.OrderStatus(order.Status),
 		CreatedAt: order.CreatedAt,
 		Version:   order.Version,
+		UserUUID:  order.UserUUID,
 	}
 
 	if order.TransactionUUID != nil {

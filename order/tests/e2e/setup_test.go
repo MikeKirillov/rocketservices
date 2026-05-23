@@ -33,14 +33,6 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/pressly/goose/v3"
-	"github.com/testcontainers/testcontainers-go"
-	tcpostgres "github.com/testcontainers/testcontainers-go/modules/postgres"
-	tcredpanda "github.com/testcontainers/testcontainers-go/modules/redpanda"
-	"github.com/testcontainers/testcontainers-go/wait"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials/insecure"
-	"google.golang.org/grpc/test/bufconn"
-
 	assemblyApp "github.com/student/assembly/pkg/app"
 	invApp "github.com/student/inventory/pkg/app"
 	inventoryClientPkg "github.com/student/order/internal/client/grpc/inventory/v1"
@@ -53,6 +45,13 @@ import (
 	wrappedKafkaProducer "github.com/student/platform/pkg/kafka/producer"
 	inventoryv1 "github.com/student/shared/pkg/proto/inventory/v1"
 	paymentv1 "github.com/student/shared/pkg/proto/payment/v1"
+	"github.com/testcontainers/testcontainers-go"
+	tcpostgres "github.com/testcontainers/testcontainers-go/modules/postgres"
+	tcredpanda "github.com/testcontainers/testcontainers-go/modules/redpanda"
+	"github.com/testcontainers/testcontainers-go/wait"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/grpc/test/bufconn"
 )
 
 // Предзагруженные UUID и цены деталей (из migrations/inventory/00002_seed_parts.sql).
