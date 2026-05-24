@@ -117,7 +117,8 @@ func TestCancel(t *testing.T) {
 			i := mocks.NewInventoryServiceClient(t)
 			p := mocks.NewPaymentServiceClient(t)
 			m := mocks.NewTxManager(t)
-			s := service.NewService(r, i, p, m)
+			o := mocks.NewOrderProducerService(t)
+			s := service.NewService(r, i, p, m, o)
 
 			test.setupMock(i, r)
 

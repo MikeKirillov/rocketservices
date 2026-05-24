@@ -7,10 +7,11 @@ type TxManager interface {
 }
 
 type service struct {
-	orderRepository OrderRepository
-	inventoryClient InventoryServiceClient
-	paymentClient   PaymentServiceClient
-	txManager       TxManager
+	orderRepository      OrderRepository
+	inventoryClient      InventoryServiceClient
+	paymentClient        PaymentServiceClient
+	txManager            TxManager
+	orderProducerService OrderProducerService
 }
 
 func NewService(
@@ -18,11 +19,13 @@ func NewService(
 	inventoryClient InventoryServiceClient,
 	paymentClient PaymentServiceClient,
 	txManager TxManager,
+	orderProducerService OrderProducerService,
 ) *service {
 	return &service{
-		orderRepository: orderRepository,
-		inventoryClient: inventoryClient,
-		paymentClient:   paymentClient,
-		txManager:       txManager,
+		orderRepository:      orderRepository,
+		inventoryClient:      inventoryClient,
+		paymentClient:        paymentClient,
+		txManager:            txManager,
+		orderProducerService: orderProducerService,
 	}
 }

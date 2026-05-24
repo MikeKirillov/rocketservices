@@ -30,3 +30,10 @@ http:
     idleSec: 60
     shutdownSec: 10
     middlwareSec: 10
+
+kafka:
+  producer:
+    topic: "order.paid"
+  consumer:
+    topic: "assembly.ship-assembled"
+    group: 1

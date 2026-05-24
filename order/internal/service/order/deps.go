@@ -25,3 +25,7 @@ type InventoryServiceClient interface {
 type PaymentServiceClient interface {
 	PayOrder(ctx context.Context, orderRq input.PayOrderRq) (uuid.UUID, error)
 }
+
+type OrderProducerService interface {
+	ProduceOrderPaid(ctx context.Context, order model.Order) error
+}
