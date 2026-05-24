@@ -33,7 +33,7 @@ packages:
       include-interface-regex: ".*Service"
   github.com/MikeKirillov/rocketservices/order/internal/service/order:
     config:
-      include-interface-regex: ".*(Repository|Client|Manager)"
+      include-interface-regex: ".*(Repository|Client|Manager|Service)"
 
   # Inventory service
   github.com/MikeKirillov/rocketservices/inventory/internal/api/inventory/v1:

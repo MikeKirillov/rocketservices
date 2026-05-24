@@ -6,6 +6,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/IBM/sarama"
 	trmpgx "github.com/avito-tech/go-transaction-manager/drivers/pgxv5/v2"
 	"github.com/avito-tech/go-transaction-manager/trm/v2/manager"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -17,22 +18,38 @@ import (
 	inventoryClientV1 "github.com/MikeKirillov/rocketservices/order/internal/client/grpc/inventory/v1"
 	paymentClientV1 "github.com/MikeKirillov/rocketservices/order/internal/client/grpc/payment/v1"
 	orderConfig "github.com/MikeKirillov/rocketservices/order/internal/config"
+	"github.com/MikeKirillov/rocketservices/order/internal/producer"
 	orderRepository "github.com/MikeKirillov/rocketservices/order/internal/repository/order"
 	orderService "github.com/MikeKirillov/rocketservices/order/internal/service/order"
 	"github.com/MikeKirillov/rocketservices/platform/pkg/closer"
+	wrappedKafkaProducer "github.com/MikeKirillov/rocketservices/platform/pkg/kafka/producer"
 	orderv1 "github.com/MikeKirillov/rocketservices/shared/pkg/openapi/order/v1"
 	inventoryv1 "github.com/MikeKirillov/rocketservices/shared/pkg/proto/inventory/v1"
 	paymentv1 "github.com/MikeKirillov/rocketservices/shared/pkg/proto/payment/v1"
 )
 
 type diContainer struct {
-	pgPool          *pgxpool.Pool
-	txManager       *manager.Manager
-	orderRepo       orderService.OrderRepository
+	// Инфраструктура
+	pgPool       *pgxpool.Pool
+	txManager    *manager.Manager
+	syncProducer sarama.SyncProducer
+
+	// Kafka-обёртки
+	orderPaidProducer *wrappedKafkaProducer.Producer
+
+	// Репо
+	orderRepo orderService.OrderRepository
+
+	// Интеграции
 	inventoryClient orderService.InventoryServiceClient
 	paymentClient   orderService.PaymentServiceClient
-	orderSvc        orderV1API.OrderService
-	orderV1Handler  orderv1.Handler
+
+	// Сервисы
+	orderSvc      orderV1API.OrderService
+	orderProducer orderService.OrderProducerService
+
+	// API-обработчики
+	orderV1Handler orderv1.Handler
 }
 
 func (d *diContainer) PGPool(ctx context.Context) *pgxpool.Pool {
@@ -147,6 +164,47 @@ func newGRPCClient(address string, time, timeout time.Duration) (conn *grpc.Clie
 	)
 }
 
+// SyncProducer возвращает синхронный Kafka-продюсер
+// При первом вызове создаёт продюсер и регистрирует closer.
+func (d *diContainer) SyncProducer() sarama.SyncProducer {
+	if d.syncProducer == nil {
+		p, err := sarama.NewSyncProducer(
+			orderConfig.AppConfig().Kafka.Brokers,
+			orderConfig.AppConfig().Kafka.OrderPaidProducer.SaramaConfig(),
+		)
+		if err != nil {
+			slog.Error("не удалось создать sync producer", "error", err)
+			os.Exit(1)
+		}
+
+		closer.Add("Kafka sync producer", func(_ context.Context) error {
+			return p.Close()
+		})
+
+		d.syncProducer = p
+	}
+	return d.syncProducer
+}
+
+// OrderPaidProducer возвращает обёртку Kafka-потребителя для событий OrderPaid.
+func (d *diContainer) OrderPaidProducer() *wrappedKafkaProducer.Producer {
+	if d.orderPaidProducer == nil {
+		d.orderPaidProducer = wrappedKafkaProducer.NewProducer(
+			d.SyncProducer(),
+			orderConfig.AppConfig().Kafka.OrderPaidProducer.Topic(),
+		)
+	}
+	return d.orderPaidProducer
+}
+
+// ProducerService возвращает сервис потребления событий из Kafka.
+func (d *diContainer) ProducerService() orderService.OrderProducerService {
+	if d.orderProducer == nil {
+		d.orderProducer = producer.NewService(d.OrderPaidProducer())
+	}
+	return d.orderProducer
+}
+
 func (d *diContainer) OrderService(ctx context.Context) orderV1API.OrderService {
 	if d.orderSvc == nil {
 		d.orderSvc = orderService.NewService(
@@ -154,6 +212,7 @@ func (d *diContainer) OrderService(ctx context.Context) orderV1API.OrderService 
 			d.InventoryClient(ctx),
 			d.PaymentClient(ctx),
 			d.TxManager(ctx),
+			d.ProducerService(),
 		)
 	}
 	return d.orderSvc

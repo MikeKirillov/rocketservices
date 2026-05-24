@@ -15,6 +15,7 @@ type config struct {
 	GRPC   grpcConfig   `yaml:"grpc"`
 	Logger loggerConfig `yaml:"logger"`
 	PG     pgConfig     `yaml:"pg"`
+	Kafka  kafkaConfig  `yaml:"kafka"`
 }
 
 var appConfig *config

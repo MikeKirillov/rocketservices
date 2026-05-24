@@ -23,7 +23,7 @@ func (r *repository) Update(ctx context.Context, order model.Order) error {
 
 	db := r.getter.DefaultTrOrDB(ctx, r.pool)
 	tag, err := db.Exec(
-		ctx, query, o.Status, o.TransactionUUID, o.PaymentMethod, o.UpdatedAt, o.UUID, o.Version, o.UserUUID,
+		ctx, query, o.Status, o.TransactionUUID, o.PaymentMethod, o.UpdatedAt, o.UserUUID, o.UUID, o.Version,
 	)
 	if err != nil {
 		return fmt.Errorf("обновление записи %s: %w", o.UUID, err)

@@ -27,6 +27,7 @@ func (a *App) Run() error {
 
 	a.startGracefulShutdown(ctx)
 
+	// a.runConsumer(ctx)
 	return a.runHTTPServer()
 }
 
@@ -59,6 +60,11 @@ func (a *App) runHTTPServer() error {
 
 	return nil
 }
+
+// func (a *App) runConsumer(ctx context.Context) error {
+
+// 	return nil
+// }
 
 func New(ctx context.Context, configPath string) *App {
 	a := &App{configPath: configPath}
