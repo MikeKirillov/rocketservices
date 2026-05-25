@@ -1,4 +1,4 @@
-package producer
+package order
 
 import (
 	"context"
@@ -9,6 +9,7 @@ import (
 
 	"github.com/MikeKirillov/rocketservices/order/internal/model"
 	"github.com/MikeKirillov/rocketservices/platform/pkg/kafka"
+	sharedErrs "github.com/MikeKirillov/rocketservices/shared/pkg/errors"
 	eventsv1 "github.com/MikeKirillov/rocketservices/shared/pkg/proto/events/v1"
 )
 
@@ -32,7 +33,7 @@ func (s *service) ProduceOrderPaid(ctx context.Context, order model.Order) error
 	payload, err := proto.Marshal(msg)
 	if err != nil {
 		slog.ErrorContext(ctx, "не удалось сериализовать OrderPaid", "error", err)
-		return err
+		return sharedErrs.NewInternal(err)
 	}
 
 	return s.orderPaidProducer.Send(ctx, &kafka.Message{

@@ -13,7 +13,7 @@ import (
 	paymentClientV1 "github.com/MikeKirillov/rocketservices/order/internal/client/grpc/payment/v1"
 	orderConfig "github.com/MikeKirillov/rocketservices/order/internal/config"
 	"github.com/MikeKirillov/rocketservices/order/internal/middleware"
-	"github.com/MikeKirillov/rocketservices/order/internal/producer"
+	producer "github.com/MikeKirillov/rocketservices/order/internal/producer/order"
 	orderRepo "github.com/MikeKirillov/rocketservices/order/internal/repository/order"
 	orderService "github.com/MikeKirillov/rocketservices/order/internal/service/order"
 	wrappedKafkaProducer "github.com/MikeKirillov/rocketservices/platform/pkg/kafka/producer"

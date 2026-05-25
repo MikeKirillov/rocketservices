@@ -16,8 +16,8 @@ import (
 	"github.com/MikeKirillov/rocketservices/payment/internal/config"
 	"github.com/MikeKirillov/rocketservices/platform/pkg/closer"
 	"github.com/MikeKirillov/rocketservices/platform/pkg/grpc/health"
+	"github.com/MikeKirillov/rocketservices/platform/pkg/interceptor"
 	"github.com/MikeKirillov/rocketservices/platform/pkg/logger"
-	"github.com/MikeKirillov/rocketservices/shared/interceptor"
 	sharedErrs "github.com/MikeKirillov/rocketservices/shared/pkg/errors"
 	paymentv1 "github.com/MikeKirillov/rocketservices/shared/pkg/proto/payment/v1"
 )
@@ -63,9 +63,11 @@ func (a *App) startGracefulShutdown(ctx context.Context, cancel context.CancelFu
 		slog.Info("получен сигнал завершения, начинаем graceful shutdown")
 		shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), config.AppConfig().GRPC.ShutdownTimeout())
 		defer shutdownCancel()
+
 		if closeErr := closer.CloseAll(shutdownCtx); closeErr != nil {
 			slog.Error("ошибка при завершении работы", "error", closeErr)
 		}
+		slog.Info("сервер остановлен")
 	}()
 }
 
