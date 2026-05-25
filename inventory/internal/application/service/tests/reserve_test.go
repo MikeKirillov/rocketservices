@@ -19,6 +19,8 @@ import (
 )
 
 func TestReserve(t *testing.T) {
+	t.Parallel()
+
 	type args struct {
 		ids []uuid.UUID
 	}
@@ -78,7 +80,7 @@ func TestReserve(t *testing.T) {
 			name: "зарезервировано - ошибок нет",
 			args: args{ids: ids},
 			setupMock: func(m *mocks.TxManager, r *mocks.PartRepository) {
-				r.EXPECT().ListByUUIDs(ctx, ids).Return(expModelSlice, nil)
+				r.EXPECT().ListByUUIDsForUpdate(ctx, ids).Return(expModelSlice, nil)
 				r.EXPECT().UpdateReservedBatch(ctx, expModelSlice).Return(nil)
 				m.EXPECT().
 					Do(ctx, mock.Anything).
@@ -98,7 +100,7 @@ func TestReserve(t *testing.T) {
 			name: "один из UUID не найден - errs.ErrPartNotFound",
 			args: args{ids: ids},
 			setupMock: func(m *mocks.TxManager, r *mocks.PartRepository) {
-				r.EXPECT().ListByUUIDs(ctx, ids).Return(nil, errs.ErrPartNotFound)
+				r.EXPECT().ListByUUIDsForUpdate(ctx, ids).Return(nil, errs.ErrPartNotFound)
 				m.EXPECT().
 					Do(ctx, mock.Anything).
 					Run(func(ctx context.Context, fn func(context.Context) error) {
@@ -118,7 +120,7 @@ func TestReserve(t *testing.T) {
 			name: "ошибка репозитория - errInternal",
 			args: args{ids: ids},
 			setupMock: func(m *mocks.TxManager, r *mocks.PartRepository) {
-				r.EXPECT().ListByUUIDs(ctx, ids).Return(expModelSlice, nil)
+				r.EXPECT().ListByUUIDsForUpdate(ctx, ids).Return(expModelSlice, nil)
 				r.EXPECT().UpdateReservedBatch(ctx, expModelSlice).Return(errInternal)
 				m.EXPECT().
 					Do(ctx, mock.Anything).
@@ -139,7 +141,7 @@ func TestReserve(t *testing.T) {
 			name: "ошибка при создании резерва - errs.ErrOutOfStock",
 			args: args{ids: ids},
 			setupMock: func(m *mocks.TxManager, r *mocks.PartRepository) {
-				r.EXPECT().ListByUUIDs(ctx, ids).Return(expModelSliceOutStock, nil)
+				r.EXPECT().ListByUUIDsForUpdate(ctx, ids).Return(expModelSliceOutStock, nil)
 				m.EXPECT().
 					Do(ctx, mock.Anything).
 					Run(func(ctx context.Context, fn func(context.Context) error) {
@@ -159,6 +161,8 @@ func TestReserve(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
+			t.Parallel()
+
 			r := mocks.NewPartRepository(t)
 			c := mocks.NewCompatibilityChecker(t)
 			m := mocks.NewTxManager(t)

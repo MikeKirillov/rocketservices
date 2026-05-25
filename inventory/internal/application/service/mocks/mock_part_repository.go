@@ -306,6 +306,131 @@ func (_c *PartRepository_ListByUUIDs_Call) RunAndReturn(run func(ctx context.Con
 	return _c
 }
 
+// ListByUUIDsForUpdate provides a mock function for the type PartRepository
+func (_mock *PartRepository) ListByUUIDsForUpdate(ctx context.Context, uuids []uuid.UUID) ([]model.Part, error) {
+	ret := _mock.Called(ctx, uuids)
+
+	if len(ret) == 0 {
+		panic("no return value specified for ListByUUIDsForUpdate")
+	}
+
+	var r0 []model.Part
+	var r1 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, []uuid.UUID) ([]model.Part, error)); ok {
+		return returnFunc(ctx, uuids)
+	}
+	if returnFunc, ok := ret.Get(0).(func(context.Context, []uuid.UUID) []model.Part); ok {
+		r0 = returnFunc(ctx, uuids)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]model.Part)
+		}
+	}
+	if returnFunc, ok := ret.Get(1).(func(context.Context, []uuid.UUID) error); ok {
+		r1 = returnFunc(ctx, uuids)
+	} else {
+		r1 = ret.Error(1)
+	}
+	return r0, r1
+}
+
+// PartRepository_ListByUUIDsForUpdate_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'ListByUUIDsForUpdate'
+type PartRepository_ListByUUIDsForUpdate_Call struct {
+	*mock.Call
+}
+
+// ListByUUIDsForUpdate is a helper method to define mock.On call
+//   - ctx context.Context
+//   - uuids []uuid.UUID
+func (_e *PartRepository_Expecter) ListByUUIDsForUpdate(ctx interface{}, uuids interface{}) *PartRepository_ListByUUIDsForUpdate_Call {
+	return &PartRepository_ListByUUIDsForUpdate_Call{Call: _e.mock.On("ListByUUIDsForUpdate", ctx, uuids)}
+}
+
+func (_c *PartRepository_ListByUUIDsForUpdate_Call) Run(run func(ctx context.Context, uuids []uuid.UUID)) *PartRepository_ListByUUIDsForUpdate_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 []uuid.UUID
+		if args[1] != nil {
+			arg1 = args[1].([]uuid.UUID)
+		}
+		run(
+			arg0,
+			arg1,
+		)
+	})
+	return _c
+}
+
+func (_c *PartRepository_ListByUUIDsForUpdate_Call) Return(vs []model.Part, err error) *PartRepository_ListByUUIDsForUpdate_Call {
+	_c.Call.Return(vs, err)
+	return _c
+}
+
+func (_c *PartRepository_ListByUUIDsForUpdate_Call) RunAndReturn(run func(ctx context.Context, uuids []uuid.UUID) ([]model.Part, error)) *PartRepository_ListByUUIDsForUpdate_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// UpdateCommitBatch provides a mock function for the type PartRepository
+func (_mock *PartRepository) UpdateCommitBatch(ctx context.Context, parts []model.Part) error {
+	ret := _mock.Called(ctx, parts)
+
+	if len(ret) == 0 {
+		panic("no return value specified for UpdateCommitBatch")
+	}
+
+	var r0 error
+	if returnFunc, ok := ret.Get(0).(func(context.Context, []model.Part) error); ok {
+		r0 = returnFunc(ctx, parts)
+	} else {
+		r0 = ret.Error(0)
+	}
+	return r0
+}
+
+// PartRepository_UpdateCommitBatch_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'UpdateCommitBatch'
+type PartRepository_UpdateCommitBatch_Call struct {
+	*mock.Call
+}
+
+// UpdateCommitBatch is a helper method to define mock.On call
+//   - ctx context.Context
+//   - parts []model.Part
+func (_e *PartRepository_Expecter) UpdateCommitBatch(ctx interface{}, parts interface{}) *PartRepository_UpdateCommitBatch_Call {
+	return &PartRepository_UpdateCommitBatch_Call{Call: _e.mock.On("UpdateCommitBatch", ctx, parts)}
+}
+
+func (_c *PartRepository_UpdateCommitBatch_Call) Run(run func(ctx context.Context, parts []model.Part)) *PartRepository_UpdateCommitBatch_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 context.Context
+		if args[0] != nil {
+			arg0 = args[0].(context.Context)
+		}
+		var arg1 []model.Part
+		if args[1] != nil {
+			arg1 = args[1].([]model.Part)
+		}
+		run(
+			arg0,
+			arg1,
+		)
+	})
+	return _c
+}
+
+func (_c *PartRepository_UpdateCommitBatch_Call) Return(err error) *PartRepository_UpdateCommitBatch_Call {
+	_c.Call.Return(err)
+	return _c
+}
+
+func (_c *PartRepository_UpdateCommitBatch_Call) RunAndReturn(run func(ctx context.Context, parts []model.Part) error) *PartRepository_UpdateCommitBatch_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // UpdateReservedBatch provides a mock function for the type PartRepository
 func (_mock *PartRepository) UpdateReservedBatch(ctx context.Context, parts []model.Part) error {
 	ret := _mock.Called(ctx, parts)

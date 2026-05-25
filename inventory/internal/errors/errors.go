@@ -10,6 +10,7 @@ var (
 	ErrInvalidProperties = errors.New("некорректные свойства компонента")
 	ErrOutOfStock        = errors.New("деталь отсутствует на складе")
 	ErrNothingToRelease  = errors.New("резерв равен нулю")
+	ErrNothingToCommit   = errors.New("резерв равен нулю или деталь отсутствует на складе")
 	ErrInvalidUUID       = errors.New("неверный формат UUID")
 	ErrIncompatibleParts = errors.New("детали несовместимы")
 	ErrPartTypeMismatch  = errors.New("тип детали не соответствует слоту корабля")

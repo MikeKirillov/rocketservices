@@ -13,7 +13,7 @@ import (
 func (s *service) Release(ctx context.Context, ids []uuid.UUID) error {
 	return s.txManager.Do(ctx, func(ctx context.Context) error {
 		// Загрузите детали по uuids через репозиторий.
-		parts, err := s.partRepository.ListByUUIDs(ctx, ids)
+		parts, err := s.partRepository.ListByUUIDsForUpdate(ctx, ids)
 		if err != nil {
 			switch {
 			case errors.Is(err, errs.ErrPartNotFound):
