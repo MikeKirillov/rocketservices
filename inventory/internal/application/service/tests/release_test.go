@@ -19,8 +19,6 @@ import (
 )
 
 func TestRelease(t *testing.T) {
-	t.Parallel()
-
 	type args struct {
 		ids []uuid.UUID
 	}
@@ -150,8 +148,6 @@ func TestRelease(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			t.Parallel()
-
 			r := mocks.NewPartRepository(t)
 			c := mocks.NewCompatibilityChecker(t)
 			m := mocks.NewTxManager(t)
