@@ -39,7 +39,7 @@ packages:
   github.com/MikeKirillov/rocketservices/inventory/internal/api/inventory/v1:
     config:
       include-interface-regex: ".*Service"
-  github.com/MikeKirillov/rocketservices/inventory/internal/service/application/part:
+  github.com/MikeKirillov/rocketservices/inventory/internal/application/service:
     config:
       include-interface-regex: ".*(Repository|Checker|Manager)"
 

@@ -15,4 +15,5 @@ type PartService interface {
 	Validate(ctx context.Context, slots input.ShipSlots) error
 	Reserve(ctx context.Context, ids []uuid.UUID) error
 	Release(ctx context.Context, ids []uuid.UUID) error
+	Commit(ctx context.Context, ids []uuid.UUID) error
 }

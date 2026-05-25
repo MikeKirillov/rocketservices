@@ -1,10 +1,12 @@
 package part
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
 	"log/slog"
+	"slices"
 
 	trmpgx "github.com/avito-tech/go-transaction-manager/drivers/pgxv5/v2"
 	"github.com/google/uuid"
@@ -111,6 +113,32 @@ func (r *repository) ListByUUIDs(ctx context.Context, uuids []uuid.UUID) ([]mode
 	uuid, name, description, part_type, price, stock_quantity, reserved, properties, created_at
 	FROM parts WHERE uuid = ANY($1)`
 
+	parts, err := r.listByIds(ctx, uuids, query)
+	if err != nil {
+		return nil, err
+	}
+	return parts, nil
+}
+
+func (r *repository) ListByUUIDsForUpdate(ctx context.Context, uuids []uuid.UUID) ([]model.Part, error) {
+	query := `SELECT
+	uuid, name, description, part_type, price, stock_quantity, reserved, properties, created_at
+	FROM parts WHERE uuid = ANY($1) ORDER BY uuid FOR UPDATE`
+
+	// Обязательно выполняем сортировку uuid перед отправкой запроса в БД,
+	// принимая uuid.UUID (массив 16 байт) за слайс
+	slices.SortFunc(uuids, func(a, b uuid.UUID) int {
+		return bytes.Compare(a[:], b[:])
+	})
+
+	parts, err := r.listByIds(ctx, uuids, query)
+	if err != nil {
+		return nil, err
+	}
+	return parts, nil
+}
+
+func (r *repository) listByIds(ctx context.Context, uuids []uuid.UUID, query string) ([]model.Part, error) {
 	rows, err := r.getter.DefaultTrOrDB(ctx, r.pool).Query(ctx, query, uuids)
 	if err != nil {
 		slog.Error("не удалось выполнить выборку", "error", err)
@@ -172,6 +200,35 @@ func (r *repository) UpdateReservedBatch(ctx context.Context, parts []model.Part
 	}
 
 	tag, err := r.getter.DefaultTrOrDB(ctx, r.pool).Exec(ctx, query, uuids, reservedVal)
+	if err != nil {
+		return err
+	}
+
+	if tag.RowsAffected() == 0 {
+		return errors.New("не удалось обновить записи")
+	}
+
+	return nil
+}
+
+func (r *repository) UpdateCommitBatch(ctx context.Context, parts []model.Part) error {
+	query := `UPDATE parts AS p
+	SET reserved = batch.reserved,
+	stock_quantity = batch.stock_quantity,
+	FROM unnest($1::uuid[], $2::int[], $3::int[]) AS batch(uuid, reserved, stock_quantity)
+	WHERE p.uuid = batch.uuid`
+
+	uuids := make([]uuid.UUID, len(parts))
+	reservedVal := make([]int, len(parts))
+	stockVal := make([]int, len(parts))
+
+	for i, p := range parts {
+		uuids[i] = p.UUID()
+		reservedVal[i] = p.Reserved()
+		stockVal[i] = p.StockQuantity()
+	}
+
+	tag, err := r.getter.DefaultTrOrDB(ctx, r.pool).Exec(ctx, query, uuids, reservedVal, stockVal)
 	if err != nil {
 		return err
 	}

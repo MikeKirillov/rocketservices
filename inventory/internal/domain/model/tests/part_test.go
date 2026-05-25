@@ -67,3 +67,30 @@ func TestRelease(t *testing.T) {
 		assert.True(t, errors.Is(err, errs.ErrNothingToRelease))
 	})
 }
+
+func TestCommit(t *testing.T) {
+	var (
+		id      = uuid.New()
+		str     = gofakeit.Word()
+		num64   = gofakeit.Int64()
+		num     = gofakeit.Int()
+		now     = time.Now()
+		hull, _ = model.NewHullProperties(num)
+
+		part    = model.RestorePart(id, str, str, num64, model.PartTypeHull, num, num, hull, now)
+		partErr = model.RestorePart(id, str, str, num64, model.PartTypeHull, 0, 0, hull, now)
+	)
+
+	t.Run("отмена релиза - ошибок нет", func(t *testing.T) {
+		err := part.Commit()
+
+		require.NoError(t, err)
+	})
+
+	t.Run("отмена релиза - errs.ErrNothingToCommit", func(t *testing.T) {
+		err := partErr.Commit()
+
+		require.Error(t, err)
+		assert.True(t, errors.Is(err, errs.ErrNothingToCommit))
+	})
+}

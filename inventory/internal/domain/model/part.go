@@ -72,6 +72,17 @@ func (p *part) Release() error {
 	return nil
 }
 
+// Commit освобождает одну зарезервированную единицу компонента.
+// Возвращает ErrNothingToCommit, если резерв равен нулю.
+func (p *Part) Commit() error {
+	if p.reserved == 0 || p.stockQuantity == 0 {
+		return errs.ErrNothingToCommit
+	}
+	p.reserved--
+	p.stockQuantity--
+	return nil
+}
+
 // RestorePart восстанавливает сущность из БД (без валидации — данные уже проверены).
 func RestorePart(
 	id uuid.UUID,
