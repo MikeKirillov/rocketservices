@@ -11,7 +11,6 @@ import (
 	orderAPIV1 "github.com/MikeKirillov/rocketservices/order/internal/api/order/v1"
 	inventoryClientV1 "github.com/MikeKirillov/rocketservices/order/internal/client/grpc/inventory/v1"
 	paymentClientV1 "github.com/MikeKirillov/rocketservices/order/internal/client/grpc/payment/v1"
-	orderConfig "github.com/MikeKirillov/rocketservices/order/internal/config"
 	"github.com/MikeKirillov/rocketservices/order/internal/middleware"
 	producer "github.com/MikeKirillov/rocketservices/order/internal/producer/order"
 	orderRepo "github.com/MikeKirillov/rocketservices/order/internal/repository/order"
@@ -41,10 +40,7 @@ func NewHTTPHandler(
 		slog.Error("не удалось создать sync producer", "error", err)
 		return nil, err
 	}
-	orderPaidProducer := wrappedKafkaProducer.NewProducer(
-		syncProducer,
-		orderConfig.AppConfig().Kafka.OrderPaidProducer.Topic(),
-	)
+	orderPaidProducer := wrappedKafkaProducer.NewProducer(syncProducer, "order.paid")
 	producerService := producer.NewService(orderPaidProducer)
 
 	service := orderService.NewService(repo, inventoryClient, paymentClient, txManager, producerService)

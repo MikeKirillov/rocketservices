@@ -144,7 +144,8 @@ func TestDB_Order_Cancel_PersistsStatus(t *testing.T) {
 func TestDB_Order_Create_IncrementsReserved(t *testing.T) {
 	hullUUID := uuid.New().String()
 	engineUUID := uuid.New().String()
-	_, err := inventoryDBPool.Exec(context.Background(),
+	_, err := inventoryDBPool.Exec(
+		context.Background(),
 		`INSERT INTO parts (uuid, name, description, part_type, price, stock_quantity, properties)
 		 VALUES
 		   ($1, 'DB-state hull', '', 'HULL', 1000, 5, '{"hull": {"strength": 100}}'),
@@ -175,7 +176,8 @@ func TestDB_Order_Create_IncrementsReserved(t *testing.T) {
 // транзакция должна откатиться целиком.
 func TestDB_Order_FailedCreate_DoesNotLeakReserved(t *testing.T) {
 	engineUUID := uuid.New().String()
-	_, err := inventoryDBPool.Exec(context.Background(),
+	_, err := inventoryDBPool.Exec(
+		context.Background(),
 		`INSERT INTO parts (uuid, name, description, part_type, price, stock_quantity, properties)
 		 VALUES ($1, 'DB-state engine leak', '', 'ENGINE', 1000, 5, '{"engine": {"class": "C", "required_strength": 50}}')`,
 		engineUUID,
@@ -205,7 +207,8 @@ func TestDB_Order_FailedCreate_DoesNotLeakReserved(t *testing.T) {
 func TestDB_Order_Cancel_DecrementsReserved(t *testing.T) {
 	hullUUID := uuid.New().String()
 	engineUUID := uuid.New().String()
-	_, err := inventoryDBPool.Exec(context.Background(),
+	_, err := inventoryDBPool.Exec(
+		context.Background(),
 		`INSERT INTO parts (uuid, name, description, part_type, price, stock_quantity, properties)
 		 VALUES
 		   ($1, 'DB-state cancel hull', '', 'HULL', 1000, 5, '{"hull": {"strength": 100}}'),
@@ -291,7 +294,8 @@ func TestDB_Order_AssembledStatus_BlocksCancel(t *testing.T) {
 // reserved, а не stock_quantity (уменьшение stock — это уже CommitParts).
 func TestDB_Inventory_Stock_UnchangedByReserve(t *testing.T) {
 	partUUID := uuid.New().String()
-	_, err := inventoryDBPool.Exec(context.Background(),
+	_, err := inventoryDBPool.Exec(
+		context.Background(),
 		`INSERT INTO parts (uuid, name, description, part_type, price, stock_quantity, properties)
 		 VALUES ($1, 'DB-state reserve', '', 'WEAPON', 1000, 3, '{"weapon": {"weapon_type": "laser"}}')`,
 		partUUID,
