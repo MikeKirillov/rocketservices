@@ -87,7 +87,7 @@ func (a *App) runHTTPServer() error {
 func (a *App) runConsumer(ctx context.Context) error {
 	slog.Info("Kafka-потребитель AssemblyShipAssembled запущен")
 
-	return a.diContainer.AssemblyConsumerService().RunConsumer(ctx)
+	return a.diContainer.AssemblyConsumerService(ctx).RunConsumer(ctx)
 }
 
 func New(ctx context.Context, configPath string) *App {

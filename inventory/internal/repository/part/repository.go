@@ -111,7 +111,8 @@ func (r *repository) ListByPartType(ctx context.Context, partType model.PartType
 func (r *repository) ListByUUIDs(ctx context.Context, uuids []uuid.UUID) ([]model.Part, error) {
 	query := `SELECT
 	uuid, name, description, part_type, price, stock_quantity, reserved, properties, created_at
-	FROM parts WHERE uuid = ANY($1)`
+	FROM parts
+	WHERE uuid = ANY($1)`
 
 	parts, err := r.listByIds(ctx, uuids, query)
 	if err != nil {
@@ -123,7 +124,10 @@ func (r *repository) ListByUUIDs(ctx context.Context, uuids []uuid.UUID) ([]mode
 func (r *repository) ListByUUIDsForUpdate(ctx context.Context, uuids []uuid.UUID) ([]model.Part, error) {
 	query := `SELECT
 	uuid, name, description, part_type, price, stock_quantity, reserved, properties, created_at
-	FROM parts WHERE uuid = ANY($1) ORDER BY uuid FOR UPDATE`
+	FROM parts
+	WHERE uuid = ANY($1)
+	ORDER BY uuid
+	FOR UPDATE`
 
 	// Обязательно выполняем сортировку uuid перед отправкой запроса в БД,
 	// принимая uuid.UUID (массив 16 байт) за слайс
@@ -214,7 +218,7 @@ func (r *repository) UpdateReservedBatch(ctx context.Context, parts []model.Part
 func (r *repository) UpdateCommitBatch(ctx context.Context, parts []model.Part) error {
 	query := `UPDATE parts AS p
 	SET reserved = batch.reserved,
-	stock_quantity = batch.stock_quantity,
+	stock_quantity = batch.stock_quantity
 	FROM unnest($1::uuid[], $2::int[], $3::int[]) AS batch(uuid, reserved, stock_quantity)
 	WHERE p.uuid = batch.uuid`
 
