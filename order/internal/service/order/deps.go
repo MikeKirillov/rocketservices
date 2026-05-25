@@ -11,6 +11,7 @@ import (
 
 type OrderRepository interface {
 	Get(ctx context.Context, id uuid.UUID) (model.Order, error)
+	GetForUpdate(ctx context.Context, id uuid.UUID) (model.Order, error)
 	Create(ctx context.Context, order model.Order) error
 	Update(ctx context.Context, order model.Order) error
 }
@@ -20,6 +21,7 @@ type InventoryServiceClient interface {
 	ValidateCompatibility(ctx context.Context, items []model.OrderItem) error
 	ReserveParts(ctx context.Context, partsUuids []uuid.UUID) error
 	ReleaseParts(ctx context.Context, order model.Order) error
+	CommitParts(ctx context.Context, order model.Order) error
 }
 
 type PaymentServiceClient interface {

@@ -277,9 +277,12 @@ func (d *diContainer) ShipAssembledConsumer() *wrappedKafkaConsumer.Consumer {
 }
 
 // AssemblyConsumerService возвращает сервис потребления событий из Kafka.
-func (d *diContainer) AssemblyConsumerService() ConsumerService {
+func (d *diContainer) AssemblyConsumerService(ctx context.Context) ConsumerService {
 	if d.assemblyConsumerSvc == nil {
-		d.assemblyConsumerSvc = assemblyConsumer.NewService(d.ShipAssembledConsumer())
+		d.assemblyConsumerSvc = assemblyConsumer.NewService(
+			d.ShipAssembledConsumer(),
+			d.OrderService(ctx),
+		)
 	}
 	return d.assemblyConsumerSvc
 }

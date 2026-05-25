@@ -38,6 +38,38 @@ func (r *repository) Get(ctx context.Context, id uuid.UUID) (model.Order, error)
 	// FILTER (WHERE oi.uuid IS NOT NULL) - чтобы при заказе без позиций не получить [null].
 	// COALESCE(..., '[]') - пустой массив вместо NULL.
 
+	return r.executeSelect(ctx, id, query)
+}
+
+func (r *repository) GetForUpdate(ctx context.Context, id uuid.UUID) (model.Order, error) {
+	query := `SELECT
+    o.uuid, o.status, o.transaction_uuid, o.payment_method,
+    o.created_at, o.updated_at, o.version, o.user_uuid,
+    (
+        SELECT COALESCE(
+            jsonb_agg(
+                jsonb_build_object(
+                    'uuid',       oi.uuid,
+                    'order_uuid', oi.order_uuid,
+                    'part_uuid',  oi.part_uuid,
+                    'part_type',  oi.part_type,
+                    'price',      oi.price,
+                    'created_at', to_char(oi.created_at, 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"')
+                ) ORDER BY oi.created_at
+            ),
+            '[]'::jsonb
+        )
+        FROM order_items oi
+        WHERE oi.order_uuid = o.uuid
+    ) AS items
+	FROM orders o
+	WHERE o.uuid = $1
+	FOR UPDATE OF o`
+
+	return r.executeSelect(ctx, id, query)
+}
+
+func (r *repository) executeSelect(ctx context.Context, id uuid.UUID, query string) (model.Order, error) {
 	rows, err := r.getter.DefaultTrOrDB(ctx, r.pool).Query(ctx, query, id)
 	if err != nil {
 		slog.Error("не удалось выполнить выборку", "error", err)

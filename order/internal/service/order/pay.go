@@ -16,7 +16,7 @@ func (s *service) Pay(ctx context.Context, orderRq input.PayOrderRq) (uuid.UUID,
 
 	err := s.txManager.Do(ctx, func(ctx context.Context) error {
 		// Найти заказ в store
-		order, err := s.orderRepository.Get(ctx, orderRq.OrderUUID)
+		order, err := s.orderRepository.GetForUpdate(ctx, orderRq.OrderUUID)
 		if err != nil {
 			if errors.Is(err, errs.ErrOrderNotFound) {
 				return sharedErrs.NewNotFound(err)

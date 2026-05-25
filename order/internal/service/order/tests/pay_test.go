@@ -84,16 +84,23 @@ func TestPay(t *testing.T) {
 	tests := []struct {
 		name      string
 		args      args
-		setupMock func(r *mocks.OrderRepository, p *mocks.PaymentServiceClient, m *mocks.TxManager)
+		setupMock func(r *mocks.OrderRepository, p *mocks.PaymentServiceClient, m *mocks.TxManager, o *mocks.OrderProducerService)
 		expected  expected
 	}{
 		{
 			name: "успешная оплата - ошибок нет",
 			args: args{req: req},
-			setupMock: func(r *mocks.OrderRepository, p *mocks.PaymentServiceClient, m *mocks.TxManager) {
-				r.EXPECT().Get(ctx, id).Return(modelToGet, nil)
+			setupMock: func(r *mocks.OrderRepository, p *mocks.PaymentServiceClient, m *mocks.TxManager, o *mocks.OrderProducerService) {
+				r.EXPECT().GetForUpdate(ctx, id).Return(modelToGet, nil)
 				p.EXPECT().PayOrder(ctx, req).Return(tranId, nil)
 				r.EXPECT().Update(ctx, mock.MatchedBy(func(o model.Order) bool {
+					return !o.UpdatedAt.IsZero() &&
+						o.Status == model.OrderStatusPaid &&
+						o.PaymentMethod != nil &&
+						o.TransactionUUID != nil &&
+						*o.TransactionUUID == tranId
+				})).Return(nil)
+				o.EXPECT().ProduceOrderPaid(ctx, mock.MatchedBy(func(o model.Order) bool {
 					return !o.UpdatedAt.IsZero() &&
 						o.Status == model.OrderStatusPaid &&
 						o.PaymentMethod != nil &&
@@ -117,8 +124,8 @@ func TestPay(t *testing.T) {
 		{
 			name: "заказ не найден - errs.ErrOrderConflict",
 			args: args{req: req},
-			setupMock: func(r *mocks.OrderRepository, p *mocks.PaymentServiceClient, m *mocks.TxManager) {
-				r.EXPECT().Get(ctx, id).Return(model.Order{}, errs.ErrOrderConflict)
+			setupMock: func(r *mocks.OrderRepository, p *mocks.PaymentServiceClient, m *mocks.TxManager, o *mocks.OrderProducerService) {
+				r.EXPECT().GetForUpdate(ctx, id).Return(model.Order{}, errs.ErrOrderConflict)
 				m.EXPECT().
 					Do(ctx, mock.Anything).
 					Run(func(ctx context.Context, fn func(context.Context) error) {
@@ -137,8 +144,8 @@ func TestPay(t *testing.T) {
 		{
 			name: "заказ уже оплачен - errs.ErrOrderAlreadyPaid",
 			args: args{req: req},
-			setupMock: func(r *mocks.OrderRepository, p *mocks.PaymentServiceClient, m *mocks.TxManager) {
-				r.EXPECT().Get(ctx, id).Return(modelPaid, nil)
+			setupMock: func(r *mocks.OrderRepository, p *mocks.PaymentServiceClient, m *mocks.TxManager, o *mocks.OrderProducerService) {
+				r.EXPECT().GetForUpdate(ctx, id).Return(modelPaid, nil)
 				m.EXPECT().
 					Do(ctx, mock.Anything).
 					Run(func(ctx context.Context, fn func(context.Context) error) {
@@ -157,8 +164,8 @@ func TestPay(t *testing.T) {
 		{
 			name: "заказ отменен - errs.ErrOrderAlreadyCancelled",
 			args: args{req: req},
-			setupMock: func(r *mocks.OrderRepository, p *mocks.PaymentServiceClient, m *mocks.TxManager) {
-				r.EXPECT().Get(ctx, id).Return(modelCancelled, nil)
+			setupMock: func(r *mocks.OrderRepository, p *mocks.PaymentServiceClient, m *mocks.TxManager, o *mocks.OrderProducerService) {
+				r.EXPECT().GetForUpdate(ctx, id).Return(modelCancelled, nil)
 				m.EXPECT().
 					Do(ctx, mock.Anything).
 					Run(func(ctx context.Context, fn func(context.Context) error) {
@@ -177,8 +184,8 @@ func TestPay(t *testing.T) {
 		{
 			name: "ошибка PaymentService - errInternal",
 			args: args{req: req},
-			setupMock: func(r *mocks.OrderRepository, p *mocks.PaymentServiceClient, m *mocks.TxManager) {
-				r.EXPECT().Get(ctx, id).Return(modelToGet, nil)
+			setupMock: func(r *mocks.OrderRepository, p *mocks.PaymentServiceClient, m *mocks.TxManager, o *mocks.OrderProducerService) {
+				r.EXPECT().GetForUpdate(ctx, id).Return(modelToGet, nil)
 				p.EXPECT().PayOrder(ctx, req).Return(uuid.Nil, errInternal)
 				m.EXPECT().
 					Do(ctx, mock.Anything).
@@ -198,8 +205,8 @@ func TestPay(t *testing.T) {
 		{
 			name: "ошибка репозитория - errInternal",
 			args: args{req: req},
-			setupMock: func(r *mocks.OrderRepository, p *mocks.PaymentServiceClient, m *mocks.TxManager) {
-				r.EXPECT().Get(ctx, id).Return(modelToGet, nil)
+			setupMock: func(r *mocks.OrderRepository, p *mocks.PaymentServiceClient, m *mocks.TxManager, o *mocks.OrderProducerService) {
+				r.EXPECT().GetForUpdate(ctx, id).Return(modelToGet, nil)
 				p.EXPECT().PayOrder(ctx, req).Return(tranId, nil)
 				r.EXPECT().Update(ctx, mock.MatchedBy(func(o model.Order) bool {
 					return !o.UpdatedAt.IsZero() &&
@@ -235,7 +242,7 @@ func TestPay(t *testing.T) {
 			o := mocks.NewOrderProducerService(t)
 			s := service.NewService(r, i, p, m, o)
 
-			test.setupMock(r, p, m)
+			test.setupMock(r, p, m, o)
 
 			res, err := s.Pay(ctx, test.args.req)
 

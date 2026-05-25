@@ -75,6 +75,11 @@ $ grpcurl -plaintext -d '{"uuids": ["550e8400-e29b-41d4-a716-446655440001"]}' lo
 $ grpcurl -plaintext -d '{"uuids": ["550e8400-e29b-41d4-a716-446655440001"]}' localhost:50051 inventory.v1.InventoryService/ReleaseParts
 ```
 
+### коммит деталей по UUID
+```
+$ grpcurl -plaintext -d '{"uuids": ["550e8400-e29b-41d4-a716-446655440001"]}' localhost:50051 inventory.v1.InventoryService/CommitParts
+```
+
 ## order
 
 ### server start
@@ -89,12 +94,12 @@ $ curl -v -X POST http://localhost:8080/api/v1/orders -H "Content-Type: applicat
 
 ### получить заказ
 ```
-$ curl -v http://localhost:8080/api/v1/orders/721e9a4e-2cb2-459e-b89c-891b5e88c623
+$ curl -v http://localhost:8080/api/v1/orders/716f6235-2cce-444a-b6e2-87937659ba7d
 ```
 
 ### оплата заказа
 ```
-$ curl -v -X POST http://localhost:8080/api/v1/orders/721e9a4e-2cb2-459e-b89c-891b5e88c623/pay -H "Content-Type: application/json" -d '{"payment_method": "CARD"}'
+$ curl -v -X POST http://localhost:8080/api/v1/orders/716f6235-2cce-444a-b6e2-87937659ba7d/pay -H "Content-Type: application/json" -d '{"payment_method": "CARD"}'
 ```
 
 ### отмена заказа

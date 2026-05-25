@@ -22,6 +22,7 @@ func (s *service) RunConsumer(ctx context.Context) error {
 }
 
 func (s *service) AssemblyShipAssembledHandler(ctx context.Context, msg kafka.Message) error {
+	// Десериализовать событие из protobuf
 	event, err := decodeOrderPaid(msg.Value)
 	if err != nil {
 		slog.ErrorContext(ctx, "не удалось декодировать AssemblyShipAssembled", "error", err)
@@ -39,7 +40,8 @@ func (s *service) AssemblyShipAssembledHandler(ctx context.Context, msg kafka.Me
 		"assembled_at", event.AssembledAt,
 	)
 
-	return nil
+	// Проверить статус записи и вызвать CommitParts через gRPC-клиент InventoryService
+	return s.orderService.Commit(ctx, event.OrderUuid)
 }
 
 func decodeOrderPaid(data []byte) (input.ShipAssembledEvent, error) {
