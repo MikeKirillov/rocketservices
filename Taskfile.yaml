@@ -32,6 +32,11 @@ vars:
   GOOSE: '{{.BIN_DIR}}/goose'
 
 tasks:
+  build:
+    desc: "Собирает все Go-модули (go build)"
+    cmds:
+      - go build ./order/... ./inventory/... ./payment/...
+
   formatters:install:
     desc: "Устанавливает gofumpt и gci"
     cmds:
