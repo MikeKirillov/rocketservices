@@ -18,24 +18,34 @@ import (
 	inventoryClientV1 "github.com/MikeKirillov/rocketservices/order/internal/client/grpc/inventory/v1"
 	paymentClientV1 "github.com/MikeKirillov/rocketservices/order/internal/client/grpc/payment/v1"
 	orderConfig "github.com/MikeKirillov/rocketservices/order/internal/config"
-	"github.com/MikeKirillov/rocketservices/order/internal/producer"
+	assemblyConsumer "github.com/MikeKirillov/rocketservices/order/internal/consumer/assembly"
+	producer "github.com/MikeKirillov/rocketservices/order/internal/producer/order"
 	orderRepository "github.com/MikeKirillov/rocketservices/order/internal/repository/order"
 	orderService "github.com/MikeKirillov/rocketservices/order/internal/service/order"
 	"github.com/MikeKirillov/rocketservices/platform/pkg/closer"
+	wrappedKafkaConsumer "github.com/MikeKirillov/rocketservices/platform/pkg/kafka/consumer"
 	wrappedKafkaProducer "github.com/MikeKirillov/rocketservices/platform/pkg/kafka/producer"
+	kafkaMiddleware "github.com/MikeKirillov/rocketservices/platform/pkg/middleware/kafka"
 	orderv1 "github.com/MikeKirillov/rocketservices/shared/pkg/openapi/order/v1"
 	inventoryv1 "github.com/MikeKirillov/rocketservices/shared/pkg/proto/inventory/v1"
 	paymentv1 "github.com/MikeKirillov/rocketservices/shared/pkg/proto/payment/v1"
 )
 
+// ConsumerService определяет контракт для запуска Kafka-потребителей.
+type ConsumerService interface {
+	RunConsumer(ctx context.Context) error
+}
+
 type diContainer struct {
 	// Инфраструктура
-	pgPool       *pgxpool.Pool
-	txManager    *manager.Manager
-	syncProducer sarama.SyncProducer
+	pgPool        *pgxpool.Pool
+	txManager     *manager.Manager
+	syncProducer  sarama.SyncProducer
+	consumerGroup sarama.ConsumerGroup
 
 	// Kafka-обёртки
-	orderPaidProducer *wrappedKafkaProducer.Producer
+	orderPaidProducer    *wrappedKafkaProducer.Producer
+	shipAssemblyConsumer *wrappedKafkaConsumer.Consumer
 
 	// Репо
 	orderRepo orderService.OrderRepository
@@ -45,8 +55,9 @@ type diContainer struct {
 	paymentClient   orderService.PaymentServiceClient
 
 	// Сервисы
-	orderSvc      orderV1API.OrderService
-	orderProducer orderService.OrderProducerService
+	orderSvc            orderV1API.OrderService
+	orderProducerSvc    orderService.OrderProducerService
+	assemblyConsumerSvc ConsumerService
 
 	// API-обработчики
 	orderV1Handler orderv1.Handler
@@ -199,10 +210,10 @@ func (d *diContainer) OrderPaidProducer() *wrappedKafkaProducer.Producer {
 
 // ProducerService возвращает сервис потребления событий из Kafka.
 func (d *diContainer) ProducerService() orderService.OrderProducerService {
-	if d.orderProducer == nil {
-		d.orderProducer = producer.NewService(d.OrderPaidProducer())
+	if d.orderProducerSvc == nil {
+		d.orderProducerSvc = producer.NewService(d.OrderPaidProducer())
 	}
-	return d.orderProducer
+	return d.orderProducerSvc
 }
 
 func (d *diContainer) OrderService(ctx context.Context) orderV1API.OrderService {
@@ -223,4 +234,52 @@ func (d *diContainer) OrderV1API(ctx context.Context) orderv1.Handler {
 		d.orderV1Handler = orderV1API.NewOrderHandler(d.OrderService(ctx))
 	}
 	return d.orderV1Handler
+}
+
+// ConsumerGroup возвращает Kafka consumer group
+// При первом вызове создаёт группу и регистрирует closer.
+func (d *diContainer) ConsumerGroup() sarama.ConsumerGroup {
+	if d.consumerGroup == nil {
+		consumerGroup, err := sarama.NewConsumerGroup(
+			orderConfig.AppConfig().Kafka.Brokers,
+			orderConfig.AppConfig().Kafka.AssemblyShipAssembledConsumer.GroupID(),
+			orderConfig.AppConfig().Kafka.AssemblyShipAssembledConsumer.SaramaConfig(),
+		)
+		if err != nil {
+			slog.Error("не удалось создать consumer group", "error", err)
+			os.Exit(1)
+		}
+
+		closer.Add("Kafka consumer group", func(_ context.Context) error {
+			return consumerGroup.Close()
+		})
+
+		d.consumerGroup = consumerGroup
+	}
+	return d.consumerGroup
+}
+
+// ShipAssembledConsumer возвращает обёртку Kafka-потребителя для событий AssemblyShipAssembled.
+func (d *diContainer) ShipAssembledConsumer() *wrappedKafkaConsumer.Consumer {
+	if d.shipAssemblyConsumer == nil {
+		d.shipAssemblyConsumer = wrappedKafkaConsumer.NewConsumer(
+			d.ConsumerGroup(),
+			[]string{
+				orderConfig.AppConfig().Kafka.AssemblyShipAssembledConsumer.Topic(),
+			},
+			wrappedKafkaConsumer.WithMiddlewares(
+				kafkaMiddleware.RecoveryMiddleware(),
+				kafkaMiddleware.ConsumerLogging(),
+			),
+		)
+	}
+	return d.shipAssemblyConsumer
+}
+
+// AssemblyConsumerService возвращает сервис потребления событий из Kafka.
+func (d *diContainer) AssemblyConsumerService() ConsumerService {
+	if d.assemblyConsumerSvc == nil {
+		d.assemblyConsumerSvc = assemblyConsumer.NewService(d.ShipAssembledConsumer())
+	}
+	return d.assemblyConsumerSvc
 }

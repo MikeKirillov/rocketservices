@@ -29,13 +29,13 @@ type assemblyShipAssembledConsumerConfig struct {
 	Group     string `yaml:"group" env:"ASSEMBLY_SHIP_ASSEMBLED_CONSUMER_GROUP_ID" env-default:"1"`
 }
 
-func (c *assemblyShipAssembledConsumerConfig) Topic() string { return c.TopicName }
-
+func (c *assemblyShipAssembledConsumerConfig) Topic() string   { return c.TopicName }
 func (c *assemblyShipAssembledConsumerConfig) GroupID() string { return c.Group }
 
 func (c *assemblyShipAssembledConsumerConfig) SaramaConfig() *sarama.Config {
 	cfg := sarama.NewConfig()
 	cfg.Version = sarama.V4_0_0_0
-	cfg.Producer.Return.Successes = true
+	cfg.Consumer.Group.Rebalance.GroupStrategies = []sarama.BalanceStrategy{sarama.NewBalanceStrategyRoundRobin()}
+	cfg.Consumer.Offsets.Initial = sarama.OffsetOldest
 	return cfg
 }

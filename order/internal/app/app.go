@@ -3,6 +3,7 @@ package app
 import (
 	"context"
 	"errors"
+	"fmt"
 	"log/slog"
 	"net/http"
 	"os"
@@ -11,6 +12,7 @@ import (
 
 	"github.com/MikeKirillov/rocketservices/order/internal/config"
 	"github.com/MikeKirillov/rocketservices/order/internal/middleware"
+	"github.com/MikeKirillov/rocketservices/platform/pkg/closer"
 	"github.com/MikeKirillov/rocketservices/platform/pkg/logger"
 	orderv1 "github.com/MikeKirillov/rocketservices/shared/pkg/openapi/order/v1"
 )
@@ -27,8 +29,25 @@ func (a *App) Run() error {
 
 	a.startGracefulShutdown(ctx)
 
-	// a.runConsumer(ctx)
-	return a.runHTTPServer()
+	errChan := make(chan error, 2)
+
+	go func() {
+		if err := a.runConsumer(ctx); err != nil {
+			errChan <- fmt.Errorf("потребитель упал: %w", err)
+		}
+	}()
+	go func() {
+		if err := a.runHTTPServer(); err != nil {
+			errChan <- fmt.Errorf("http-сервер упал: %w", err)
+		}
+	}()
+
+	select {
+	case <-ctx.Done():
+		return nil
+	case err := <-errChan:
+		return err
+	}
 }
 
 func (a *App) startGracefulShutdown(ctx context.Context) {
@@ -42,6 +61,10 @@ func (a *App) startGracefulShutdown(ctx context.Context) {
 			config.AppConfig().HTTP.TimeoutShutdown(),
 		)
 		defer shutdownCancel()
+
+		if closeErr := closer.CloseAll(shutdownCtx); closeErr != nil {
+			slog.Error("ошибка при завершении работы", "error", closeErr)
+		}
 
 		if err := a.httpServer.Shutdown(shutdownCtx); err != nil {
 			slog.Error("ошибка при остановке сервера", "error", err)
@@ -61,10 +84,11 @@ func (a *App) runHTTPServer() error {
 	return nil
 }
 
-// func (a *App) runConsumer(ctx context.Context) error {
+func (a *App) runConsumer(ctx context.Context) error {
+	slog.Info("Kafka-потребитель AssemblyShipAssembled запущен")
 
-// 	return nil
-// }
+	return a.diContainer.AssemblyConsumerService().RunConsumer(ctx)
+}
 
 func New(ctx context.Context, configPath string) *App {
 	a := &App{configPath: configPath}

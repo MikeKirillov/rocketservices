@@ -1,0 +1,6 @@
+kafka:
+  producer:
+    topic: "assembly.ship-assembled"
+  consumer:
+    topic: "order.paid"
+    group: "1"

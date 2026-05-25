@@ -89,17 +89,24 @@ $ curl -v -X POST http://localhost:8080/api/v1/orders -H "Content-Type: applicat
 
 ### получить заказ
 ```
-$ curl -v http://localhost:8080/api/v1/orders/ef13705e-7202-4ab1-8d54-b103782ae649
+$ curl -v http://localhost:8080/api/v1/orders/721e9a4e-2cb2-459e-b89c-891b5e88c623
 ```
 
 ### оплата заказа
 ```
-$ curl -v -X POST http://localhost:8080/api/v1/orders/1c6cca93-6483-4e62-bd28-a911e4d3f174/pay -H "Content-Type: application/json" -d '{"payment_method": "CARD"}'
+$ curl -v -X POST http://localhost:8080/api/v1/orders/721e9a4e-2cb2-459e-b89c-891b5e88c623/pay -H "Content-Type: application/json" -d '{"payment_method": "CARD"}'
 ```
 
 ### отмена заказа
 ```
 $ curl -v -X POST http://localhost:8080/api/v1/orders/0e095a5d-e802-4c23-bbd7-92e765ddd73c/cancel -H "Content-Type: application/json"
+```
+
+## assembly
+
+### server start
+```
+$ go run cmd/main.go
 ```
 
 # goose файл миграции
