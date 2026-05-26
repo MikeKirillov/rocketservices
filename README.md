@@ -94,17 +94,17 @@ $ curl -v -X POST http://localhost:8080/api/v1/orders -H "Content-Type: applicat
 
 ### получить заказ
 ```
-$ curl -v http://localhost:8080/api/v1/orders/716f6235-2cce-444a-b6e2-87937659ba7d
+$ curl -v http://localhost:8080/api/v1/orders/add59d95-8607-44dc-8204-9224e2336738
 ```
 
 ### оплата заказа
 ```
-$ curl -v -X POST http://localhost:8080/api/v1/orders/716f6235-2cce-444a-b6e2-87937659ba7d/pay -H "Content-Type: application/json" -d '{"payment_method": "CARD"}'
+$ curl -v -X POST http://localhost:8080/api/v1/orders/8a74ccda-a417-4fb3-ba06-04943d17489a/pay -H "Content-Type: application/json" -d '{"payment_method": "CARD"}'
 ```
 
 ### отмена заказа
 ```
-$ curl -v -X POST http://localhost:8080/api/v1/orders/0e095a5d-e802-4c23-bbd7-92e765ddd73c/cancel -H "Content-Type: application/json"
+$ curl -v -X POST http://localhost:8080/api/v1/orders/add59d95-8607-44dc-8204-9224e2336738/cancel -H "Content-Type: application/json"
 ```
 
 ## assembly

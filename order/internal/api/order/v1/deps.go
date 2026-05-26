@@ -14,5 +14,4 @@ type OrderService interface {
 	Create(ctx context.Context, orderRq input.CreateOrderRq) (input.CreateOrderRs, error)
 	Cancel(ctx context.Context, id uuid.UUID) error
 	Pay(ctx context.Context, orderRq input.PayOrderRq) (uuid.UUID, error)
-	Commit(ctx context.Context, id uuid.UUID) error
 }

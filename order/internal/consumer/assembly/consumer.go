@@ -2,6 +2,7 @@ package assembly
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log/slog"
 
@@ -41,7 +42,14 @@ func (s *service) AssemblyShipAssembledHandler(ctx context.Context, msg kafka.Me
 	)
 
 	// Проверить статус записи и вызвать CommitParts через gRPC-клиент InventoryService
-	return s.orderService.Commit(ctx, event.OrderUuid)
+	// (лучше эту логику выносить в сервис и в consumer притягивать только его, как было сделано изначально)
+	if err := s.commit(ctx, event.OrderUuid); err != nil {
+		return err
+	}
+
+	slog.Info("заказ обновлен", "order_uuid", event.OrderUuid)
+
+	return nil
 }
 
 func decodeOrderPaid(data []byte) (input.ShipAssembledEvent, error) {
@@ -67,4 +75,51 @@ func decodeOrderPaid(data []byte) (input.ShipAssembledEvent, error) {
 		BuildTimeSec: pb.GetBuildTimeSec(),
 		AssembledAt:  pb.GetAssembledAt().AsTime(),
 	}, nil
+}
+
+func (s *service) commit(ctx context.Context, id uuid.UUID) error {
+	err := s.txManager.Do(ctx, func(ctx context.Context) error {
+		// Найти заказ в store
+		order, err := s.orderRepository.GetForUpdate(ctx, id)
+		if err != nil {
+			if errors.Is(err, errs.ErrOrderNotFound) {
+				return sharedErrs.NewNotFound(err)
+			}
+			return sharedErrs.NewInternal(err)
+		}
+
+		// Получить заказ из БД и проверить статус
+		// Если заказ уже ASSEMBLED — пропустить (идемпотентность, at-least-once семантика)
+		err = order.CanCommit()
+		if err != nil {
+			return sharedErrs.NewConflict(err)
+		}
+
+		// Вызвать CommitParts через gRPC-клиент InventoryService
+		err = s.inventoryClient.CommitParts(ctx, order)
+		if err != nil {
+			switch {
+			case errors.Is(err, errs.ErrGrpcNotFound):
+				return sharedErrs.NewNotFound(err)
+			case errors.Is(err, errs.ErrGrpcInvalidArgument):
+				return sharedErrs.NewInvalidArgument(err)
+			case errors.Is(err, errs.ErrGrpcCancelledOperation):
+				return sharedErrs.NewFailedPrecondition(err)
+			default:
+				return sharedErrs.NewInternal(err)
+			}
+		}
+
+		// Обновить статус заказа на ASSEMBLED
+		order.Commit()
+		if err = s.orderRepository.Update(ctx, order); err != nil {
+			if errors.Is(err, errs.ErrOrderConflict) {
+				return sharedErrs.NewConflict(err)
+			}
+			return sharedErrs.NewInternal(err)
+		}
+
+		return nil
+	})
+	return err
 }

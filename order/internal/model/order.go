@@ -74,6 +74,9 @@ func (o *Order) CanModify() error {
 	if o.Status == OrderStatusPaid {
 		return errs.ErrOrderAlreadyPaid
 	}
+	if o.Status == OrderStatusAssembled {
+		return errs.ErrOrderAlreadyAssembled
+	}
 	if o.Status != OrderStatusPendingPayment {
 		return errs.ErrOrderUnknownStatus
 	}

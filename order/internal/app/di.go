@@ -281,7 +281,9 @@ func (d *diContainer) AssemblyConsumerService(ctx context.Context) ConsumerServi
 	if d.assemblyConsumerSvc == nil {
 		d.assemblyConsumerSvc = assemblyConsumer.NewService(
 			d.ShipAssembledConsumer(),
-			d.OrderService(ctx),
+			d.OrderRepository(ctx),
+			d.InventoryClient(ctx),
+			d.TxManager(ctx),
 		)
 	}
 	return d.assemblyConsumerSvc
