@@ -29,13 +29,14 @@ jobs:
       - name: Run unit tests with coverage
         run: task test:coverage
 
-      - name: Publish coverage to job summary
-        if: always()
-        run: |
-          {
-            echo "## 📊 Coverage report"
-            echo ""
-            echo '```'
-            go tool cover -func=coverage/coverage.out
-            echo '```'
-          } >> "$GITHUB_STEP_SUMMARY"
+      # TODO: добавить!
+      # - name: Publish coverage to job summary
+      #   if: always()
+      #   run: |
+      #     {
+      #       echo "## 📊 Coverage report"
+      #       echo ""
+      #       echo '```'
+      #       go tool cover -func=coverage/coverage.out
+      #       echo '```'
+      #     } >> "$GITHUB_STEP_SUMMARY"
