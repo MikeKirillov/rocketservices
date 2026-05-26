@@ -7,6 +7,25 @@ jobs:
   test-api:
     name: "API tests"
     runs-on: ubuntu-24.04
+
+    # Запускаем Kafka в качестве фонового контейнера
+    services:
+      kafka:
+        image: ubuntu/kafka:3.7-24.04_beta # Быстрый и легкий KRaft-ready образ
+        ports:
+          - 9092:9092
+        env:
+          KAFKA_NODE_ID: 1
+          KAFKA_PROCESS_ROLES: 'broker,controller'
+          KAFKA_CONTROLLER_QUORUM_VOTERS: '1@localhost:9093'
+          KAFKA_LISTENERS: 'PLAINTEXT://0.0.0.0:9092,CONTROLLER://0.0.0.0:9093'
+          # Это сопоставляет брокер с localhost, чтобы приложение на хосте могло с ним связаться
+          KAFKA_ADVERTISED_LISTENERS: 'PLAINTEXT://localhost:9092'
+          KAFKA_CONTROLLER_LISTENER_NAMES: 'CONTROLLER'
+          # Для обеспечения временного и быстрого выполнения операций в оперативной памяти,
+          # храним логи в каталоге /tmp
+          KAFKA_LOG_DIRS: '/tmp/kraft-combined-logs' 
+
     steps:
       - uses: actions/checkout@v6.0.2
 
@@ -28,3 +47,6 @@ jobs:
 
       - name: Run API tests
         run: task test:api
+        env:
+          # Inject the connection string into your Go tests if needed
+          KAFKA_BROKERS: "localhost:9092" 
