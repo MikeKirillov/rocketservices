@@ -10,7 +10,7 @@ jobs:
 
     services:
       kafka:
-        image: ubuntu/kafka:3.7-24.04_beta
+        image: confluentinc/cp-kafka:8.2.0
         ports:
           - 9092:9092
         env:
