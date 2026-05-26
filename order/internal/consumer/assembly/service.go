@@ -2,15 +2,21 @@ package assembly
 
 type service struct {
 	shipAssemblyConsumer Consumer
-	orderService         OrderService
+	orderRepository      OrderRepository
+	inventoryClient      InventoryServiceClient
+	txManager            TxManager
 }
 
 func NewService(
 	shipAssemblyConsumer Consumer,
-	orderService OrderService,
+	orderRepository OrderRepository,
+	inventoryClient InventoryServiceClient,
+	txManager TxManager,
 ) *service {
 	return &service{
 		shipAssemblyConsumer: shipAssemblyConsumer,
-		orderService:         orderService,
+		orderRepository:      orderRepository,
+		inventoryClient:      inventoryClient,
+		txManager:            txManager,
 	}
 }
