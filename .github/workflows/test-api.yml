@@ -8,7 +8,6 @@ jobs:
     name: "API tests"
     runs-on: ubuntu-24.04
 
-    # Запускаем Kafka в качестве фонового контейнера
     services:
       kafka:
         image: confluentinc/cp-kafka:8.2.0
@@ -21,13 +20,13 @@ jobs:
           KAFKA_CONTROLLER_QUORUM_VOTERS: '1@127.0.0.1:29093'
           KAFKA_INTER_BROKER_LISTENER_NAME: 'PLAINTEXT'
           KAFKA_LISTENERS: 'PLAINTEXT://0.0.0.0:29092,PLAINTEXT_EXTERNAL://0.0.0.0:9092,CONTROLLER://0.0.0.0:29093'
-          # Это сопоставляет брокер с localhost, чтобы приложение на хосте могло с ним связаться
-          KAFKA_ADVERTISED_LISTENERS: 'PLAINTEXT://127.0.0.1:29092,PLAINTEXT_EXTERNAL://127.0.0.1:9092'
+          KAFKA_ADVERTISED_LISTENERS: 'PLAINTEXT://127.0.0.1:29092,PLAINTEXT_EXTERNAL://127.0.0.1:9092,CONTROLLER://127.0.0.1:29093'
           KAFKA_CONTROLLER_LISTENER_NAMES: 'CONTROLLER'
-          # Для обеспечения временного и быстрого выполнения операций в оперативной памяти,
-          # храним логи в каталоге /tmp
           KAFKA_LOG_DIRS: '/tmp/kraft-combined-logs'
           KAFKA_CLUSTER_ID: 'MkU3OEVBNTcwNTJENDM2Qk'
+          KAFKA_AUTO_CREATE_TOPICS_ENABLE: 'true'
+          KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+          KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
         options: >-
           --health-cmd "nc -z 127.0.0.1 9092"
           --health-interval 10s
@@ -57,5 +56,4 @@ jobs:
       - name: Run API tests
         run: task test:api
         env:
-          # Inject the connection string into your Go tests if needed
           KAFKA_BROKERS: "127.0.0.1:9092" 
