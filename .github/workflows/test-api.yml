@@ -27,6 +27,12 @@ jobs:
           # храним логи в каталоге /tmp
           KAFKA_LOG_DIRS: '/tmp/kraft-combined-logs'
           KAFKA_CLUSTER_ID: 'MkU3OEVBNTcwNTJENDM2Qk'
+        options: >-
+          --health-cmd "nc -z 127.0.0.1 9092"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+
 
     steps:
       - uses: actions/checkout@v6.0.2
@@ -51,4 +57,4 @@ jobs:
         run: task test:api
         env:
           # Inject the connection string into your Go tests if needed
-          KAFKA_BROKERS: "localhost:9092" 
+          KAFKA_BROKERS: "127.0.0.1:9092" 
