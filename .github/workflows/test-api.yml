@@ -21,7 +21,7 @@ jobs:
           KAFKA_CONTROLLER_QUORUM_VOTERS: '1@127.0.0.1:29093'
           KAFKA_LISTENERS: 'PLAINTEXT://0.0.0.0:29092,PLAINTEXT_EXTERNAL://0.0.0.0:9092,CONTROLLER://kafka:29093'
           # Это сопоставляет брокер с localhost, чтобы приложение на хосте могло с ним связаться
-          KAFKA_ADVERTISED_LISTENERS: 'PLAINTEXT://0.0.0.0:29092,PLAINTEXT_EXTERNAL://0.0.0.0:9092,CONTROLLER://kafka:29093'
+          KAFKA_ADVERTISED_LISTENERS: 'PLAINTEXT://127.0.0.1:29092,PLAINTEXT_EXTERNAL://127.0.0.1:9092'
           KAFKA_CONTROLLER_LISTENER_NAMES: 'CONTROLLER'
           # Для обеспечения временного и быстрого выполнения операций в оперативной памяти,
           # храним логи в каталоге /tmp
