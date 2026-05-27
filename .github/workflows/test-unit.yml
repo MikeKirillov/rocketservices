@@ -23,6 +23,11 @@ jobs:
           KAFKA_CONTROLLER_LISTENER_NAMES: 'CONTROLLER'
           KAFKA_LOG_DIRS: '/tmp/kraft-combined-logs'
           KAFKA_CLUSTER_ID: 'MkU3OEVBNTcwNTJENDM2Qk'
+        options: >-
+          --health-cmd "nc -z 127.0.0.1 9092"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
 
     steps:
       - uses: actions/checkout@v6.0.2
@@ -46,7 +51,7 @@ jobs:
       - name: Run unit tests with coverage
         run: task test:coverage
         env:
-          KAFKA_BROKERS: "localhost:9092"
+          KAFKA_BROKERS: "127.0.0.1:9092"
 
       # TODO: добавить!
       # - name: Publish coverage to job summary
