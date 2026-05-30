@@ -29,7 +29,7 @@ func (s *service) ProduceShipAssembly(ctx context.Context, order model.OrderPaid
 		EventUuid:    uuid.NewString(),
 		OrderUuid:    order.OrderUuid.String(),
 		UserUuid:     order.UserUuid.String(),
-		BuildTimeSec: int64(time.Since(order.Recieved)),
+		BuildTimeSec: int64(time.Since(order.Received).Seconds()),
 		AssembledAt:  timestamppb.Now(),
 	}
 

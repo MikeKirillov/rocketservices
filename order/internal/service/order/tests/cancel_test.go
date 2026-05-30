@@ -56,19 +56,25 @@ func TestCancel(t *testing.T) {
 	tests := []struct {
 		name      string
 		args      args
-		setupMock func(i *mocks.InventoryServiceClient, r *mocks.OrderRepository)
+		setupMock func(i *mocks.InventoryServiceClient, r *mocks.OrderRepository, m *mocks.TxManager)
 		expected  expected
 	}{
 		{
 			name: "успешная отмена - ошибок нет",
 			args: args{id: id},
-			setupMock: func(i *mocks.InventoryServiceClient, r *mocks.OrderRepository) {
-				r.EXPECT().Get(ctx, id).Return(modelToSave, nil)
+			setupMock: func(i *mocks.InventoryServiceClient, r *mocks.OrderRepository, m *mocks.TxManager) {
+				r.EXPECT().GetForUpdate(ctx, id).Return(modelToSave, nil)
 				i.EXPECT().ReleaseParts(ctx, modelToSave).Return(nil)
 				r.EXPECT().Update(ctx, mock.MatchedBy(func(o model.Order) bool {
 					return o.Status == model.OrderStatusCancelled &&
 						!o.UpdatedAt.IsZero()
 				})).Return(nil)
+				m.EXPECT().
+					Do(ctx, mock.Anything).
+					Run(func(ctx context.Context, fn func(context.Context) error) {
+						_ = fn(ctx) // запускает выполнение функции, содержащей бизнес-шаги
+					}).
+					Return(nil)
 			},
 			expected: expected{
 				errCheck: func(t *testing.T, err error) {
@@ -79,8 +85,14 @@ func TestCancel(t *testing.T) {
 		{
 			name: "заказ не найден - errs.ErrOrderConflict",
 			args: args{id: id},
-			setupMock: func(i *mocks.InventoryServiceClient, r *mocks.OrderRepository) {
-				r.EXPECT().Get(ctx, id).Return(model.Order{}, errs.ErrOrderConflict)
+			setupMock: func(i *mocks.InventoryServiceClient, r *mocks.OrderRepository, m *mocks.TxManager) {
+				r.EXPECT().GetForUpdate(ctx, id).Return(model.Order{}, errs.ErrOrderConflict)
+				m.EXPECT().
+					Do(ctx, mock.Anything).
+					Run(func(ctx context.Context, fn func(context.Context) error) {
+						_ = fn(ctx) // запускает выполнение функции, содержащей бизнес-шаги
+					}).
+					Return(errs.ErrOrderConflict)
 			},
 			expected: expected{
 				errCheck: func(t *testing.T, err error) {
@@ -92,13 +104,19 @@ func TestCancel(t *testing.T) {
 		{
 			name: "ошибка репозитория - errInternal",
 			args: args{id: id},
-			setupMock: func(i *mocks.InventoryServiceClient, r *mocks.OrderRepository) {
-				r.EXPECT().Get(ctx, id).Return(modelToSave, nil)
+			setupMock: func(i *mocks.InventoryServiceClient, r *mocks.OrderRepository, m *mocks.TxManager) {
+				r.EXPECT().GetForUpdate(ctx, id).Return(modelToSave, nil)
 				i.EXPECT().ReleaseParts(ctx, modelToSave).Return(nil)
 				r.EXPECT().Update(ctx, mock.MatchedBy(func(o model.Order) bool {
 					return o.Status == model.OrderStatusCancelled &&
 						!o.UpdatedAt.IsZero()
 				})).Return(errInternal)
+				m.EXPECT().
+					Do(ctx, mock.Anything).
+					Run(func(ctx context.Context, fn func(context.Context) error) {
+						_ = fn(ctx) // запускает выполнение функции, содержащей бизнес-шаги
+					}).
+					Return(errInternal)
 			},
 			expected: expected{
 				errCheck: func(t *testing.T, err error) {
@@ -120,7 +138,7 @@ func TestCancel(t *testing.T) {
 			o := mocks.NewOrderProducerService(t)
 			s := service.NewService(r, i, p, m, o)
 
-			test.setupMock(i, r)
+			test.setupMock(i, r, m)
 
 			err := s.Cancel(ctx, test.args.id)
 

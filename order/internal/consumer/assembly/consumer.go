@@ -24,10 +24,10 @@ func (s *service) RunConsumer(ctx context.Context) error {
 
 func (s *service) AssemblyShipAssembledHandler(ctx context.Context, msg kafka.Message) error {
 	// Десериализовать событие из protobuf
-	event, err := decodeOrderPaid(msg.Value)
+	event, err := decodeShipAssembled(msg.Value)
 	if err != nil {
 		slog.ErrorContext(ctx, "не удалось декодировать AssemblyShipAssembled", "error", err)
-		return sharedErrs.NewInternal(err)
+		return nil
 	}
 
 	slog.InfoContext(
@@ -52,7 +52,7 @@ func (s *service) AssemblyShipAssembledHandler(ctx context.Context, msg kafka.Me
 	return nil
 }
 
-func decodeOrderPaid(data []byte) (input.ShipAssembledEvent, error) {
+func decodeShipAssembled(data []byte) (input.ShipAssembledEvent, error) {
 	var pb eventsv1.ShipAssembled
 
 	if err := proto.Unmarshal(data, &pb); err != nil {
@@ -90,9 +90,10 @@ func (s *service) commit(ctx context.Context, id uuid.UUID) error {
 
 		// Получить заказ из БД и проверить статус
 		// Если заказ уже ASSEMBLED — пропустить (идемпотентность, at-least-once семантика)
-		err = order.CanCommit()
+		err = order.CanModify()
 		if err != nil {
-			return sharedErrs.NewConflict(err)
+			slog.Info("полученный заказ был обновлен ранее", "статус заказа", order.Status)
+			return nil
 		}
 
 		// Вызвать CommitParts через gRPC-клиент InventoryService

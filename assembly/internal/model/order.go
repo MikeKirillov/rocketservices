@@ -9,5 +9,5 @@ import (
 type OrderPaidEvent struct {
 	OrderUuid uuid.UUID
 	UserUuid  uuid.UUID
-	Recieved  time.Time
+	Received  time.Time
 }
