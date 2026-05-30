@@ -83,6 +83,20 @@ func (o *Order) CanModify() error {
 	return nil
 }
 
+// CanCommit() позволяет производить только заказы в статусе PAID.
+func (o *Order) CanCommit() error {
+	if o.Status == OrderStatusCancelled {
+		return errs.ErrOrderAlreadyCancelled
+	}
+	if o.Status == OrderStatusAssembled {
+		return errs.ErrOrderAlreadyAssembled
+	}
+	if o.Status == OrderStatusPendingPayment {
+		return errs.ErrOrderUnpaid
+	}
+	return nil
+}
+
 // Pay() меняет статус заказа на PAID, устанавливает способ оплаты и идентификатор транзакции.
 func (o *Order) Pay(transaction uuid.UUID, payment *PaymentMethod) {
 	if payment != nil {
