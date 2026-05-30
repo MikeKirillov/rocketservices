@@ -90,9 +90,9 @@ func (s *service) commit(ctx context.Context, id uuid.UUID) error {
 
 		// Получить заказ из БД и проверить статус
 		// Если заказ уже ASSEMBLED — пропустить (идемпотентность, at-least-once семантика)
-		err = order.CanModify()
+		err = order.CanCommit()
 		if err != nil {
-			slog.Info("полученный заказ был обновлен ранее", "статус заказа", order.Status)
+			slog.Info("полученный заказ был уже обновлен", "order", order.OrderUUID, "статус заказа", order.Status)
 			return nil
 		}
 

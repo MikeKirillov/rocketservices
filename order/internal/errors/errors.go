@@ -9,6 +9,7 @@ var (
 	ErrOrderAlreadyPaid      = errors.New("заказ уже оплачен")
 	ErrOrderAlreadyAssembled = errors.New("заказ уже собран")
 	ErrOrderAlreadyCancelled = errors.New("заказ уже отменён")
+	ErrOrderUnpaid           = errors.New("заказ не оплачен")
 	ErrOrderUnknownStatus    = errors.New("неизвестный статус заказа")
 	ErrOrderCannotCancel     = errors.New("невозможно отменить заказ")
 
