@@ -31,7 +31,7 @@ func (s *service) OrderPaidHandler(ctx context.Context, msg kafka.Message) error
 	event, err := decodeOrderPaid(msg.Value)
 	if err != nil {
 		slog.ErrorContext(ctx, "не удалось декодировать OrderPaid", "error", err)
-		return err
+		return nil
 	}
 
 	slog.InfoContext(
@@ -71,7 +71,7 @@ func decodeOrderPaid(data []byte) (model.OrderPaidEvent, error) {
 	return model.OrderPaidEvent{
 		OrderUuid: orderId,
 		UserUuid:  userId,
-		Recieved:  recieved,
+		Received:  recieved,
 	}, nil
 }
 

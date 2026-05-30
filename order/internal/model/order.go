@@ -83,14 +83,6 @@ func (o *Order) CanModify() error {
 	return nil
 }
 
-// CanCommit() позволяет производить только заказов в статусе ASSEMBLED.
-func (o *Order) CanCommit() error {
-	if o.Status == OrderStatusAssembled {
-		return errs.ErrOrderAlreadyAssembled
-	}
-	return nil
-}
-
 // Pay() меняет статус заказа на PAID, устанавливает способ оплаты и идентификатор транзакции.
 func (o *Order) Pay(transaction uuid.UUID, payment *PaymentMethod) {
 	if payment != nil {
