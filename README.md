@@ -128,4 +128,6 @@ $ bin/goose -dir migrations/order create create_order_items_table sql
 $ bin/goose -dir migrations/order create add_user_uuid_column_to_orders sql
 $ bin/goose -dir migrations/order create backfill_user_uuid_in_orders sql
 $ bin/goose -dir migrations/order create set_user_uuid_not_null_in_orders sql
+
+$ bin/goose -dir migrations/iam create create_users_table sql
 ```

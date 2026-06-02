@@ -290,6 +290,7 @@ tasks:
       - task up-core
       - task up-inventory
       - task up-order
+      - task up-iam
 
   down-all:
     desc: Остановить и удалить все сервисы по очереди вместе с зависимостями
@@ -297,6 +298,21 @@ tasks:
       - task down-order
       - task down-inventory
       - task down-core
+      - task down-iam
+
+  migrate-all-up:
+    desc: Выполнить миграции для всех сервисов
+    cmds:
+      - task migrate:order:up
+      - task migrate:inventory:up
+      - task migrate:iam:up
+
+  migrate-all-down:
+    desc: Откат миграции для всех сервисов
+    cmds:
+      - task migrate:order:down
+      - task migrate:inventory:down
+      - task migrate:iam:down
 
   migrate:order:up:
     desc: "Применяет все миграции Order-сервиса"
