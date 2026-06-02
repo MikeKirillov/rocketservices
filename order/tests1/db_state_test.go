@@ -9,7 +9,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/MikeKirillov/rocketservices/order/tests/testutil"
+	"github.com/MikeKirillov/rocketservices/order/tests1/testutil"
 	inventoryv1 "github.com/MikeKirillov/rocketservices/shared/pkg/proto/inventory/v1"
 )
 
