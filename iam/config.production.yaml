@@ -1,0 +1,19 @@
+grpc:
+  host: "0.0.0.0"
+  port: "50053"
+  keepalive:
+    timeMinutes: 5 # Интервал ping'ов для обнаружения мёртвого сервера
+    timeoutSec: 1 # Таймаут ожидания pong
+    maxConnIdleMinutes: 15 # Закрыть idle-соединения (нет активных RPC)
+    maxConnAgeMinutes: 30 # Принудительная ротация для балансировки
+    maxConnAgeGraceSec: 5  # Время на завершение активных RPC
+    minPingIntervalMinutes: 5  # Минимальный интервал ping'ов от клиента (защита от DoS)
+    shutdownTimeoutSec: 5
+
+pg:
+  host: "postgres-production"
+  port: "5434"
+  database: "iam-service"
+  user: "MUST_BE_SET_VIA_ENV"
+  password: "MUST_BE_SET_VIA_ENV"
+  sslmode: "require"
