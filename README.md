@@ -114,6 +114,18 @@ $ curl -v -X POST http://localhost:8080/api/v1/orders/add59d95-8607-44dc-8204-92
 $ go run cmd/main.go
 ```
 
+## iam
+
+### server start
+```
+$ go run cmd/grpc_server/main.go
+```
+
+### получить все детали
+```
+$ grpcurl -plaintext -d '{"info": {"info": {"login": "aaa"}, "password": "12345678"}}' localhost:50053 user.v1.UserService/Register
+```
+
 # goose файл миграции
 
 ```
