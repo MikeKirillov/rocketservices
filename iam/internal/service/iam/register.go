@@ -31,19 +31,3 @@ func (s *service) Register(ctx context.Context, input input.RegisterInput) (uuid
 
 	return user.UUID, nil
 }
-
-func (s *service) GetUser(context.Context) error {
-	return nil
-}
-
-func (s *service) Login(context.Context) error {
-	return nil
-}
-
-func (s *service) Whoami(context.Context) error {
-	return nil
-}
-
-func (s *service) Logout(context.Context) error {
-	return nil
-}
