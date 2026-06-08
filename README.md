@@ -121,9 +121,14 @@ $ go run cmd/main.go
 $ go run cmd/grpc_server/main.go
 ```
 
-### получить все детали
+### зарегистрировать пользователя
 ```
 $ grpcurl -plaintext -d '{"info": {"info": {"login": "aaa"}, "password": "12345678"}}' localhost:50053 user.v1.UserService/Register
+```
+
+### получить пользователя
+```
+$ grpcurl -plaintext -d '{"userUuid": "3674a8b1-4827-40ce-82d5-a487dd72a9ea"}' localhost:50053 user.v1.UserService/GetUser
 ```
 
 # goose файл миграции
