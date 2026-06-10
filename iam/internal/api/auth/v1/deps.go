@@ -12,9 +12,9 @@ import (
 // для обоих хендлеров используется интерфейс с одинаковым
 // набором методов. по ТЗ у нас универсальный сервис для user и auth.
 type AuthService interface {
-	Register(context.Context, input.RegisterInput) (uuid.UUID, error)
+	Register(context.Context, input.LoginPassInput) (uuid.UUID, error)
 	GetUser(context.Context, uuid.UUID) (model.User, error)
-	Login(context.Context) error
+	Login(context.Context, input.LoginPassInput) (uuid.UUID, error)
 	Whoami(context.Context) error
 	Logout(context.Context) error
 }

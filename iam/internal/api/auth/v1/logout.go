@@ -12,3 +12,9 @@ import (
 func (a *api) Logout(context.Context, *authv1.LogoutRequest) (*authv1.LogoutResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method Logout not implemented")
 }
+
+// Logout
+// Ситуация					gRPC код			Описание
+// Успешный выход			OK					Сессия удалена
+// Пустой session_uuid		InvalidArgument		"session_uuid обязателен"
+// Сессия не существует		OK					Идемпотентно — повторный Logout не ошибка

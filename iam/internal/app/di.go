@@ -6,22 +6,34 @@ import (
 	"os"
 
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/redis/go-redis/v9"
 
 	authV1API "github.com/MikeKirillov/rocketservices/iam/internal/api/auth/v1"
 	userV1API "github.com/MikeKirillov/rocketservices/iam/internal/api/user/v1"
 	"github.com/MikeKirillov/rocketservices/iam/internal/config"
+	sessionRepo "github.com/MikeKirillov/rocketservices/iam/internal/repository/session_cache"
 	userRepo "github.com/MikeKirillov/rocketservices/iam/internal/repository/user"
 	iamService "github.com/MikeKirillov/rocketservices/iam/internal/service/iam"
 	"github.com/MikeKirillov/rocketservices/platform/pkg/closer"
+	platformRedis "github.com/MikeKirillov/rocketservices/platform/pkg/redis"
 	authv1 "github.com/MikeKirillov/rocketservices/shared/pkg/proto/auth/v1"
 	userv1 "github.com/MikeKirillov/rocketservices/shared/pkg/proto/user/v1"
 )
 
 type diContainer struct {
-	pgPool        *pgxpool.Pool
-	userRepo      iamService.UserRepository
-	userSvc       userV1API.UserService
-	authSvc       authV1API.AuthService
+	// Инфраструктура
+	pgPool      *pgxpool.Pool
+	redisClient *redis.Client
+
+	// Репозитории
+	userRepo    iamService.UserRepository
+	sessionRepo iamService.SessionRepository
+
+	// Сервисы
+	userSvc userV1API.UserService
+	authSvc authV1API.AuthService
+
+	// API-обработчики
 	authV1Handler authv1.AuthServiceServer
 	userV1Handler userv1.UserServiceServer
 }
@@ -59,9 +71,44 @@ func (d *diContainer) UserRepository(ctx context.Context) iamService.UserReposit
 	return d.userRepo
 }
 
+func (d *diContainer) RedisClient() *redis.Client {
+	if d.redisClient == nil {
+		rdb, err := platformRedis.NewClient(
+			&redis.Options{
+				Addr:         config.AppConfig().Redis.Address(),
+				DialTimeout:  config.AppConfig().Redis.ConnTimeout(),
+				ReadTimeout:  config.AppConfig().Redis.ConnTimeout(),
+				WriteTimeout: config.AppConfig().Redis.ConnTimeout(),
+			},
+			slog.Default(),
+		)
+		if err != nil {
+			slog.Error("не удалось создать Redis клиент", "error", err)
+			os.Exit(1)
+		}
+
+		closer.Add("Redis", func(_ context.Context) error {
+			return rdb.Close()
+		})
+
+		d.redisClient = rdb
+	}
+	return d.redisClient
+}
+
+func (d *diContainer) SessionRepository() iamService.SessionRepository {
+	if d.sessionRepo == nil {
+		d.sessionRepo = sessionRepo.NewRepository(
+			d.RedisClient(),
+			config.AppConfig().Redis.SessionTTL(),
+		)
+	}
+	return d.sessionRepo
+}
+
 func (d *diContainer) AuthService(ctx context.Context) authV1API.AuthService {
 	if d.authSvc == nil {
-		d.authSvc = iamService.New(d.UserRepository(ctx))
+		d.authSvc = iamService.New(d.UserRepository(ctx), d.SessionRepository())
 	}
 	return d.authSvc
 }

@@ -12,7 +12,7 @@ import (
 	sharedErrs "github.com/MikeKirillov/rocketservices/shared/pkg/errors"
 )
 
-func (s *service) Register(ctx context.Context, input input.RegisterInput) (uuid.UUID, error) {
+func (s *service) Register(ctx context.Context, input input.LoginPassInput) (uuid.UUID, error) {
 	user, err := model.NewUser(input.Login, input.Password)
 	if err != nil {
 		if errors.Is(err, errs.ErrInvalidLogin) || errors.Is(err, errs.ErrWeakPassword) {

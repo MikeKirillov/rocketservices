@@ -17,3 +17,16 @@ pg:
   user: "MUST_BE_SET_VIA_ENV"
   password: "MUST_BE_SET_VIA_ENV"
   sslmode: "require"
+
+redis:
+  host: "0.0.0.0"
+  port: "6379"
+  password: ""
+  db: 0
+  connection_timeout: 5s
+
+session:
+  ttl: 24h
+
+logger:
+  level: "info"

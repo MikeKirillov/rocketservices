@@ -16,9 +16,10 @@ func UserToRecord(user model.User) record.User {
 
 func UserToModel(user record.User) model.User {
 	return model.User{
-		UUID:      user.Uuid,
-		Login:     user.Login,
-		CreatedAt: user.CreatedAt,
-		UpdatetAt: user.UpdatedAt,
+		UUID:         user.Uuid,
+		Login:        user.Login,
+		CreatedAt:    user.CreatedAt,
+		UpdatetAt:    user.UpdatedAt,
+		PasswordHash: user.PasswordHash,
 	}
 }

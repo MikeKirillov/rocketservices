@@ -5,14 +5,22 @@ import (
 
 	"github.com/MikeKirillov/rocketservices/iam/internal/model"
 	"github.com/MikeKirillov/rocketservices/iam/internal/service/input"
+	authv1 "github.com/MikeKirillov/rocketservices/shared/pkg/proto/auth/v1"
 	commonv1 "github.com/MikeKirillov/rocketservices/shared/pkg/proto/common/v1"
 	userv1 "github.com/MikeKirillov/rocketservices/shared/pkg/proto/user/v1"
 )
 
-func RegisterToInput(proto *userv1.RegisterRequest) input.RegisterInput {
-	return input.RegisterInput{
+func RegisterToInput(proto *userv1.RegisterRequest) input.LoginPassInput {
+	return input.LoginPassInput{
 		Login:    proto.GetInfo().GetInfo().GetLogin(),
 		Password: proto.GetInfo().GetPassword(),
+	}
+}
+
+func LoginToInput(proto *authv1.LoginRequest) input.LoginPassInput {
+	return input.LoginPassInput{
+		Login:    proto.GetLogin(),
+		Password: proto.GetPassword(),
 	}
 }
 
