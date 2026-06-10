@@ -22,7 +22,3 @@ func New(
 func (s *service) Whoami(context.Context) error {
 	return nil
 }
-
-func (s *service) Logout(context.Context) error {
-	return nil
-}

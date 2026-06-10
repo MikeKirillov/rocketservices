@@ -16,4 +16,5 @@ type UserRepository interface {
 
 type SessionRepository interface {
 	Set(context.Context, model.Session) error
+	Delete(context.Context, uuid.UUID) error
 }
