@@ -26,17 +26,42 @@ func LoginToInput(proto *authv1.LoginRequest) input.LoginPassInput {
 
 func UserToProto(user model.User) *userv1.GetUserResponse {
 	result := &userv1.GetUserResponse{
-		User: &commonv1.User{
-			Uuid: user.UUID.String(),
-			Info: &commonv1.UserInfo{
-				Login: user.Login,
-			},
-			CreatedAt: timestamppb.New(user.CreatedAt),
-		},
+		User: userToCommonProto(user),
 	}
 
 	if user.UpdatetAt != nil {
 		result.User.UpdatedAt = timestamppb.New(*user.UpdatetAt)
+	}
+
+	return result
+}
+
+func UserSessionToProto(user model.User, session model.Session) *authv1.WhoamiResponse {
+	return &authv1.WhoamiResponse{
+		Session: sessionToCommonProto(session),
+		User:    userToCommonProto(user),
+	}
+}
+
+func userToCommonProto(user model.User) *commonv1.User {
+	return &commonv1.User{
+		Uuid: user.UUID.String(),
+		Info: &commonv1.UserInfo{
+			Login: user.Login,
+		},
+		CreatedAt: timestamppb.New(user.CreatedAt),
+	}
+}
+
+func sessionToCommonProto(session model.Session) *commonv1.Session {
+	result := &commonv1.Session{
+		Uuid:      session.UUID.String(),
+		CreatedAt: timestamppb.New(session.CreatedAt),
+		ExpiresAt: timestamppb.New(session.ExpiresAt),
+	}
+
+	if session.UpdatedAt != nil {
+		result.UpdatedAt = timestamppb.New(*session.UpdatedAt)
 	}
 
 	return result
