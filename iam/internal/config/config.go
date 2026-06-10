@@ -14,6 +14,7 @@ type config struct {
 	GRPC   grpcConfig   `yaml:"grpc"`
 	Logger loggerConfig `yaml:"logger"`
 	PG     pgConfig     `yaml:"pg"`
+	Redis  redisConfig  `yaml:"redis"`
 }
 
 var appConfig *config

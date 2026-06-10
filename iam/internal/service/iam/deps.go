@@ -10,7 +10,10 @@ import (
 
 type UserRepository interface {
 	InsertUser(context.Context, model.User) error
-	GetUser(context.Context, uuid.UUID) (model.User, error)
+	GetUserByUUID(context.Context, uuid.UUID) (model.User, error)
+	GetUserByLogin(context.Context, string) (model.User, error)
 }
 
-type SessionRepository interface{}
+type SessionRepository interface {
+	Set(context.Context, model.Session) error
+}

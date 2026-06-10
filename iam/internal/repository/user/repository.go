@@ -47,7 +47,7 @@ func (r *repository) InsertUser(ctx context.Context, user model.User) error {
 	return nil
 }
 
-func (r *repository) GetUser(ctx context.Context, id uuid.UUID) (model.User, error) {
+func (r *repository) GetUserByUUID(ctx context.Context, id uuid.UUID) (model.User, error) {
 	query := `SELECT uuid, login, created_at, updated_at
 	FROM users WHERE uuid = $1`
 
@@ -57,6 +57,28 @@ func (r *repository) GetUser(ctx context.Context, id uuid.UUID) (model.User, err
 		&rec.Login,
 		&rec.CreatedAt,
 		&rec.UpdatedAt,
+	)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return model.User{}, errs.ErrUserNotFound
+		}
+		return model.User{}, err
+	}
+
+	return converter.UserToModel(rec), nil
+}
+
+func (r *repository) GetUserByLogin(ctx context.Context, login string) (model.User, error) {
+	query := `SELECT uuid, login, created_at, updated_at, password_hash
+	FROM users WHERE login = $1`
+
+	var rec record.User
+	err := r.pool.QueryRow(ctx, query, login).Scan(
+		&rec.Uuid,
+		&rec.Login,
+		&rec.CreatedAt,
+		&rec.UpdatedAt,
+		&rec.PasswordHash,
 	)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {

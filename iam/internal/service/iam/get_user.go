@@ -12,7 +12,7 @@ import (
 )
 
 func (s *service) GetUser(ctx context.Context, id uuid.UUID) (model.User, error) {
-	user, err := s.userRepository.GetUser(ctx, id)
+	user, err := s.userRepository.GetUserByUUID(ctx, id)
 	if err != nil {
 		if errors.Is(err, errs.ErrUserNotFound) {
 			return model.User{}, sharedErrs.NewNotFound(err)
