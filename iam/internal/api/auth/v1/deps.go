@@ -16,5 +16,5 @@ type AuthService interface {
 	GetUser(context.Context, uuid.UUID) (model.User, error)
 	Login(context.Context, input.LoginPassInput) (uuid.UUID, error)
 	Whoami(context.Context) error
-	Logout(context.Context) error
+	Logout(context.Context, uuid.UUID) error
 }

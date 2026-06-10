@@ -3,18 +3,24 @@ package v1
 import (
 	"context"
 
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
+	"github.com/google/uuid"
 
+	errs "github.com/MikeKirillov/rocketservices/iam/internal/errors"
+	sharedErrs "github.com/MikeKirillov/rocketservices/shared/pkg/errors"
 	authv1 "github.com/MikeKirillov/rocketservices/shared/pkg/proto/auth/v1"
 )
 
-func (a *api) Logout(context.Context, *authv1.LogoutRequest) (*authv1.LogoutResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "method Logout not implemented")
-}
+func (a *api) Logout(ctx context.Context, req *authv1.LogoutRequest) (*authv1.LogoutResponse, error) {
+	if req.GetSessionUuid() == "" {
+		return nil, sharedErrs.NewInvalidArgument(errs.ErrEmptySessionID)
+	}
+	sessionUUID, err := uuid.Parse(req.GetSessionUuid())
+	if err != nil {
+		return nil, sharedErrs.NewInvalidArgument(errs.ErrInvalidUUID)
+	}
 
-// Logout
-// Ситуация					gRPC код			Описание
-// Успешный выход			OK					Сессия удалена
-// Пустой session_uuid		InvalidArgument		"session_uuid обязателен"
-// Сессия не существует		OK					Идемпотентно — повторный Logout не ошибка
+	if err := a.authService.Logout(ctx, sessionUUID); err != nil {
+		return nil, err
+	}
+	return &authv1.LogoutResponse{}, nil
+}

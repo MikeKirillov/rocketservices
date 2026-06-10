@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/google/uuid"
+
 	"github.com/MikeKirillov/rocketservices/iam/internal/model"
 	"github.com/MikeKirillov/rocketservices/iam/internal/repository/converter"
 )
@@ -38,4 +40,9 @@ func (r *repository) Set(ctx context.Context, session model.Session) error {
 	}
 
 	return r.client.Expire(ctx, cacheKey, r.ttl).Err()
+}
+
+func (r *repository) Delete(ctx context.Context, sessionUUID uuid.UUID) error {
+	cacheKey := r.getChacheKey(sessionUUID.String())
+	return r.client.Del(ctx, cacheKey).Err()
 }
