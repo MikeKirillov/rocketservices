@@ -13,7 +13,7 @@ type redisConfig struct {
 }
 
 type session struct {
-	TTL int64 `yaml:"ttl env:"SESSION_TTL" env-default:"24"`
+	TTL int64 `yaml:"ttl" env:"SESSION_TTL" env-default:"24"`
 }
 
 func (r *redisConfig) Address() string {

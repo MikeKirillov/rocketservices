@@ -1,9 +1,5 @@
 package iam
 
-import (
-	"context"
-)
-
 type service struct {
 	userRepository    UserRepository
 	sessionRepository SessionRepository
@@ -17,8 +13,4 @@ func New(
 		userRepository:    userRepository,
 		sessionRepository: sessionRepository,
 	}
-}
-
-func (s *service) Whoami(context.Context) error {
-	return nil
 }

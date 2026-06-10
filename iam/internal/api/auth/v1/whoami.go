@@ -2,19 +2,31 @@ package v1
 
 import (
 	"context"
+	"errors"
 
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
+	"github.com/google/uuid"
 
+	"github.com/MikeKirillov/rocketservices/iam/internal/api/converter"
+	errs "github.com/MikeKirillov/rocketservices/iam/internal/errors"
+	sharedErrs "github.com/MikeKirillov/rocketservices/shared/pkg/errors"
 	authv1 "github.com/MikeKirillov/rocketservices/shared/pkg/proto/auth/v1"
 )
 
-func (a *api) Whoami(context.Context, *authv1.WhoamiRequest) (*authv1.WhoamiResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "method Whoami not implemented")
-}
+func (a *api) Whoami(ctx context.Context, req *authv1.WhoamiRequest) (*authv1.WhoamiResponse, error) {
+	if req.GetSessionUuid() == "" {
+		return nil, sharedErrs.NewInvalidArgument(errs.ErrEmptySessionID)
+	}
+	sessionUUID, err := uuid.Parse(req.GetSessionUuid())
+	if err != nil {
+		return nil, sharedErrs.NewInvalidArgument(errs.ErrInvalidUUID)
+	}
 
-// Whoami
-// Ситуация						gRPC код			Описание
-// Сессия валидна				OK					Возвращает session + user
-// Пустой session_uuid			InvalidArgument		"session_uuid обязателен"
-// Сессия не найдена / истекла	Unauthenticated		"сессия не найдена или истекла"
+	user, session, err := a.authService.Whoami(ctx, sessionUUID)
+	if err != nil {
+		if errors.Is(err, errs.ErrSessionNotFound) {
+			return nil, sharedErrs.NewUnauthorized(err)
+		}
+		return nil, sharedErrs.NewInternal(err)
+	}
+	return converter.UserSessionToProto(user, session), nil
+}
