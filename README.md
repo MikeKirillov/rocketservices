@@ -123,13 +123,29 @@ $ go run cmd/grpc_server/main.go
 
 ### зарегистрировать пользователя
 ```
-$ grpcurl -plaintext -d '{"info": {"info": {"login": "aaa"}, "password": "12345678"}}' localhost:50053 user.v1.UserService/Register
+$ grpcurl -plaintext -d '{"info": {"info": {"login": "test"}, "password": "password123"}}' localhost:50053 user.v1.UserService/Register
 ```
 
 ### получить пользователя
 ```
-$ grpcurl -plaintext -d '{"userUuid": "3674a8b1-4827-40ce-82d5-a487dd72a9ea"}' localhost:50053 user.v1.UserService/GetUser
+$ grpcurl -plaintext -d '{"userUuid": "cd6fd604-bf67-4b8e-9c1f-a5ebcd85323e"}' localhost:50053 user.v1.UserService/GetUser
 ```
+
+### логин
+```
+$ grpcurl -plaintext -d '{"login": "test", "password": "password123"}' localhost:50053 auth.v1.AuthService/Login
+```
+
+### логаут
+```
+$ grpcurl -plaintext -d '{"session_uuid": "09d21cf8-8c7c-422f-80c4-13f37b8cec3d"}' localhost:50053 auth.v1.AuthService/Logout
+```
+
+### о сессии и пользователе
+```
+$ grpcurl -plaintext -d '{"session_uuid": "09d21cf8-8c7c-422f-80c4-13f37b8cec3d"}' localhost:50053 auth.v1.AuthService/Whoami
+```
+
 
 # goose файл миграции
 

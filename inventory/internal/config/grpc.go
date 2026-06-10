@@ -44,11 +44,11 @@ func (c *grpcConfig) ShutdownTimeout() time.Duration {
 }
 
 type keepaliveGRPCConfig struct {
-	Time                  int64 `yaml:"timeMinutes" env:"GRPC_TIME" env-default:"300000"`
-	Timeout               int64 `yaml:"timeoutSec" env:"GRPC_TIMEOUT" env-default:"1000"`
-	MaxConnectionIdle     int64 `yaml:"maxConnIdleMinutes" env:"GRPC_IDLE" env-default:"900000"`
-	MaxConnectionAge      int64 `yaml:"maxConnAgeMinutes" env:"GRPC_AGE" env-default:"1800000"`
-	MaxConnectionAgeGrace int64 `yaml:"maxConnAgeGraceSec" env:"GRPC_AGE_GRACE" env-default:"5000"`
-	MinPingInterval       int64 `yaml:"minPingIntervalMinutes" env:"GRPC_PING_INTERVAL" env-default:"300000"`
-	ShutdownTimeout       int64 `yaml:"shutdownTimeoutSec" env:"GRPC_SHUTDOWN_TIMEOUT" env-default:"5000"`
+	Time                  int64 `yaml:"timeMinutes" env:"GRPC_TIME" env-default:"5"`
+	Timeout               int64 `yaml:"timeoutSec" env:"GRPC_TIMEOUT" env-default:"1"`
+	MaxConnectionIdle     int64 `yaml:"maxConnIdleMinutes" env:"GRPC_IDLE" env-default:"15"`
+	MaxConnectionAge      int64 `yaml:"maxConnAgeMinutes" env:"GRPC_AGE" env-default:"30"`
+	MaxConnectionAgeGrace int64 `yaml:"maxConnAgeGraceSec" env:"GRPC_AGE_GRACE" env-default:"5"`
+	MinPingInterval       int64 `yaml:"minPingIntervalMinutes" env:"GRPC_PING_INTERVAL" env-default:"5"`
+	ShutdownTimeout       int64 `yaml:"shutdownTimeoutSec" env:"GRPC_SHUTDOWN_TIMEOUT" env-default:"5"`
 }

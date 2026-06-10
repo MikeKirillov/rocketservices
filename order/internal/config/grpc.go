@@ -47,6 +47,6 @@ func (c *paymentGRPCConfig) Timeout() time.Duration {
 }
 
 type keepaliveGRPCConfig struct {
-	Time    int64 `yaml:"timeMin" env:"GRPC_KEEPALIVE_TIME" env-default:"300000"`
-	Timeout int64 `yaml:"timeoutSec" env:"GRPC_KEEPALIVE_TIMEOUT" env-default:"1000"`
+	Time    int64 `yaml:"timeMin" env:"GRPC_KEEPALIVE_TIME" env-default:"5"`
+	Timeout int64 `yaml:"timeoutSec" env:"GRPC_KEEPALIVE_TIMEOUT" env-default:"1"`
 }
