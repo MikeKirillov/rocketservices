@@ -12,8 +12,8 @@ import (
 	producer "github.com/MikeKirillov/rocketservices/assembly/internal/producer/order"
 	"github.com/MikeKirillov/rocketservices/platform/pkg/closer"
 	wrappedKafkaConsumer "github.com/MikeKirillov/rocketservices/platform/pkg/kafka/consumer"
+	kafkaMiddleware "github.com/MikeKirillov/rocketservices/platform/pkg/kafka/middleware"
 	wrappedKafkaProducer "github.com/MikeKirillov/rocketservices/platform/pkg/kafka/producer"
-	kafkaMiddleware "github.com/MikeKirillov/rocketservices/platform/pkg/middleware/kafka"
 )
 
 // ConsumerService определяет контракт для запуска Kafka-потребителей.

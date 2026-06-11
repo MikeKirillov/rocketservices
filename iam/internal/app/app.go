@@ -14,7 +14,7 @@ import (
 
 	"github.com/MikeKirillov/rocketservices/iam/internal/config"
 	"github.com/MikeKirillov/rocketservices/platform/pkg/closer"
-	"github.com/MikeKirillov/rocketservices/platform/pkg/interceptor"
+	"github.com/MikeKirillov/rocketservices/platform/pkg/grpc/interceptor"
 	"github.com/MikeKirillov/rocketservices/platform/pkg/logger"
 	sharedErrs "github.com/MikeKirillov/rocketservices/shared/pkg/errors"
 	authv1 "github.com/MikeKirillov/rocketservices/shared/pkg/proto/auth/v1"
