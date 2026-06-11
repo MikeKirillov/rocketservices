@@ -54,7 +54,7 @@ func (c *paymentGRPCConfig) Timeout() time.Duration {
 
 type authGRPCConfig struct {
 	Host      string              `yaml:"host" env:"GRPC_PAYMENT_HOST" env-default:"localhost"`
-	Port      string              `yaml:"port" env:"GRPC_PAYMENT_PORT" env-default:"50052"`
+	Port      string              `yaml:"port" env:"GRPC_PAYMENT_PORT" env-default:"50053"`
 	Keepalive keepaliveGRPCConfig `yaml:"keepalive"`
 }
 

@@ -11,9 +11,10 @@ import (
 const defaultConfigPath = "config.local.yaml"
 
 type config struct {
-	GRPC   grpcConfig   `yaml:"grpc"`
-	Logger loggerConfig `yaml:"logger"`
-	PG     pgConfig     `yaml:"pg"`
+	GRPC       grpcConfig       `yaml:"grpc"`
+	Logger     loggerConfig     `yaml:"logger"`
+	PG         pgConfig         `yaml:"pg"`
+	GRPCClient grpcClientConfig `yaml:"grpcClient"`
 }
 
 var appConfig *config

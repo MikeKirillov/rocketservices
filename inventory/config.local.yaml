@@ -10,6 +10,14 @@ grpc:
     minPingIntervalMinutes: 5  # Минимальный интервал ping'ов от клиента (защита от DoS)
     shutdownTimeoutSec: 5
 
+grpcClient:
+  auth:
+    host: "localhost"
+    port: "50053"
+    keepalive:
+      timeMin: 5 # Интервал ping'ов для обнаружения мёртвого сервера
+      timeoutSec: 1 # Таймаут ожидания pong
+
 pg:
   host: "localhost"
   port: "5433"

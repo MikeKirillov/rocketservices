@@ -52,3 +52,25 @@ type keepaliveGRPCConfig struct {
 	MinPingInterval       int64 `yaml:"minPingIntervalMinutes" env:"GRPC_PING_INTERVAL" env-default:"5"`
 	ShutdownTimeout       int64 `yaml:"shutdownTimeoutSec" env:"GRPC_SHUTDOWN_TIMEOUT" env-default:"5"`
 }
+
+type grpcClientConfig struct {
+	AuthGRPCConfig authGRPCConfig `yaml:"auth"`
+}
+
+type authGRPCConfig struct {
+	Host      string              `yaml:"host" env:"GRPC_PAYMENT_HOST" env-default:"localhost"`
+	Port      string              `yaml:"port" env:"GRPC_PAYMENT_PORT" env-default:"50053"`
+	Keepalive keepaliveGRPCConfig `yaml:"keepalive"`
+}
+
+func (c *authGRPCConfig) Address() string {
+	return net.JoinHostPort(c.Host, c.Port)
+}
+
+func (c *authGRPCConfig) Time() time.Duration {
+	return time.Duration(c.Keepalive.Time) * time.Minute
+}
+
+func (c *authGRPCConfig) Timeout() time.Duration {
+	return time.Duration(c.Keepalive.Timeout) * time.Second
+}
