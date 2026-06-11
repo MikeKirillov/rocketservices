@@ -11,7 +11,7 @@ import (
 	partService "github.com/MikeKirillov/rocketservices/inventory/internal/application/service"
 	partComp "github.com/MikeKirillov/rocketservices/inventory/internal/domain/service"
 	partRepository "github.com/MikeKirillov/rocketservices/inventory/internal/repository/part"
-	"github.com/MikeKirillov/rocketservices/platform/pkg/interceptor"
+	"github.com/MikeKirillov/rocketservices/platform/pkg/grpc/interceptor"
 	sharedErrs "github.com/MikeKirillov/rocketservices/shared/pkg/errors"
 	inventoryv1 "github.com/MikeKirillov/rocketservices/shared/pkg/proto/inventory/v1"
 )
