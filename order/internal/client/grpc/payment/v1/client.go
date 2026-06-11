@@ -16,10 +16,8 @@ import (
 	paymentv1 "github.com/MikeKirillov/rocketservices/shared/pkg/proto/payment/v1"
 )
 
-const (
-	// Таймаут для gRPC вызовов.
-	grpcCallTimeout = 5 * time.Second
-)
+// Таймаут для gRPC вызовов.
+const grpcCallTimeout = 5 * time.Second
 
 type client struct {
 	grpcClient paymentv1.PaymentServiceClient

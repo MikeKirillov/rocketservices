@@ -34,6 +34,7 @@ import (
 	"github.com/MikeKirillov/rocketservices/order/pkg/app"
 	"github.com/MikeKirillov/rocketservices/order/tests/testutil"
 	payApp "github.com/MikeKirillov/rocketservices/payment/pkg/app"
+	authv1 "github.com/MikeKirillov/rocketservices/shared/pkg/proto/auth/v1"
 	inventoryv1 "github.com/MikeKirillov/rocketservices/shared/pkg/proto/inventory/v1"
 	paymentv1 "github.com/MikeKirillov/rocketservices/shared/pkg/proto/payment/v1"
 )
@@ -66,6 +67,7 @@ var (
 
 	inventoryClient inventoryv1.InventoryServiceClient
 	paymentClient   paymentv1.PaymentServiceClient
+	authClient      authv1.AuthServiceClient
 	httpClient      = &http.Client{Timeout: 10 * time.Second}
 	ts              *httptest.Server
 
@@ -236,8 +238,18 @@ func TestMain(m *testing.M) {
 	}
 	paymentClient = paymentv1.NewPaymentServiceClient(payConn)
 
+	authConn, err := grpc.NewClient(
+		"passthrough:///bufnet",
+		grpc.WithContextDialer(payBufDialer),
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
+	)
+	if err != nil {
+		panic(err)
+	}
+	authClient = authv1.NewAuthServiceClient(authConn)
+
 	// 10. Order HTTP через httptest
-	orderServer, err := app.NewHTTPHandler(orderPool, txManager, inventoryClient, paymentClient)
+	orderServer, err := app.NewHTTPHandler(orderPool, txManager, inventoryClient, paymentClient, authClient)
 	if err != nil {
 		panic(err)
 	}

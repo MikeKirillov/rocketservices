@@ -10,6 +10,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	orderAPIV1 "github.com/MikeKirillov/rocketservices/order/internal/api/order/v1"
+	authClientV1 "github.com/MikeKirillov/rocketservices/order/internal/client/grpc/auth/v1"
 	inventoryClientV1 "github.com/MikeKirillov/rocketservices/order/internal/client/grpc/inventory/v1"
 	paymentClientV1 "github.com/MikeKirillov/rocketservices/order/internal/client/grpc/payment/v1"
 	"github.com/MikeKirillov/rocketservices/order/internal/middleware"
@@ -19,6 +20,7 @@ import (
 	orderService "github.com/MikeKirillov/rocketservices/order/internal/service/order"
 	wrappedKafkaProducer "github.com/MikeKirillov/rocketservices/platform/pkg/kafka/producer"
 	orderv1 "github.com/MikeKirillov/rocketservices/shared/pkg/openapi/order/v1"
+	authv1 "github.com/MikeKirillov/rocketservices/shared/pkg/proto/auth/v1"
 	inventoryv1 "github.com/MikeKirillov/rocketservices/shared/pkg/proto/inventory/v1"
 	paymentv1 "github.com/MikeKirillov/rocketservices/shared/pkg/proto/payment/v1"
 )
@@ -28,10 +30,12 @@ func NewHTTPHandler(
 	txManager *manager.Manager,
 	inventoryGRPCClient inventoryv1.InventoryServiceClient,
 	paymentGRPCClient paymentv1.PaymentServiceClient,
+	authGRPCClient authv1.AuthServiceClient,
 ) (http.Handler, error) {
 	repo := orderRepo.NewRepository(pool, txManager)
 	inventoryClient := inventoryClientV1.New(inventoryGRPCClient)
 	paymentClient := paymentClientV1.New(paymentGRPCClient)
+	authClient := authClientV1.New(authGRPCClient)
 
 	cfg := sarama.NewConfig()
 	cfg.Version = sarama.V4_0_0_0
@@ -45,7 +49,7 @@ func NewHTTPHandler(
 	orderPaidProducer := wrappedKafkaProducer.NewProducer(syncProducer, "order.paid")
 	producerService := producer.NewService(orderPaidProducer)
 
-	service := orderService.NewService(repo, inventoryClient, paymentClient, txManager, producerService)
+	service := orderService.NewService(repo, inventoryClient, paymentClient, authClient, txManager, producerService)
 	orderHandler := orderAPIV1.NewOrderHandler(service)
 
 	// Создать OpenAPI сервер на основе обработчика
@@ -77,16 +81,18 @@ func NewHTTPHandlerWithProducer(
 	inventoryGRPCClient inventoryv1.InventoryServiceClient,
 	paymentGRPCClient paymentv1.PaymentServiceClient,
 	realOrderProducer OrderProducerService,
+	authGRPCClient authv1.AuthServiceClient,
 ) (http.Handler, error) {
 	repo := orderRepo.NewRepository(pool, txManager)
 	inventoryClient := inventoryClientV1.New(inventoryGRPCClient)
 	paymentClient := paymentClientV1.New(paymentGRPCClient)
+	authClient := authClientV1.New(authGRPCClient)
 
 	cfg := sarama.NewConfig()
 	cfg.Version = sarama.V4_0_0_0
 	cfg.Producer.Return.Successes = true
 
-	service := orderService.NewService(repo, inventoryClient, paymentClient, txManager, realOrderProducer)
+	service := orderService.NewService(repo, inventoryClient, paymentClient, authClient, txManager, realOrderProducer)
 	orderHandler := orderAPIV1.NewOrderHandler(service)
 
 	// Создать OpenAPI сервер на основе обработчика

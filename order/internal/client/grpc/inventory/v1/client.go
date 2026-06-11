@@ -6,10 +6,8 @@ import (
 	inventoryv1 "github.com/MikeKirillov/rocketservices/shared/pkg/proto/inventory/v1"
 )
 
-const (
-	// Таймаут для gRPC вызовов.
-	grpcCallTimeout = 5 * time.Second
-)
+// Таймаут для gRPC вызовов.
+const grpcCallTimeout = 5 * time.Second
 
 type client struct {
 	grpcClient inventoryv1.InventoryServiceClient
