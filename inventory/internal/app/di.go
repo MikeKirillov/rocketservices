@@ -8,22 +8,37 @@ import (
 	trmpgx "github.com/avito-tech/go-transaction-manager/drivers/pgxv5/v2"
 	"github.com/avito-tech/go-transaction-manager/trm/v2/manager"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/grpc/keepalive"
 
 	invV1API "github.com/MikeKirillov/rocketservices/inventory/internal/api/inventory/v1"
 	invService "github.com/MikeKirillov/rocketservices/inventory/internal/application/service"
+	authClientV1 "github.com/MikeKirillov/rocketservices/inventory/internal/client/grpc/auth/v1"
 	"github.com/MikeKirillov/rocketservices/inventory/internal/config"
 	domain "github.com/MikeKirillov/rocketservices/inventory/internal/domain/service"
 	invRepository "github.com/MikeKirillov/rocketservices/inventory/internal/repository/part"
 	"github.com/MikeKirillov/rocketservices/platform/pkg/closer"
+	authv1 "github.com/MikeKirillov/rocketservices/shared/pkg/proto/auth/v1"
 	inventoryv1 "github.com/MikeKirillov/rocketservices/shared/pkg/proto/inventory/v1"
 )
 
 type diContainer struct {
-	pgPool       *pgxpool.Pool
-	txManager    *manager.Manager
-	invRepo      invService.PartRepository
-	compChecker  invService.CompatibilityChecker
-	invSvc       invV1API.PartService
+	// Инфраструктура
+	pgPool    *pgxpool.Pool
+	txManager *manager.Manager
+
+	// Репо
+	invRepo invService.PartRepository
+
+	// Интеграции
+	authClient invService.AuthServiceClient
+
+	// Сервисы
+	compChecker invService.CompatibilityChecker
+	invSvc      invV1API.PartService
+
+	// API-обработчики
 	invV1Handler inventoryv1.InventoryServiceServer
 }
 
@@ -79,12 +94,47 @@ func (d *diContainer) TxManager(ctx context.Context) *manager.Manager {
 	return d.txManager
 }
 
+func (d *diContainer) AuthClient() invService.AuthServiceClient {
+	conf := config.AppConfig().GRPCClient.AuthGRPCConfig
+
+	if d.authClient == nil {
+		conn, err := grpc.NewClient(
+			conf.Address(),
+			grpc.WithTransportCredentials(insecure.NewCredentials()),
+			grpc.WithKeepaliveParams(keepalive.ClientParameters{
+				Time:                conf.Time(),    // Интервал ping'ов
+				Timeout:             conf.Timeout(), // Таймаут ожидания pong
+				PermitWithoutStream: true,           // Пинговать даже без активных RPC
+			}),
+		)
+		if err != nil {
+			slog.Error("не удалось подключиться к gRPC: AuthService", "error", err)
+			os.Exit(1)
+		}
+
+		closer.Add("gRPC соединение AuthService", func(_ context.Context) error {
+			if err = conn.Close(); err != nil {
+				slog.Error("ошибка закрытия gRPC соединения", "error", err)
+				return err
+			}
+			return nil
+		})
+
+		grpcClient := authv1.NewAuthServiceClient(conn)
+		d.authClient = authClientV1.New(grpcClient)
+	}
+	slog.Info("установлено подключение к gRPC: AuthService", "host", conf.Host, "port", conf.Port)
+
+	return d.authClient
+}
+
 func (d *diContainer) InventoryService(ctx context.Context) invV1API.PartService {
 	if d.invSvc == nil {
 		d.invSvc = invService.NewService(
 			d.InventoryRepository(ctx),
 			d.CompatibilityChecker(),
 			d.TxManager(ctx),
+			d.AuthClient(),
 		)
 	}
 	return d.invSvc

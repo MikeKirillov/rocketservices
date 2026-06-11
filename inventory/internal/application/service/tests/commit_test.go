@@ -151,7 +151,8 @@ func TestCommit(t *testing.T) {
 			r := mocks.NewPartRepository(t)
 			c := mocks.NewCompatibilityChecker(t)
 			m := mocks.NewTxManager(t)
-			s := part.NewService(r, c, m)
+			a := mocks.NewAuthServiceClient(t)
+			s := part.NewService(r, c, m, a)
 
 			test.setupMock(m, r)
 

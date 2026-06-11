@@ -13,6 +13,7 @@ import (
 	"google.golang.org/grpc/reflection"
 
 	"github.com/MikeKirillov/rocketservices/inventory/internal/config"
+	innerceptor "github.com/MikeKirillov/rocketservices/inventory/internal/interceptor"
 	"github.com/MikeKirillov/rocketservices/platform/pkg/closer"
 	"github.com/MikeKirillov/rocketservices/platform/pkg/grpc/interceptor"
 	"github.com/MikeKirillov/rocketservices/platform/pkg/logger"
@@ -127,6 +128,7 @@ func (a *App) initGRPCServer(ctx context.Context) {
 		grpc.ChainUnaryInterceptor(
 			interceptor.RecoveryInterceptor(),
 			interceptor.LoggerInterceptor(),
+			innerceptor.ServerIncomingInterceptor(a.diContainer.authClient),
 			sharedErrs.UnaryErrorInterceptor(slog.Default()),
 		),
 	)

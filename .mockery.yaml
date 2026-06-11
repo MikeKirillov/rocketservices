@@ -41,7 +41,7 @@ packages:
       include-interface-regex: ".*Service"
   github.com/MikeKirillov/rocketservices/inventory/internal/application/service:
     config:
-      include-interface-regex: ".*(Repository|Checker|Manager)"
+      include-interface-regex: ".*(Repository|Checker|Manager|Client)"
 
   # Payment service
   github.com/MikeKirillov/rocketservices/payment/internal/api/payment/v1:

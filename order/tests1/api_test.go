@@ -201,7 +201,16 @@ func TestMain(m *testing.M) {
 	// 8. Inventory gRPC через bufconn
 	invLis = bufconn.Listen(bufSize)
 	invGRPCServer := grpc.NewServer(invApp.Interceptors()...)
-	invApp.RegisterServices(invGRPCServer, inventoryPool, txManagerInventory)
+	authConn, err := grpc.NewClient(
+		"passthrough:///bufnet",
+		grpc.WithContextDialer(payBufDialer),
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
+	)
+	if err != nil {
+		panic(err)
+	}
+	authClient = authv1.NewAuthServiceClient(authConn)
+	invApp.RegisterServices(invGRPCServer, inventoryPool, txManagerInventory, authClient)
 	go func() {
 		if invServeErr := invGRPCServer.Serve(invLis); invServeErr != nil {
 			panic(invServeErr)
@@ -237,16 +246,6 @@ func TestMain(m *testing.M) {
 		panic(err)
 	}
 	paymentClient = paymentv1.NewPaymentServiceClient(payConn)
-
-	authConn, err := grpc.NewClient(
-		"passthrough:///bufnet",
-		grpc.WithContextDialer(payBufDialer),
-		grpc.WithTransportCredentials(insecure.NewCredentials()),
-	)
-	if err != nil {
-		panic(err)
-	}
-	authClient = authv1.NewAuthServiceClient(authConn)
 
 	// 10. Order HTTP через httptest
 	orderServer, err := app.NewHTTPHandler(orderPool, txManager, inventoryClient, paymentClient, authClient)

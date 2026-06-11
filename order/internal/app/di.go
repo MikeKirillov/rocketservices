@@ -24,6 +24,7 @@ import (
 	orderRepository "github.com/MikeKirillov/rocketservices/order/internal/repository/order"
 	orderService "github.com/MikeKirillov/rocketservices/order/internal/service/order"
 	"github.com/MikeKirillov/rocketservices/platform/pkg/closer"
+	"github.com/MikeKirillov/rocketservices/platform/pkg/grpc/interceptor"
 	wrappedKafkaConsumer "github.com/MikeKirillov/rocketservices/platform/pkg/kafka/consumer"
 	kafkaMiddleware "github.com/MikeKirillov/rocketservices/platform/pkg/kafka/middleware"
 	wrappedKafkaProducer "github.com/MikeKirillov/rocketservices/platform/pkg/kafka/producer"
@@ -118,7 +119,16 @@ func (d *diContainer) InventoryClient(ctx context.Context) orderService.Inventor
 	config := orderConfig.AppConfig().GRPC.InventoryGRPCConfig
 
 	if d.inventoryClient == nil {
-		conn, err := newGRPCClient(config.Address(), config.Time(), config.Timeout())
+		conn, err := grpc.NewClient(
+			config.Address(),
+			grpc.WithTransportCredentials(insecure.NewCredentials()),
+			grpc.WithKeepaliveParams(keepalive.ClientParameters{
+				Time:                config.Time(),    // Интервал ping'ов
+				Timeout:             config.Timeout(), // Таймаут ожидания pong
+				PermitWithoutStream: true,             // Пинговать даже без активных RPC
+			}),
+			grpc.WithUnaryInterceptor(interceptor.OutgoingClientInterceptor),
+		)
 		if err != nil {
 			slog.Error("не удалось подключиться к gRPC: InventoryService", "error", err)
 			os.Exit(1)
