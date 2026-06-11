@@ -15,6 +15,7 @@ import (
 	"google.golang.org/grpc/keepalive"
 
 	orderV1API "github.com/MikeKirillov/rocketservices/order/internal/api/order/v1"
+	authClientV1 "github.com/MikeKirillov/rocketservices/order/internal/client/grpc/auth/v1"
 	inventoryClientV1 "github.com/MikeKirillov/rocketservices/order/internal/client/grpc/inventory/v1"
 	paymentClientV1 "github.com/MikeKirillov/rocketservices/order/internal/client/grpc/payment/v1"
 	orderConfig "github.com/MikeKirillov/rocketservices/order/internal/config"
@@ -27,6 +28,7 @@ import (
 	kafkaMiddleware "github.com/MikeKirillov/rocketservices/platform/pkg/kafka/middleware"
 	wrappedKafkaProducer "github.com/MikeKirillov/rocketservices/platform/pkg/kafka/producer"
 	orderv1 "github.com/MikeKirillov/rocketservices/shared/pkg/openapi/order/v1"
+	authv1 "github.com/MikeKirillov/rocketservices/shared/pkg/proto/auth/v1"
 	inventoryv1 "github.com/MikeKirillov/rocketservices/shared/pkg/proto/inventory/v1"
 	paymentv1 "github.com/MikeKirillov/rocketservices/shared/pkg/proto/payment/v1"
 )
@@ -53,6 +55,7 @@ type diContainer struct {
 	// Интеграции
 	inventoryClient orderService.InventoryServiceClient
 	paymentClient   orderService.PaymentServiceClient
+	authClient      orderService.AuthServiceClient
 
 	// Сервисы
 	orderSvc            orderV1API.OrderService
@@ -163,6 +166,32 @@ func (d *diContainer) PaymentClient(ctx context.Context) orderService.PaymentSer
 	return d.paymentClient
 }
 
+func (d *diContainer) AuthClient(ctx context.Context) orderService.AuthServiceClient {
+	config := orderConfig.AppConfig().GRPC.AuthGRPCConfig
+
+	if d.authClient == nil {
+		conn, err := newGRPCClient(config.Address(), config.Time(), config.Timeout())
+		if err != nil {
+			slog.Error("не удалось подключиться к gRPC: AuthService", "error", err)
+			os.Exit(1)
+		}
+
+		closer.Add("gRPC соединение AuthService", func(_ context.Context) error {
+			if err = conn.Close(); err != nil {
+				slog.Error("ошибка закрытия gRPC соединения", "error", err)
+				return err
+			}
+			return nil
+		})
+
+		grpcClient := authv1.NewAuthServiceClient(conn)
+		d.authClient = authClientV1.New(grpcClient)
+	}
+	slog.Info("установлено подключение к gRPC: AuthService", "host", config.Host, "port", config.Port)
+
+	return d.authClient
+}
+
 func newGRPCClient(address string, time, timeout time.Duration) (conn *grpc.ClientConn, err error) {
 	return grpc.NewClient(
 		address,
@@ -222,6 +251,7 @@ func (d *diContainer) OrderService(ctx context.Context) orderV1API.OrderService 
 			d.OrderRepository(ctx),
 			d.InventoryClient(ctx),
 			d.PaymentClient(ctx),
+			d.AuthClient(ctx),
 			d.TxManager(ctx),
 			d.ProducerService(),
 		)

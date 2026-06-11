@@ -11,6 +11,12 @@ grpc:
     keepalive:
       timeMin: 5 # Интервал ping'ов для обнаружения мёртвого сервера
       timeoutSec: 1 # Таймаут ожидания pong
+  auth:
+    host: "0.0.0.0"
+    port: "50053"
+    keepalive:
+      timeMin: 5 # Интервал ping'ов для обнаружения мёртвого сервера
+      timeoutSec: 1 # Таймаут ожидания pong
 
 pg:
   host: "postgres-production"

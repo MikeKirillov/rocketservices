@@ -150,6 +150,7 @@ func (a *App) initHTTPServer(ctx context.Context) {
 	// Применяем кастомные middleware
 	handler = middleware.Logger(handler)
 	handler = middleware.Recoverer(handler)
+	handler = middleware.Auth(handler, a.diContainer.authClient)
 	handler = http.TimeoutHandler(
 		handler,
 		config.AppConfig().HTTP.TimeoutMiddlware(),

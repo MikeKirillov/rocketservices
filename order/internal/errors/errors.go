@@ -32,4 +32,5 @@ var (
 	ErrGrpcUnavailable        = errors.New("сервис недоступен")
 	ErrGrpcNotFound           = errors.New("детали не найдены")
 	ErrGrpcCancelledOperation = errors.New("операция отклонена")
+	ErrGrpcInvalidSession     = errors.New("недействительная сессия")
 )
