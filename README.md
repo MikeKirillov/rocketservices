@@ -89,7 +89,7 @@ $ go run cmd/main.go
 
 ### создание заказа
 ```
-$ curl -v -X POST http://localhost:8080/api/v1/orders -H "Content-Type: application/json" -d '{"hull_uuid": "550e8400-e29b-41d4-a716-446655440001", "engine_uuid": "550e8400-e29b-41d4-a716-446655440003", "shield_uuid": "550e8400-e29b-41d4-a716-446655440005", "weapon_uuid": null, "user_uuid": "550e8400-e29b-41d4-a716-446655440000"}'
+$ curl -v -X POST http://localhost:8080/api/v1/orders -H "Content-Type: application/json" -d '{"hull_uuid": "550e8400-e29b-41d4-a716-446655440001", "engine_uuid": "550e8400-e29b-41d4-a716-446655440003", "shield_uuid": "550e8400-e29b-41d4-a716-446655440005", "weapon_uuid": null}'
 ```
 
 ### получить заказ

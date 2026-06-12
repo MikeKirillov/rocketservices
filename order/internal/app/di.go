@@ -310,6 +310,7 @@ func (d *diContainer) ShipAssembledConsumer() *wrappedKafkaConsumer.Consumer {
 			wrappedKafkaConsumer.WithMiddlewares(
 				kafkaMiddleware.RecoveryMiddleware(),
 				kafkaMiddleware.ConsumerLogging(),
+				kafkaMiddleware.ConsumerSession(),
 			),
 		)
 	}

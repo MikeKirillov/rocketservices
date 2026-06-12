@@ -7,8 +7,7 @@ import (
 )
 
 type CreateOrderRq struct {
-	Items    []model.OrderItem
-	UserUUID uuid.UUID
+	Items []model.OrderItem
 }
 
 func (r *CreateOrderRq) PartUUIDsAsSlice() []uuid.UUID {
