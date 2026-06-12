@@ -33,4 +33,5 @@ var (
 	ErrGrpcNotFound           = errors.New("детали не найдены")
 	ErrGrpcCancelledOperation = errors.New("операция отклонена")
 	ErrGrpcInvalidSession     = errors.New("недействительная сессия")
+	ErrUnauthorized           = errors.New("пользователь не авторизован")
 )

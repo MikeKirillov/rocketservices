@@ -11,6 +11,7 @@ import (
 
 	"github.com/MikeKirillov/rocketservices/assembly/internal/model"
 	"github.com/MikeKirillov/rocketservices/platform/pkg/kafka"
+	kafkaMdw "github.com/MikeKirillov/rocketservices/platform/pkg/kafka/middleware"
 	eventsv1 "github.com/MikeKirillov/rocketservices/shared/pkg/proto/events/v1"
 )
 
@@ -40,7 +41,8 @@ func (s *service) ProduceShipAssembly(ctx context.Context, order model.OrderPaid
 	}
 
 	return s.shipAssemblyProducer.Send(ctx, &kafka.Message{
-		Key:   []byte(order.OrderUuid.String()),
-		Value: payload,
+		Key:     []byte(order.OrderUuid.String()),
+		Value:   payload,
+		Headers: kafkaMdw.ProducerSessionHeaders(ctx),
 	})
 }

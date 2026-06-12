@@ -9,6 +9,7 @@ import (
 
 	"github.com/MikeKirillov/rocketservices/order/internal/model"
 	"github.com/MikeKirillov/rocketservices/platform/pkg/kafka"
+	kafkaMdw "github.com/MikeKirillov/rocketservices/platform/pkg/kafka/middleware"
 	sharedErrs "github.com/MikeKirillov/rocketservices/shared/pkg/errors"
 	eventsv1 "github.com/MikeKirillov/rocketservices/shared/pkg/proto/events/v1"
 )
@@ -37,7 +38,8 @@ func (s *service) ProduceOrderPaid(ctx context.Context, order model.Order) error
 	}
 
 	return s.orderPaidProducer.Send(ctx, &kafka.Message{
-		Key:   []byte(order.OrderUUID.String()),
-		Value: payload,
+		Key:     []byte(order.OrderUUID.String()),
+		Value:   payload,
+		Headers: kafkaMdw.ProducerSessionHeaders(ctx),
 	})
 }

@@ -69,7 +69,7 @@ func OrderCreateRqToModel(orderRq *orderv1.CreateOrderRequest) (input.CreateOrde
 	if v, ok := orderRq.GetWeaponUUID().Get(); ok {
 		items = append(items, model.OrderItem{Uuid: v, Type: model.PartTypeWeapon})
 	}
-	return input.CreateOrderRq{Items: items, UserUUID: orderRq.UserUUID}, nil
+	return input.CreateOrderRq{Items: items}, nil
 }
 
 func checkRequiredField(field uuid.UUID, fieldName string) error {

@@ -10,6 +10,7 @@ import (
 	"github.com/MikeKirillov/rocketservices/order/internal/api/input"
 	errs "github.com/MikeKirillov/rocketservices/order/internal/errors"
 	"github.com/MikeKirillov/rocketservices/order/internal/model"
+	"github.com/MikeKirillov/rocketservices/platform/pkg/auth"
 	sharedErrs "github.com/MikeKirillov/rocketservices/shared/pkg/errors"
 )
 
@@ -75,7 +76,11 @@ func (s *service) Create(ctx context.Context, orderRq input.CreateOrderRq) (inpu
 
 	// 5. Сгенерировать order_uuid (UUID v4)
 	// Создать заказ со статусом PENDING_PAYMENT
-	order := model.NewOrderToCreate(parts, totalPrice, orderRq.UserUUID)
+	userUUID, ok := auth.UserUUIDFromContext(ctx)
+	if !ok {
+		return input.CreateOrderRs{}, sharedErrs.NewUnauthorized(errs.ErrUnauthorized)
+	}
+	order := model.NewOrderToCreate(parts, totalPrice, userUUID)
 
 	// 6. Сохранить в store
 	err = s.orderRepository.Create(ctx, order)
