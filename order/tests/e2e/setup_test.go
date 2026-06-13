@@ -14,7 +14,7 @@
 // + bufconn-сервер), а bufconn-клиент Inventory снабжён SessionForwarder
 //
 // Запускается только под тегом сборки e2e (см. solutions/week_6/Taskfile.yaml).
-// В обычном go test ./... не собирается, чтобы не платить временем старта Redpanda
+// В обычном go test ./... не собирается, чтобы не платить временем старта Redpanda.
 package e2e
 
 import (
@@ -80,18 +80,18 @@ const (
 const (
 	bufSize = 1024 * 1024
 
-	// Redpanda на macOS поднимается ~5-10 секунд, оставим запас
+	// Redpanda на macOS поднимается ~5-10 секунд, оставим запас.
 	redpandaImage = "docker.redpanda.com/redpandadata/redpanda:v25.1.7"
 
-	// Redis для IAM-сессий — версия совпадает с solutions/week_6/iam.env
+	// Redis для IAM-сессий — версия совпадает с solutions/week_6/iam.env.
 	redisImage = "redis:8.6.3-alpine3.23"
 
-	// numPartitions=1 достаточно: тесту важен факт доставки, не масштабирование
+	// numPartitions=1 достаточно: тесту важен факт доставки, не масштабирование.
 	topicPartitions        = 1
 	topicReplicationFactor = 1
 
 	// sessionTTL — для e2e достаточно часа: тест короткий, сессия не успеет
-	// протухнуть, повторных логинов между шагами не делаем
+	// протухнуть, повторных логинов между шагами не делаем.
 	sessionTTL = time.Hour
 )
 
@@ -100,27 +100,27 @@ var (
 	ts         *httptest.Server
 
 	// Уникальные топики и group-id на прогон — изолируют параллельные CI-сборки,
-	// которые могут шарить один и тот же Redpanda-кластер
+	// которые могут шарить один и тот же Redpanda-кластер.
 	orderPaidTopic     string
 	shipAssembledTopic string
 	assemblyGroupID    string
 	orderGroupID       string
 
 	// Прямой пул к БД order — нужен в редких случаях для проверки состояния,
-	// которое не выставляется через API (например, аудит конкретных полей)
+	// которое не выставляется через API (например, аудит конкретных полей).
 	orderDBPool     *pgxpool.Pool
 	inventoryDBPool *pgxpool.Pool
 
 	inventoryClient inventoryv1.InventoryServiceClient
 
 	// IAM-клиенты экспортируем для lifecycle_test — там делаем Register/Login,
-	// чтобы получить sessionUUID для Bearer-заголовка
+	// чтобы получить sessionUUID для Bearer-заголовка.
 	authSvcClient authv1.AuthServiceClient
 	userSvcClient userv1.UserServiceClient
 )
 
 // runMain — обёртка над m.Run, чтобы defer-cleanup отработал даже при panic в setup.
-// os.Exit обходит defer, поэтому Exit зовём из TestMain отдельно
+// os.Exit обходит defer, поэтому Exit зовём из TestMain отдельно.
 func TestMain(m *testing.M) {
 	os.Exit(runMain(m))
 }
@@ -204,7 +204,7 @@ func runMain(m *testing.M) int {
 
 // =============================================================================
 // Containers & infrastructure helpers
-// =============================================================================
+// =============================================================================.
 
 func startPostgres(ctx context.Context, dbName, user, password string) (*tcpostgres.PostgresContainer, string, error) {
 	c, err := tcpostgres.Run(
@@ -267,7 +267,7 @@ func runMigrations(dsn, migrationsDir string) error {
 }
 
 // startRedis поднимает Redis-контейнер для сессий IAM. Возвращает уже подключённый
-// redis-клиент: и контейнер, и клиент закрываются через cleanups
+// redis-клиент: и контейнер, и клиент закрываются через cleanups.
 func startRedis(ctx context.Context, cleanups *cleanupStack) *redis.Client {
 	container, err := tcredis.Run(ctx, redisImage)
 	if err != nil {
@@ -331,7 +331,7 @@ func createTopics(broker string, topics ...string) {
 }
 
 // startBufconnGRPCIAM поднимает IAM gRPC-сервер через bufconn и возвращает
-// клиентское соединение. bcrypt.MinCost — критичен для скорости тестов
+// клиентское соединение. bcrypt.MinCost — критичен для скорости тестов.
 func startBufconnGRPCIAM(ctx context.Context, cleanups *cleanupStack, pool *pgxpool.Pool, redisClient *redis.Client) *grpc.ClientConn {
 	lis := bufconn.Listen(bufSize)
 	server := iamApp.NewGRPCServer(pool, redisClient, sessionTTL, bcrypt.MinCost)
@@ -421,7 +421,7 @@ func startBufconnGRPCPayment(ctx context.Context, cleanups *cleanupStack) *grpc.
 
 // =============================================================================
 // Kafka consumers & test-assembler
-// =============================================================================
+// =============================================================================.
 
 func startOrderShipAssembledConsumer(
 	ctx context.Context,
@@ -470,7 +470,7 @@ func startOrderShipAssembledConsumer(
 // без неё session_uuid не пробросится в ShipAssembled-сообщение
 //
 // На неделе 6 build_time зашит константами 5-15 сек, поэтому таймаут ожидания
-// ASSEMBLED в тесте увеличен — см. waitForOrderStatus в lifecycle_test
+// ASSEMBLED в тесте увеличен — см. waitForOrderStatus в lifecycle_test.
 func startAssemblyService(ctx context.Context, cleanups *cleanupStack, broker string) {
 	cg := mustNew(sarama.NewConsumerGroup([]string{broker}, assemblyGroupID, consumerConfig()))
 	cleanups.add("assembly consumer group", func(_ context.Context) error { return cg.Close() })
@@ -506,7 +506,7 @@ func consumerConfig() *sarama.Config {
 
 // =============================================================================
 // Cleanup stack — LIFO порядок shutdown без портянки defer'ов в TestMain
-// =============================================================================
+// =============================================================================.
 
 type cleanupStack struct {
 	mu    sync.Mutex

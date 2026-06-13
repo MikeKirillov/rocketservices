@@ -22,7 +22,7 @@ import (
 // HTTP DTOs дублируются с api_test намеренно: e2e — самостоятельная сьюта,
 // которая держит свой контракт с HTTP-API явно перед глазами.
 // На неделе 6 user_uuid в теле запроса больше не передаётся: OrderService
-// берёт его из сессии (middleware кладёт в ctx)
+// берёт его из сессии (middleware кладёт в ctx).
 
 type createOrderRequest struct {
 	HullUUID   string  `json:"hull_uuid"`
@@ -124,11 +124,11 @@ func TestE2E_OrderFullLifecycle_Assembled(t *testing.T) {
 
 // =============================================================================
 // IAM helper
-// =============================================================================
+// =============================================================================.
 
 // registerAndLogin регистрирует уникального пользователя и сразу логинится.
 // Возвращает sessionUUID — его кладём в Authorization: Bearer для всех HTTP-запросов
-// и в auth.WithSessionUUID для прямых gRPC-вызовов Inventory
+// и в auth.WithSessionUUID для прямых gRPC-вызовов Inventory.
 func registerAndLogin(t *testing.T, ctx context.Context) string {
 	t.Helper()
 
@@ -157,7 +157,7 @@ func registerAndLogin(t *testing.T, ctx context.Context) string {
 
 // =============================================================================
 // HTTP helpers
-// =============================================================================
+// =============================================================================.
 
 func mustCreateOrder(t *testing.T, sessionUUID string, req *createOrderRequest) *createOrderResponse {
 	t.Helper()
@@ -241,12 +241,12 @@ func waitForOrderStatus(t *testing.T, sessionUUID, orderUUID, expected string, t
 
 // =============================================================================
 // Inventory helper
-// =============================================================================
+// =============================================================================.
 
 // getStock читает stock_quantity деталей напрямую через bufconn gRPC.
 // Вызывающий код должен предварительно положить session_uuid в ctx
 // (через auth.WithSessionUUID) — SessionForwarder автоматически
-// положит его в outgoing gRPC metadata
+// положит его в outgoing gRPC metadata.
 func getStock(ctx context.Context, t *testing.T, partUUIDs []string) map[string]int64 {
 	t.Helper()
 

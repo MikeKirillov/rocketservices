@@ -2,7 +2,7 @@
 //
 // Использует bufconn для мока IAM AuthService и для тестируемого Inventory gRPC-сервера —
 // Whoami возвращает контролируемый ответ, а Inventory-метод возвращает текущий userUUID
-// из контекста, чтобы тест мог проверить, что interceptor его прокинул
+// из контекста, чтобы тест мог проверить, что interceptor его прокинул.
 package tests
 
 import (
@@ -39,7 +39,7 @@ func (s *stubAuthServer) Whoami(_ context.Context, req *authv1.WhoamiRequest) (*
 }
 
 // stubInventoryServer возвращает userUUID из ctx в имени детали — чтобы тест мог
-// убедиться, что interceptor положил его в контекст и хендлер увидел
+// убедиться, что interceptor положил его в контекст и хендлер увидел.
 type stubInventoryServer struct {
 	inventoryv1.UnimplementedInventoryServiceServer
 }
