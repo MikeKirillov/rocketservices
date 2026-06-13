@@ -8,6 +8,7 @@ import (
 	orderConsumer "github.com/MikeKirillov/rocketservices/assembly/internal/consumer/order"
 	pr "github.com/MikeKirillov/rocketservices/assembly/internal/producer/order"
 	wrappedKafkaConsumer "github.com/MikeKirillov/rocketservices/platform/pkg/kafka/consumer"
+	kafkaMiddleware "github.com/MikeKirillov/rocketservices/platform/pkg/kafka/middleware"
 	wrappedKafkaProducer "github.com/MikeKirillov/rocketservices/platform/pkg/kafka/producer"
 )
 
@@ -22,7 +23,13 @@ type ConsumerService interface {
 }
 
 func New(producer sarama.SyncProducer, cg sarama.ConsumerGroup, config Config) ConsumerService {
-	wc := wrappedKafkaConsumer.NewConsumer(cg, []string{config.OrderPaidTopic})
+	wc := wrappedKafkaConsumer.NewConsumer(
+		cg,
+		[]string{config.OrderPaidTopic},
+		wrappedKafkaConsumer.WithMiddlewares(
+			kafkaMiddleware.ConsumerSession(),
+		),
+	)
 
 	wp := wrappedKafkaProducer.NewProducer(producer, config.ShipAssembledTopic)
 	p := pr.NewService(wp)
