@@ -35,7 +35,7 @@ tasks:
   build:
     desc: "Собирает все Go-модули (go build)"
     cmds:
-      - go build ./order/... ./inventory/... ./payment/... ./assembly/... ./platform/... ./shared/...
+      - go build ./order/... ./inventory/... ./payment/... ./assembly/... ./platform/... ./shared/... ./iam/...
 
   formatters:install:
     desc: "Устанавливает gofumpt и gci"
