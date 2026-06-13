@@ -1,5 +1,3 @@
-//go:build apitest
-
 package tests
 
 import (

@@ -11,19 +11,16 @@ type service struct {
 	partRepository       PartRepository
 	compatibilityChecker CompatibilityChecker
 	txManager            TxManager
-	authClient           AuthServiceClient
 }
 
 func NewService(
 	partrepository PartRepository,
 	compatibilityChecker CompatibilityChecker,
 	txManager TxManager,
-	authClient AuthServiceClient,
 ) *service {
 	return &service{
 		partRepository:       partrepository,
 		compatibilityChecker: compatibilityChecker,
 		txManager:            txManager,
-		authClient:           authClient,
 	}
 }

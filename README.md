@@ -42,42 +42,42 @@ $ go run cmd/grpc_server/main.go
 
 ### получить все детали
 ```
-$ grpcurl -plaintext -d '{}' localhost:50051 inventory.v1.InventoryService/ListParts
+$ grpcurl -plaintext -H "session-uuid: 37bde4d1-23de-49ff-85c0-75587407d9f5" -d '{}' localhost:50051 inventory.v1.InventoryService/ListParts
 ```
 
 ### получить только корпуса (фильтр по типу)
 ```
-$ grpcurl -plaintext -d '{"part_type": "PART_TYPE_HULL"}' localhost:50051 inventory.v1.InventoryService/ListParts
+$ grpcurl -plaintext -H "session-uuid: 37bde4d1-23de-49ff-85c0-75587407d9f5" -d '{"part_type": "PART_TYPE_HULL"}' localhost:50051 inventory.v1.InventoryService/ListParts
 ```
 
 ### получить конкретные детали по UUID (batch)
 ```
-$ grpcurl -plaintext -d '{"uuids": ["550e8400-e29b-41d4-a716-446655440001", "550e8400-e29b-41d4-a716-446655440003", "550e8400-e29b-41d4-a716-446655440005"]}' localhost:50051 inventory.v1.InventoryService/ListParts
+$ grpcurl -plaintext -H "session-uuid: 37bde4d1-23de-49ff-85c0-75587407d9f5" -d '{"uuids": ["550e8400-e29b-41d4-a716-446655440001", "550e8400-e29b-41d4-a716-446655440003", "550e8400-e29b-41d4-a716-446655440005"]}' localhost:50051 inventory.v1.InventoryService/ListParts
 ```
 
 ### получить одну деталь по UUID
 ```
-$ grpcurl -plaintext -d '{"uuid": "550e8400-e29b-41d4-a716-446655440001"}' localhost:50051 inventory.v1.InventoryService/GetPart
+$ grpcurl -plaintext -H "session-uuid: 37bde4d1-23de-49ff-85c0-75587407d9f5" -d '{"uuid": "550e8400-e29b-41d4-a716-446655440001"}' localhost:50051 inventory.v1.InventoryService/GetPart
 ```
 
 ### провалидировать детали по UUID
 ```
-$ grpcurl -plaintext -d '{"hull_uuid": "550e8400-e29b-41d4-a716-446655440002", "engine_uuid": "550e8400-e29b-41d4-a716-446655440004"}' localhost:50051 inventory.v1.InventoryService/ValidateCompatibility
+$ grpcurl -plaintext -H "session-uuid: 37bde4d1-23de-49ff-85c0-75587407d9f5" -d '{"hull_uuid": "550e8400-e29b-41d4-a716-446655440002", "engine_uuid": "550e8400-e29b-41d4-a716-446655440004"}' localhost:50051 inventory.v1.InventoryService/ValidateCompatibility
 ```
 
 ### зарезервировать деталь по UUID
 ```
-$ grpcurl -plaintext -d '{"uuids": ["550e8400-e29b-41d4-a716-446655440001"]}' localhost:50051 inventory.v1.InventoryService/ReserveParts
+$ grpcurl -plaintext -H "session-uuid: 37bde4d1-23de-49ff-85c0-75587407d9f5" -d '{"uuids": ["550e8400-e29b-41d4-a716-446655440001"]}' localhost:50051 inventory.v1.InventoryService/ReserveParts
 ```
 
 ### отменить резерв детали по UUID
 ```
-$ grpcurl -plaintext -d '{"uuids": ["550e8400-e29b-41d4-a716-446655440001"]}' localhost:50051 inventory.v1.InventoryService/ReleaseParts
+$ grpcurl -plaintext -H "session-uuid: 37bde4d1-23de-49ff-85c0-75587407d9f5" -d '{"uuids": ["550e8400-e29b-41d4-a716-446655440001"]}' localhost:50051 inventory.v1.InventoryService/ReleaseParts
 ```
 
 ### коммит деталей по UUID
 ```
-$ grpcurl -plaintext -d '{"uuids": ["550e8400-e29b-41d4-a716-446655440001"]}' localhost:50051 inventory.v1.InventoryService/CommitParts
+$ grpcurl -plaintext -H "session-uuid: 37bde4d1-23de-49ff-85c0-75587407d9f5" -d '{"uuids": ["550e8400-e29b-41d4-a716-446655440001"]}' localhost:50051 inventory.v1.InventoryService/CommitParts
 ```
 
 ## order
@@ -89,22 +89,22 @@ $ go run cmd/main.go
 
 ### создание заказа
 ```
-$ curl -v -X POST http://localhost:8080/api/v1/orders -H "Content-Type: application/json" -d '{"hull_uuid": "550e8400-e29b-41d4-a716-446655440001", "engine_uuid": "550e8400-e29b-41d4-a716-446655440003", "shield_uuid": "550e8400-e29b-41d4-a716-446655440005", "weapon_uuid": null}'
+$ curl -v -X POST http://localhost:8080/api/v1/orders -H "Content-Type: application/json" -H "Authorization: Bearer e9f75010-ca46-40f7-b981-b75318432143" -d '{"hull_uuid": "550e8400-e29b-41d4-a716-446655440001", "engine_uuid": "550e8400-e29b-41d4-a716-446655440003", "shield_uuid": "550e8400-e29b-41d4-a716-446655440005", "weapon_uuid": null}'
 ```
 
 ### получить заказ
 ```
-$ curl -v http://localhost:8080/api/v1/orders/add59d95-8607-44dc-8204-9224e2336738
+$ curl -v http://localhost:8080/api/v1/orders/cdf06168-918e-41af-87b3-a0784d3fada9 -H "Authorization: Bearer 37bde4d1-23de-49ff-85c0-75587407d9f5"
 ```
 
 ### оплата заказа
 ```
-$ curl -v -X POST http://localhost:8080/api/v1/orders/8a74ccda-a417-4fb3-ba06-04943d17489a/pay -H "Content-Type: application/json" -d '{"payment_method": "CARD"}'
+$ curl -v -X POST http://localhost:8080/api/v1/orders/2cf12816-d448-4a96-a638-660cd5794463/pay -H "Content-Type: application/json" -H "Authorization: Bearer e9f75010-ca46-40f7-b981-b75318432143" -d '{"payment_method": "CARD"}'
 ```
 
 ### отмена заказа
 ```
-$ curl -v -X POST http://localhost:8080/api/v1/orders/add59d95-8607-44dc-8204-9224e2336738/cancel -H "Content-Type: application/json"
+$ curl -v -X POST http://localhost:8080/api/v1/orders/f0068d1b-d126-4b4d-8d0e-5c8b33b530a1/cancel -H "Content-Type: application/json" -H "Authorization: Bearer 37bde4d1-23de-49ff-85c0-75587407d9f5"
 ```
 
 ## assembly
@@ -128,7 +128,7 @@ $ grpcurl -plaintext -d '{"info": {"info": {"login": "test"}, "password": "passw
 
 ### получить пользователя
 ```
-$ grpcurl -plaintext -d '{"userUuid": "cd6fd604-bf67-4b8e-9c1f-a5ebcd85323e"}' localhost:50053 user.v1.UserService/GetUser
+$ grpcurl -plaintext -d '{"userUuid": "62ba15d3-e7d3-478f-852c-77373540454b"}' localhost:50053 user.v1.UserService/GetUser
 ```
 
 ### логин
@@ -138,12 +138,12 @@ $ grpcurl -plaintext -d '{"login": "test", "password": "password123"}' localhost
 
 ### логаут
 ```
-$ grpcurl -plaintext -d '{"session_uuid": "09d21cf8-8c7c-422f-80c4-13f37b8cec3d"}' localhost:50053 auth.v1.AuthService/Logout
+$ grpcurl -plaintext -d '{"session_uuid": "50be5582-8512-43c6-b958-44080c86da6d"}' localhost:50053 auth.v1.AuthService/Logout
 ```
 
 ### о сессии и пользователе
 ```
-$ grpcurl -plaintext -d '{"session_uuid": "09d21cf8-8c7c-422f-80c4-13f37b8cec3d"}' localhost:50053 auth.v1.AuthService/Whoami
+$ grpcurl -plaintext -d '{"session_uuid": "50be5582-8512-43c6-b958-44080c86da6d"}' localhost:50053 auth.v1.AuthService/Whoami
 ```
 
 

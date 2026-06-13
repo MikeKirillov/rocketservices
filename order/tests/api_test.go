@@ -1,5 +1,3 @@
-//go:build apitest
-
 package tests
 
 import (
@@ -33,15 +31,15 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials/insecure"
-	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/test/bufconn"
 
 	iamApp "github.com/MikeKirillov/rocketservices/iam/pkg/app"
 	invApp "github.com/MikeKirillov/rocketservices/inventory/pkg/app"
-	"github.com/MikeKirillov/rocketservices/order/internal/interceptor"
 	"github.com/MikeKirillov/rocketservices/order/pkg/app"
 	"github.com/MikeKirillov/rocketservices/order/tests/testutil"
 	payApp "github.com/MikeKirillov/rocketservices/payment/pkg/app"
+	"github.com/MikeKirillov/rocketservices/platform/pkg/auth"
+	"github.com/MikeKirillov/rocketservices/platform/pkg/grpc/interceptor"
 	authv1 "github.com/MikeKirillov/rocketservices/shared/pkg/proto/auth/v1"
 	commonv1 "github.com/MikeKirillov/rocketservices/shared/pkg/proto/common/v1"
 	inventoryv1 "github.com/MikeKirillov/rocketservices/shared/pkg/proto/inventory/v1"
@@ -287,10 +285,16 @@ func TestMain(m *testing.M) {
 	userClient = userv1.NewUserServiceClient(iamConn)
 	authSvcClient = authv1.NewAuthServiceClient(iamConn)
 
+	// Создаём TxManager для inventory-сервиса
+	txManagerInventory, err := manager.New(trmpgx.NewDefaultFactory(inventoryPool))
+	if err != nil {
+		panic(err)
+	}
+
 	// 10. Inventory gRPC через bufconn — теперь с auth-interceptor'ом
 	invLis = bufconn.Listen(bufSize)
 	invGRPCServer := grpc.NewServer(invApp.Interceptors(authSvcClient)...)
-	invApp.RegisterServices(invGRPCServer, inventoryPool)
+	invApp.RegisterServices(invGRPCServer, inventoryPool, txManagerInventory)
 	go func() {
 		if invServeErr := invGRPCServer.Serve(invLis); invServeErr != nil {
 			panic(invServeErr)
@@ -301,7 +305,7 @@ func TestMain(m *testing.M) {
 		"passthrough:///bufnet",
 		grpc.WithContextDialer(invBufDialer),
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
-		grpc.WithUnaryInterceptor(interceptor.SessionForwarder()),
+		grpc.WithUnaryInterceptor(interceptor.SessionForwarder),
 	)
 	if err != nil {
 		panic(err)
@@ -383,13 +387,15 @@ func TestMain(m *testing.M) {
 // authCtx добавляет session-uuid в outgoing metadata — нужно для прямых gRPC-вызовов
 // в InventoryService, чей сервер требует metadata.session-uuid (auth-interceptor).
 func authCtx(ctx context.Context) context.Context {
-	return metadata.AppendToOutgoingContext(ctx, "session-uuid", defaultSessionUUID)
+	// return metadata.AppendToOutgoingContext(ctx, "session-uuid", defaultSessionUUID)
+	return auth.WithSessionUUID(ctx, defaultSessionUUID)
 }
 
 // authCtxWith — то же, что authCtx, но с произвольной сессией. Используется
 // в тестах, где явно нужно проверить поведение interceptor'а с заданным значением.
 func authCtxWith(ctx context.Context, sessionUUID string) context.Context {
-	return metadata.AppendToOutgoingContext(ctx, "session-uuid", sessionUUID)
+	// return metadata.AppendToOutgoingContext(ctx, "session-uuid", sessionUUID)
+	return auth.WithSessionUUID(ctx, sessionUUID)
 }
 
 // registerAndLogin регистрирует нового пользователя и сразу логинится —

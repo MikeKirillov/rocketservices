@@ -1,5 +1,3 @@
-//go:build apitest
-
 // Package tests содержит API-тесты gRPC auth-interceptor InventoryService
 //
 // Использует bufconn для мока IAM AuthService и для тестируемого Inventory gRPC-сервера —
@@ -21,7 +19,7 @@ import (
 	"google.golang.org/grpc/test/bufconn"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
-	iamClient "github.com/MikeKirillov/rocketservices/inventory/internal/client/grpc/iam/v1"
+	iamClient "github.com/MikeKirillov/rocketservices/inventory/internal/client/grpc/auth/v1"
 	"github.com/MikeKirillov/rocketservices/inventory/internal/interceptor"
 	"github.com/MikeKirillov/rocketservices/platform/pkg/auth"
 	authv1 "github.com/MikeKirillov/rocketservices/shared/pkg/proto/auth/v1"
@@ -80,7 +78,7 @@ func startInventory(t *testing.T, authClient *iamClient.Client) inventoryv1.Inve
 	t.Helper()
 	lis := bufconn.Listen(bufSize)
 	server := grpc.NewServer(
-		grpc.ChainUnaryInterceptor(interceptor.Auth(authClient)),
+		grpc.ChainUnaryInterceptor(interceptor.ServerIncomingInterceptor(authClient)),
 	)
 	inventoryv1.RegisterInventoryServiceServer(server, &stubInventoryServer{})
 
@@ -120,7 +118,7 @@ func TestInterceptor_EmptySession(t *testing.T) {
 	})
 	invClient := startInventory(t, authClient)
 
-	ctx := metadata.AppendToOutgoingContext(context.Background(), interceptor.SessionMetadataKey, "")
+	ctx := metadata.AppendToOutgoingContext(context.Background(), auth.SessionUUIDKey, "")
 
 	_, err := invClient.GetPart(ctx, &inventoryv1.GetPartRequest{Uuid: "x"})
 	requireGRPCCode(t, err, codes.Unauthenticated)
@@ -134,7 +132,7 @@ func TestInterceptor_InvalidSession(t *testing.T) {
 	})
 	invClient := startInventory(t, authClient)
 
-	ctx := metadata.AppendToOutgoingContext(context.Background(), interceptor.SessionMetadataKey, "expired")
+	ctx := metadata.AppendToOutgoingContext(context.Background(), auth.SessionUUIDKey, "expired")
 
 	_, err := invClient.GetPart(ctx, &inventoryv1.GetPartRequest{Uuid: "x"})
 	requireGRPCCode(t, err, codes.Unauthenticated)
@@ -156,7 +154,7 @@ func TestInterceptor_ValidSession(t *testing.T) {
 	})
 	invClient := startInventory(t, authClient)
 
-	ctx := metadata.AppendToOutgoingContext(context.Background(), interceptor.SessionMetadataKey, sessionUUID)
+	ctx := metadata.AppendToOutgoingContext(context.Background(), auth.SessionUUIDKey, sessionUUID)
 
 	resp, err := invClient.GetPart(ctx, &inventoryv1.GetPartRequest{Uuid: "x"})
 	require.NoError(t, err)

@@ -56,7 +56,7 @@ type diContainer struct {
 	// Интеграции
 	inventoryClient orderService.InventoryServiceClient
 	paymentClient   orderService.PaymentServiceClient
-	authClient      orderService.AuthServiceClient
+	authClient      *authClientV1.Client
 
 	// Сервисы
 	orderSvc            orderV1API.OrderService
@@ -127,7 +127,7 @@ func (d *diContainer) InventoryClient(ctx context.Context) orderService.Inventor
 				Timeout:             config.Timeout(), // Таймаут ожидания pong
 				PermitWithoutStream: true,             // Пинговать даже без активных RPC
 			}),
-			grpc.WithUnaryInterceptor(interceptor.OutgoingClientInterceptor),
+			grpc.WithUnaryInterceptor(interceptor.SessionForwarder),
 		)
 		if err != nil {
 			slog.Error("не удалось подключиться к gRPC: InventoryService", "error", err)
@@ -176,7 +176,7 @@ func (d *diContainer) PaymentClient(ctx context.Context) orderService.PaymentSer
 	return d.paymentClient
 }
 
-func (d *diContainer) AuthClient(ctx context.Context) orderService.AuthServiceClient {
+func (d *diContainer) AuthClient() *authClientV1.Client {
 	config := orderConfig.AppConfig().GRPC.AuthGRPCConfig
 
 	if d.authClient == nil {
@@ -261,7 +261,6 @@ func (d *diContainer) OrderService(ctx context.Context) orderV1API.OrderService 
 			d.OrderRepository(ctx),
 			d.InventoryClient(ctx),
 			d.PaymentClient(ctx),
-			d.AuthClient(ctx),
 			d.TxManager(ctx),
 			d.ProducerService(),
 		)

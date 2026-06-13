@@ -1,5 +1,3 @@
-//go:build e2e
-
 // Package e2e содержит сквозные тесты OrderService с реальной Kafka (Redpanda).
 //
 // Цель отдельной сьюты — проверить асинхронную цепочку:
@@ -53,15 +51,15 @@ import (
 	iamApp "github.com/MikeKirillov/rocketservices/iam/pkg/app"
 	invApp "github.com/MikeKirillov/rocketservices/inventory/pkg/app"
 	inventoryClientPkg "github.com/MikeKirillov/rocketservices/order/internal/client/grpc/inventory/v1"
-	assemblyconsumer "github.com/MikeKirillov/rocketservices/order/internal/consumer/assembly_consumer"
-	"github.com/MikeKirillov/rocketservices/order/internal/interceptor"
-	orderProducer "github.com/MikeKirillov/rocketservices/order/internal/producer/order_producer"
+	assemblyconsumer "github.com/MikeKirillov/rocketservices/order/internal/consumer/assembly"
+	orderProducer "github.com/MikeKirillov/rocketservices/order/internal/producer/order"
 	orderRepoPkg "github.com/MikeKirillov/rocketservices/order/internal/repository/order"
 	"github.com/MikeKirillov/rocketservices/order/pkg/app"
 	payApp "github.com/MikeKirillov/rocketservices/payment/pkg/app"
+	"github.com/MikeKirillov/rocketservices/platform/pkg/grpc/interceptor"
 	wrappedKafkaConsumer "github.com/MikeKirillov/rocketservices/platform/pkg/kafka/consumer"
+	kafkaMiddleware "github.com/MikeKirillov/rocketservices/platform/pkg/kafka/middleware"
 	wrappedKafkaProducer "github.com/MikeKirillov/rocketservices/platform/pkg/kafka/producer"
-	kafkaMiddleware "github.com/MikeKirillov/rocketservices/platform/pkg/middleware/kafka"
 	authv1 "github.com/MikeKirillov/rocketservices/shared/pkg/proto/auth/v1"
 	inventoryv1 "github.com/MikeKirillov/rocketservices/shared/pkg/proto/inventory/v1"
 	paymentv1 "github.com/MikeKirillov/rocketservices/shared/pkg/proto/payment/v1"
@@ -182,7 +180,7 @@ func runMain(m *testing.M) int {
 	cleanups.add("order sarama producer", func(_ context.Context) error { return syncProducer.Close() })
 
 	orderPaidKafkaProducer := wrappedKafkaProducer.NewProducer(syncProducer, orderPaidTopic)
-	realOrderProducer := orderProducer.New(orderPaidKafkaProducer)
+	realOrderProducer := orderProducer.NewService(orderPaidKafkaProducer)
 
 	// 10. Order HTTP-сервер с реальным продьюсером (НЕ noopProducer как в api_test).
 	// Дополнительно подключаем authSvcClient — на неделе 6 HTTP-обработчик обёрнут
@@ -362,7 +360,13 @@ func startBufconnGRPCIAM(ctx context.Context, cleanups *cleanupStack, pool *pgxp
 func startBufconnGRPCInventory(ctx context.Context, cleanups *cleanupStack, pool *pgxpool.Pool, authClient authv1.AuthServiceClient) *grpc.ClientConn {
 	lis := bufconn.Listen(bufSize)
 	server := grpc.NewServer(invApp.Interceptors(authClient)...)
-	invApp.RegisterServices(server, pool)
+
+	// Создаём TxManager для inventory-сервиса
+	txManagerInventory, err := manager.New(trmpgx.NewDefaultFactory(pool))
+	if err != nil {
+		panic(err)
+	}
+	invApp.RegisterServices(server, pool, txManagerInventory)
 
 	go func() {
 		if err := server.Serve(lis); err != nil {
@@ -378,7 +382,7 @@ func startBufconnGRPCInventory(ctx context.Context, cleanups *cleanupStack, pool
 		"passthrough:///bufnet",
 		grpc.WithContextDialer(func(context.Context, string) (net.Conn, error) { return lis.Dial() }),
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
-		grpc.WithUnaryInterceptor(interceptor.SessionForwarder()),
+		grpc.WithUnaryInterceptor(interceptor.SessionForwarder),
 	)
 	if err != nil {
 		panic(fmt.Errorf("inventory grpc client: %w", err))
@@ -446,7 +450,7 @@ func startOrderShipAssembledConsumer(
 	// что использует прод-DI (order/internal/app/di.go)
 	svc := assemblyconsumer.NewService(
 		wrappedConsumer,
-		orderRepoPkg.New(pool, txManager),
+		orderRepoPkg.NewRepository(pool, txManager),
 		inventoryClientPkg.New(invClient),
 		txManager,
 	)

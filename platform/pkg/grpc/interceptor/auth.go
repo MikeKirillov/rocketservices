@@ -13,9 +13,9 @@ import (
 	"github.com/MikeKirillov/rocketservices/platform/pkg/auth"
 )
 
-// OutgoingClientInterceptor - осуществляет перехват вызовов с клиентской стороны. Получает
+// SessionForwarder - осуществляет перехват вызовов с клиентской стороны. Получает
 // идентификатор сессии из текущего контекста и передает его в исходящий контекст RPC.
-func OutgoingClientInterceptor(
+func SessionForwarder(
 	ctx context.Context,
 	method string,
 	req, reply any,
@@ -28,11 +28,11 @@ func OutgoingClientInterceptor(
 	// Извлекаем идентификатор сессии из контекста
 	sessionUUID, ok := auth.SessionUUIDFromContext(ctx)
 	if !ok {
-		return status.Error(codes.Internal, "отсутствует session-uuid")
+		return status.Error(codes.Unauthenticated, "отсутствует session-uuid")
 	}
 
 	// Устанавливаем его в исходящий контекст
-	metadata.AppendToOutgoingContext(ctx, auth.SessionUUIDKey, sessionUUID)
+	ctx = metadata.AppendToOutgoingContext(ctx, auth.SessionUUIDKey, sessionUUID)
 
 	// Осуществляем вызов RPC
 	err := invoker(ctx, method, req, reply, cc, opts...)
