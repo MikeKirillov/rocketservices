@@ -74,12 +74,13 @@ func (s *service) Create(ctx context.Context, orderRq input.CreateOrderRq) (inpu
 		}
 	}
 
-	// 5. Сгенерировать order_uuid (UUID v4)
-	// Создать заказ со статусом PENDING_PAYMENT
 	userUUID, ok := auth.UserUUIDFromContext(ctx)
 	if !ok {
 		return input.CreateOrderRs{}, sharedErrs.NewUnauthorized(errs.ErrUnauthorized)
 	}
+
+	// 5. Сгенерировать order_uuid (UUID v4)
+	// Создать заказ со статусом PENDING_PAYMENT
 	order := model.NewOrderToCreate(parts, totalPrice, userUUID)
 
 	// 6. Сохранить в store

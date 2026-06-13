@@ -16,6 +16,7 @@ import (
 	"github.com/MikeKirillov/rocketservices/order/internal/model"
 	service "github.com/MikeKirillov/rocketservices/order/internal/service/order"
 	"github.com/MikeKirillov/rocketservices/order/internal/service/order/mocks"
+	"github.com/MikeKirillov/rocketservices/platform/pkg/auth"
 )
 
 func TestCreate(t *testing.T) {
@@ -124,6 +125,8 @@ func TestCreate(t *testing.T) {
 
 		errInternal = errors.New("внутренняя ошибка")
 	)
+
+	ctx = auth.WithUserUUID(ctx, uuid.New())
 
 	tests := []struct {
 		name      string
