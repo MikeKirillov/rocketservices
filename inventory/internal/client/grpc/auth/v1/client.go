@@ -16,19 +16,19 @@ import (
 
 const grpcCallTimeout = 5 * time.Second
 
-type client struct {
+type Client struct {
 	grpcClient authv1.AuthServiceClient
 }
 
-func New(grpcClient authv1.AuthServiceClient) *client {
-	return &client{grpcClient: grpcClient}
+func New(grpcClient authv1.AuthServiceClient) *Client {
+	return &Client{grpcClient: grpcClient}
 }
 
-func (c *client) Whoami(ctx context.Context, sessionUUID uuid.UUID) (uuid.UUID, uuid.UUID, error) {
+func (c *Client) Whoami(ctx context.Context, sessionUUID string) (uuid.UUID, uuid.UUID, error) {
 	ctx, cancel := context.WithTimeout(ctx, grpcCallTimeout)
 	defer cancel()
 
-	rs, err := c.grpcClient.Whoami(ctx, converter.RqToProto(sessionUUID))
+	rs, err := c.grpcClient.Whoami(ctx, &authv1.WhoamiRequest{SessionUuid: sessionUUID})
 	if err != nil {
 		st, ok := status.FromError(err)
 		if !ok {

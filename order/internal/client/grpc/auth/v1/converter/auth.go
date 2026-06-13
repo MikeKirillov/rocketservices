@@ -10,13 +10,7 @@ import (
 	authv1 "github.com/MikeKirillov/rocketservices/shared/pkg/proto/auth/v1"
 )
 
-func RqToProto(s uuid.UUID) *authv1.WhoamiRequest {
-	return &authv1.WhoamiRequest{
-		SessionUuid: s.String(),
-	}
-}
-
-func ProtoToRs(sessionUUID uuid.UUID, rs *authv1.WhoamiResponse) (uuid.UUID, uuid.UUID, error) {
+func ProtoToRs(sessionUUID string, rs *authv1.WhoamiResponse) (uuid.UUID, uuid.UUID, error) {
 	if rs.GetSession() == nil || rs.GetSession().GetUuid() == "" {
 		return uuid.Nil, uuid.Nil, fmt.Errorf("сессия %s: %w", sessionUUID, errs.ErrGrpcInvalidSession)
 	}

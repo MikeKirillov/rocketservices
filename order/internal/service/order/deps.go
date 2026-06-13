@@ -28,10 +28,6 @@ type PaymentServiceClient interface {
 	PayOrder(ctx context.Context, orderRq input.PayOrderRq) (uuid.UUID, error)
 }
 
-type AuthServiceClient interface {
-	Whoami(ctx context.Context, sessionUUID uuid.UUID) (uuid.UUID, uuid.UUID, error)
-}
-
 type OrderProducerService interface {
 	ProduceOrderPaid(ctx context.Context, order model.Order) error
 }

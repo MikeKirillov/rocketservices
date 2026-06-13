@@ -32,7 +32,7 @@ type diContainer struct {
 	invRepo invService.PartRepository
 
 	// Интеграции
-	authClient invService.AuthServiceClient
+	authClient *authClientV1.Client
 
 	// Сервисы
 	compChecker invService.CompatibilityChecker
@@ -94,7 +94,25 @@ func (d *diContainer) TxManager(ctx context.Context) *manager.Manager {
 	return d.txManager
 }
 
-func (d *diContainer) AuthClient() invService.AuthServiceClient {
+func (d *diContainer) InventoryService(ctx context.Context) invV1API.PartService {
+	if d.invSvc == nil {
+		d.invSvc = invService.NewService(
+			d.InventoryRepository(ctx),
+			d.CompatibilityChecker(),
+			d.TxManager(ctx),
+		)
+	}
+	return d.invSvc
+}
+
+func (d *diContainer) InventoryV1API(ctx context.Context) inventoryv1.InventoryServiceServer {
+	if d.invV1Handler == nil {
+		d.invV1Handler = invV1API.NewAPI(d.InventoryService(ctx))
+	}
+	return d.invV1Handler
+}
+
+func (d *diContainer) AuthClient() *authClientV1.Client {
 	conf := config.AppConfig().GRPCClient.AuthGRPCConfig
 
 	if d.authClient == nil {
@@ -126,23 +144,4 @@ func (d *diContainer) AuthClient() invService.AuthServiceClient {
 	slog.Info("установлено подключение к gRPC: AuthService", "host", conf.Host, "port", conf.Port)
 
 	return d.authClient
-}
-
-func (d *diContainer) InventoryService(ctx context.Context) invV1API.PartService {
-	if d.invSvc == nil {
-		d.invSvc = invService.NewService(
-			d.InventoryRepository(ctx),
-			d.CompatibilityChecker(),
-			d.TxManager(ctx),
-			d.AuthClient(),
-		)
-	}
-	return d.invSvc
-}
-
-func (d *diContainer) InventoryV1API(ctx context.Context) inventoryv1.InventoryServiceServer {
-	if d.invV1Handler == nil {
-		d.invV1Handler = invV1API.NewAPI(d.InventoryService(ctx))
-	}
-	return d.invV1Handler
 }

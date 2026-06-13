@@ -111,10 +111,9 @@ func TestGet(t *testing.T) {
 			r := mocks.NewOrderRepository(t)
 			i := mocks.NewInventoryServiceClient(t)
 			p := mocks.NewPaymentServiceClient(t)
-			a := mocks.NewAuthServiceClient(t)
 			m := mocks.NewTxManager(t)
 			o := mocks.NewOrderProducerService(t)
-			s := service.NewService(r, i, p, a, m, o)
+			s := service.NewService(r, i, p, m, o)
 
 			test.setupMock(r)
 

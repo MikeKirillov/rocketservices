@@ -11,6 +11,7 @@ import (
 	partService "github.com/MikeKirillov/rocketservices/inventory/internal/application/service"
 	authClientV1 "github.com/MikeKirillov/rocketservices/inventory/internal/client/grpc/auth/v1"
 	partComp "github.com/MikeKirillov/rocketservices/inventory/internal/domain/service"
+	innerceptor "github.com/MikeKirillov/rocketservices/inventory/internal/interceptor"
 	partRepository "github.com/MikeKirillov/rocketservices/inventory/internal/repository/part"
 	"github.com/MikeKirillov/rocketservices/platform/pkg/grpc/interceptor"
 	sharedErrs "github.com/MikeKirillov/rocketservices/shared/pkg/errors"
@@ -22,21 +23,21 @@ func RegisterServices(
 	grpcServer *grpc.Server,
 	pool *pgxpool.Pool,
 	txManager *manager.Manager,
-	authGRPCClient authv1.AuthServiceClient,
 ) {
 	repo := partRepository.NewRepository(pool)
 	comp := partComp.NewCompatibilityChecker()
-	authClient := authClientV1.New(authGRPCClient)
-	svc := partService.NewService(repo, comp, txManager, authClient)
+	svc := partService.NewService(repo, comp, txManager)
 	api := partAPIV1.NewAPI(svc)
 	inventoryv1.RegisterInventoryServiceServer(grpcServer, api)
 }
 
-func Interceptors() []grpc.ServerOption {
+func Interceptors(authGRPCClient authv1.AuthServiceClient) []grpc.ServerOption {
+	authClient := authClientV1.New(authGRPCClient)
 	return []grpc.ServerOption{
 		grpc.ChainUnaryInterceptor(
 			interceptor.RecoveryInterceptor(),
 			interceptor.LoggerInterceptor(),
+			innerceptor.ServerIncomingInterceptor(authClient),
 			sharedErrs.UnaryErrorInterceptor(slog.Default()),
 		),
 	}

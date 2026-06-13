@@ -49,7 +49,7 @@ func NewHTTPHandler(
 	orderPaidProducer := wrappedKafkaProducer.NewProducer(syncProducer, "order.paid")
 	producerService := producer.NewService(orderPaidProducer)
 
-	service := orderService.NewService(repo, inventoryClient, paymentClient, authClient, txManager, producerService)
+	service := orderService.NewService(repo, inventoryClient, paymentClient, txManager, producerService)
 	orderHandler := orderAPIV1.NewOrderHandler(service)
 
 	// Создать OpenAPI сервер на основе обработчика
@@ -67,6 +67,7 @@ func NewHTTPHandler(
 	// Применяем кастомные middleware
 	handler = middleware.Logger(handler)
 	handler = middleware.Recoverer(handler)
+	handler = middleware.Auth(handler, authClient)
 
 	return handler, nil
 }
@@ -80,8 +81,8 @@ func NewHTTPHandlerWithProducer(
 	txManager *manager.Manager,
 	inventoryGRPCClient inventoryv1.InventoryServiceClient,
 	paymentGRPCClient paymentv1.PaymentServiceClient,
-	realOrderProducer OrderProducerService,
 	authGRPCClient authv1.AuthServiceClient,
+	realOrderProducer OrderProducerService,
 ) (http.Handler, error) {
 	repo := orderRepo.NewRepository(pool, txManager)
 	inventoryClient := inventoryClientV1.New(inventoryGRPCClient)
@@ -92,7 +93,7 @@ func NewHTTPHandlerWithProducer(
 	cfg.Version = sarama.V4_0_0_0
 	cfg.Producer.Return.Successes = true
 
-	service := orderService.NewService(repo, inventoryClient, paymentClient, authClient, txManager, realOrderProducer)
+	service := orderService.NewService(repo, inventoryClient, paymentClient, txManager, realOrderProducer)
 	orderHandler := orderAPIV1.NewOrderHandler(service)
 
 	// Создать OpenAPI сервер на основе обработчика
@@ -110,6 +111,7 @@ func NewHTTPHandlerWithProducer(
 	// Применяем кастомные middleware
 	handler = middleware.Logger(handler)
 	handler = middleware.Recoverer(handler)
+	handler = middleware.Auth(handler, authClient)
 
 	return handler, nil
 }

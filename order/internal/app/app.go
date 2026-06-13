@@ -101,6 +101,7 @@ func (a *App) initDeps(ctx context.Context) {
 		a.initConfig,
 		a.initDi,
 		a.initLogger,
+		a.initAuthClient,
 		a.initHTTPServer,
 	}
 
@@ -130,6 +131,10 @@ func (a *App) initDi(ctx context.Context) {
 
 func (a *App) initLogger(ctx context.Context) {
 	logger.Init(config.AppConfig().Logger.Level)
+}
+
+func (a *App) initAuthClient(_ context.Context) {
+	a.diContainer.AuthClient()
 }
 
 func (a *App) initHTTPServer(ctx context.Context) {

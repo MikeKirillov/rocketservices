@@ -72,6 +72,7 @@ func (a *App) initDeps(ctx context.Context) {
 		a.initDi,
 		a.initLogger,
 		a.initListener,
+		a.initAuthClient,
 		a.initGRPCServer,
 	}
 
@@ -110,6 +111,10 @@ func (a *App) initListener(ctx context.Context) {
 		os.Exit(1)
 	}
 	a.listener = lis
+}
+
+func (a *App) initAuthClient(_ context.Context) {
+	a.diContainer.AuthClient()
 }
 
 func (a *App) initGRPCServer(ctx context.Context) {

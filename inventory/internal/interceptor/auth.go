@@ -4,19 +4,18 @@ import (
 	"context"
 	"log/slog"
 
-	"github.com/google/uuid"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
 
-	invService "github.com/MikeKirillov/rocketservices/inventory/internal/application/service"
+	authv1 "github.com/MikeKirillov/rocketservices/inventory/internal/client/grpc/auth/v1"
 	"github.com/MikeKirillov/rocketservices/platform/pkg/auth"
 )
 
 // ServerIncomingInterceptor - перехватывает вызов сервера. Извлекает идентификатор сессии
 // для дальнейшей валидации пользователя, инициировавшего запрос.
-func ServerIncomingInterceptor(authClient invService.AuthServiceClient) grpc.UnaryServerInterceptor {
+func ServerIncomingInterceptor(authClient *authv1.Client) grpc.UnaryServerInterceptor {
 	return func(
 		ctx context.Context,
 		req any,
@@ -40,7 +39,7 @@ func ServerIncomingInterceptor(authClient invService.AuthServiceClient) grpc.Una
 			return nil, status.Error(codes.Unauthenticated, "недействительная сессия")
 		}
 
-		sID, uID, err := authClient.Whoami(ctx, uuid.MustParse(sessionUUID))
+		sID, uID, err := authClient.Whoami(ctx, sessionUUID)
 		if err != nil {
 			return nil, status.Error(codes.Unauthenticated, "ошибка авторизации")
 		}

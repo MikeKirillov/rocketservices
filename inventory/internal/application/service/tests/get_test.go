@@ -113,8 +113,7 @@ func TestGet(t *testing.T) {
 			r := mocks.NewPartRepository(t)
 			c := mocks.NewCompatibilityChecker(t)
 			m := mocks.NewTxManager(t)
-			a := mocks.NewAuthServiceClient(t)
-			s := part.NewService(r, c, m, a)
+			s := part.NewService(r, c, m)
 
 			test.setupMock(r)
 

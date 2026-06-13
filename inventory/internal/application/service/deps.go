@@ -21,7 +21,3 @@ type PartRepository interface {
 	UpdateReservedBatch(ctx context.Context, parts []model.Part) error
 	UpdateCommitBatch(ctx context.Context, parts []model.Part) error
 }
-
-type AuthServiceClient interface {
-	Whoami(ctx context.Context, sessionUUID uuid.UUID) (uuid.UUID, uuid.UUID, error)
-}

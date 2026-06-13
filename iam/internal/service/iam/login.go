@@ -22,7 +22,7 @@ func (s *service) Login(ctx context.Context, input input.LoginPassInput) (uuid.U
 	user, err := s.userRepository.GetUserByLogin(ctx, input.Login)
 	if err != nil {
 		if errors.Is(err, errs.ErrUserNotFound) {
-			return uuid.Nil, sharedErrs.NewNotFound(errs.ErrInvalidCredentials)
+			return uuid.Nil, sharedErrs.NewUnauthorized(errs.ErrInvalidCredentials)
 		}
 		return uuid.Nil, sharedErrs.NewInternal(err)
 	}

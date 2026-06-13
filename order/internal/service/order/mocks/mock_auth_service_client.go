@@ -42,7 +42,7 @@ func (_m *AuthServiceClient) EXPECT() *AuthServiceClient_Expecter {
 }
 
 // Whoami provides a mock function for the type AuthServiceClient
-func (_mock *AuthServiceClient) Whoami(ctx context.Context, sessionUUID uuid.UUID) (uuid.UUID, uuid.UUID, error) {
+func (_mock *AuthServiceClient) Whoami(ctx context.Context, sessionUUID string) (uuid.UUID, uuid.UUID, error) {
 	ret := _mock.Called(ctx, sessionUUID)
 
 	if len(ret) == 0 {
@@ -52,24 +52,24 @@ func (_mock *AuthServiceClient) Whoami(ctx context.Context, sessionUUID uuid.UUI
 	var r0 uuid.UUID
 	var r1 uuid.UUID
 	var r2 error
-	if returnFunc, ok := ret.Get(0).(func(context.Context, uuid.UUID) (uuid.UUID, uuid.UUID, error)); ok {
+	if returnFunc, ok := ret.Get(0).(func(context.Context, string) (uuid.UUID, uuid.UUID, error)); ok {
 		return returnFunc(ctx, sessionUUID)
 	}
-	if returnFunc, ok := ret.Get(0).(func(context.Context, uuid.UUID) uuid.UUID); ok {
+	if returnFunc, ok := ret.Get(0).(func(context.Context, string) uuid.UUID); ok {
 		r0 = returnFunc(ctx, sessionUUID)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(uuid.UUID)
 		}
 	}
-	if returnFunc, ok := ret.Get(1).(func(context.Context, uuid.UUID) uuid.UUID); ok {
+	if returnFunc, ok := ret.Get(1).(func(context.Context, string) uuid.UUID); ok {
 		r1 = returnFunc(ctx, sessionUUID)
 	} else {
 		if ret.Get(1) != nil {
 			r1 = ret.Get(1).(uuid.UUID)
 		}
 	}
-	if returnFunc, ok := ret.Get(2).(func(context.Context, uuid.UUID) error); ok {
+	if returnFunc, ok := ret.Get(2).(func(context.Context, string) error); ok {
 		r2 = returnFunc(ctx, sessionUUID)
 	} else {
 		r2 = ret.Error(2)
@@ -84,20 +84,20 @@ type AuthServiceClient_Whoami_Call struct {
 
 // Whoami is a helper method to define mock.On call
 //   - ctx context.Context
-//   - sessionUUID uuid.UUID
+//   - sessionUUID string
 func (_e *AuthServiceClient_Expecter) Whoami(ctx interface{}, sessionUUID interface{}) *AuthServiceClient_Whoami_Call {
 	return &AuthServiceClient_Whoami_Call{Call: _e.mock.On("Whoami", ctx, sessionUUID)}
 }
 
-func (_c *AuthServiceClient_Whoami_Call) Run(run func(ctx context.Context, sessionUUID uuid.UUID)) *AuthServiceClient_Whoami_Call {
+func (_c *AuthServiceClient_Whoami_Call) Run(run func(ctx context.Context, sessionUUID string)) *AuthServiceClient_Whoami_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		var arg0 context.Context
 		if args[0] != nil {
 			arg0 = args[0].(context.Context)
 		}
-		var arg1 uuid.UUID
+		var arg1 string
 		if args[1] != nil {
-			arg1 = args[1].(uuid.UUID)
+			arg1 = args[1].(string)
 		}
 		run(
 			arg0,
@@ -112,7 +112,7 @@ func (_c *AuthServiceClient_Whoami_Call) Return(uUID uuid.UUID, uUID1 uuid.UUID,
 	return _c
 }
 
-func (_c *AuthServiceClient_Whoami_Call) RunAndReturn(run func(ctx context.Context, sessionUUID uuid.UUID) (uuid.UUID, uuid.UUID, error)) *AuthServiceClient_Whoami_Call {
+func (_c *AuthServiceClient_Whoami_Call) RunAndReturn(run func(ctx context.Context, sessionUUID string) (uuid.UUID, uuid.UUID, error)) *AuthServiceClient_Whoami_Call {
 	_c.Call.Return(run)
 	return _c
 }
