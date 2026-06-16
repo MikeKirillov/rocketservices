@@ -9,17 +9,17 @@ func UserToRecord(user model.User) record.User {
 	return record.User{
 		Uuid:         user.UUID,
 		Login:        user.Login,
-		PasswordHash: user.PasswordHash,
+		PasswordHash: user.Password.Hash(),
 		CreatedAt:    user.CreatedAt,
 	}
 }
 
 func UserToModel(user record.User) model.User {
 	return model.User{
-		UUID:         user.Uuid,
-		Login:        user.Login,
-		CreatedAt:    user.CreatedAt,
-		UpdatetAt:    user.UpdatedAt,
-		PasswordHash: user.PasswordHash,
+		UUID:      user.Uuid,
+		Login:     user.Login,
+		CreatedAt: user.CreatedAt,
+		UpdatedAt: user.UpdatedAt,
+		Password:  model.RestorePassword(user.PasswordHash),
 	}
 }
