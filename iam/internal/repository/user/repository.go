@@ -16,6 +16,8 @@ import (
 	"github.com/MikeKirillov/rocketservices/iam/internal/repository/record"
 )
 
+const users_login_constraint = "uq_users_login"
+
 type repository struct {
 	pool *pgxpool.Pool
 }
@@ -35,7 +37,7 @@ func (r *repository) InsertUser(ctx context.Context, user model.User) error {
 	if err != nil {
 		// При Register два параллельных запроса с одинаковым логином приведут к unique constraint violation
 		var pgErr *pgconn.PgError
-		if errors.As(err, &pgErr) && pgErr.Code == "23505" {
+		if errors.As(err, &pgErr) && pgErr.ConstraintName == users_login_constraint {
 			return errs.ErrUserAlreadyExists
 		}
 		return fmt.Errorf("создание записи пользователя %s: %w", rec.Login, err)
