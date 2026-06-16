@@ -2,6 +2,7 @@ package iam
 
 import (
 	"context"
+	"time"
 
 	"github.com/google/uuid"
 
@@ -15,7 +16,7 @@ type UserRepository interface {
 }
 
 type SessionRepository interface {
-	Set(context.Context, model.Session) error
+	Set(context.Context, model.Session, model.User, time.Duration) error
 	Delete(context.Context, uuid.UUID) error
-	Get(context.Context, uuid.UUID) (model.Session, error)
+	Get(context.Context, uuid.UUID) (model.Session, model.User, error)
 }

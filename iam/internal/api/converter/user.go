@@ -29,8 +29,8 @@ func UserToProto(user model.User) *userv1.GetUserResponse {
 		User: userToCommonProto(user),
 	}
 
-	if user.UpdatetAt != nil {
-		result.User.UpdatedAt = timestamppb.New(*user.UpdatetAt)
+	if user.UpdatedAt != nil {
+		result.User.UpdatedAt = timestamppb.New(*user.UpdatedAt)
 	}
 
 	return result

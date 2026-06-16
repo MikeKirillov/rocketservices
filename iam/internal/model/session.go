@@ -8,18 +8,16 @@ import (
 
 type Session struct {
 	UUID      uuid.UUID
-	UserUUID  uuid.UUID
-	Login     string
 	CreatedAt time.Time
 	UpdatedAt *time.Time
 	ExpiresAt time.Time
 }
 
-func NewSession(user User) Session {
+func NewSession(ttl time.Duration) Session {
+	now := time.Now()
 	return Session{
 		UUID:      uuid.New(),
-		UserUUID:  user.UUID,
-		Login:     user.Login,
-		CreatedAt: time.Now(),
+		CreatedAt: now,
+		ExpiresAt: now.Add(ttl),
 	}
 }

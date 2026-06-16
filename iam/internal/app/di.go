@@ -98,17 +98,18 @@ func (d *diContainer) RedisClient() *redis.Client {
 
 func (d *diContainer) SessionRepository() iamService.SessionRepository {
 	if d.sessionRepo == nil {
-		d.sessionRepo = sessionRepo.NewRepository(
-			d.RedisClient(),
-			config.AppConfig().Redis.SessionTTL(),
-		)
+		d.sessionRepo = sessionRepo.NewRepository(d.RedisClient())
 	}
 	return d.sessionRepo
 }
 
 func (d *diContainer) AuthService(ctx context.Context) authV1API.AuthService {
 	if d.authSvc == nil {
-		d.authSvc = iamService.New(d.UserRepository(ctx), d.SessionRepository())
+		d.authSvc = iamService.New(
+			d.UserRepository(ctx),
+			d.SessionRepository(),
+			config.AppConfig().Redis.SessionTTL(),
+		)
 	}
 	return d.authSvc
 }

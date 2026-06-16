@@ -43,9 +43,9 @@ func registerServices(
 	ttl time.Duration,
 ) {
 	userRepo := userRepository.NewRepository(pool)
-	sessionRepo := sessionRepository.NewRepository(redisClient, ttl)
+	sessionRepo := sessionRepository.NewRepository(redisClient)
 
-	svc := iamService.New(userRepo, sessionRepo)
+	svc := iamService.New(userRepo, sessionRepo, ttl)
 
 	authAPI := authAPIV1.NewAPI(svc)
 	userAPI := userAPIV1.NewAPI(svc)

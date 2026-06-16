@@ -5,7 +5,6 @@ import (
 	"errors"
 
 	"github.com/google/uuid"
-	"golang.org/x/crypto/bcrypt"
 
 	errs "github.com/MikeKirillov/rocketservices/iam/internal/errors"
 	"github.com/MikeKirillov/rocketservices/iam/internal/model"
@@ -28,12 +27,12 @@ func (s *service) Login(ctx context.Context, input input.LoginPassInput) (uuid.U
 	}
 
 	// Проверка корректности пароля
-	if err := bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(input.Password)); err != nil {
+	if err := user.Password.Verify(input.Password); err != nil {
 		return uuid.Nil, sharedErrs.NewUnauthorized(errs.ErrInvalidCredentials)
 	}
 
-	session := model.NewSession(user)
-	if err := s.sessionRepository.Set(ctx, session); err != nil {
+	session := model.NewSession(s.ttl)
+	if err := s.sessionRepository.Set(ctx, session, user, s.ttl); err != nil {
 		return uuid.Nil, sharedErrs.NewInternal(err)
 	}
 
