@@ -2,7 +2,7 @@ package iam
 
 import "time"
 
-type service struct {
+type Service struct {
 	userRepository    UserRepository
 	sessionRepository SessionRepository
 
@@ -13,8 +13,8 @@ func New(
 	userRepository UserRepository,
 	sessionRepository SessionRepository,
 	ttl time.Duration,
-) *service {
-	return &service{
+) *Service {
+	return &Service{
 		userRepository:    userRepository,
 		sessionRepository: sessionRepository,
 		ttl:               ttl,

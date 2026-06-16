@@ -11,7 +11,7 @@ import (
 	sharedErrs "github.com/MikeKirillov/rocketservices/shared/pkg/errors"
 )
 
-func (s *service) GetUser(ctx context.Context, id uuid.UUID) (model.User, error) {
+func (s *Service) GetUser(ctx context.Context, id uuid.UUID) (model.User, error) {
 	user, err := s.userRepository.GetUserByUUID(ctx, id)
 	if err != nil {
 		if errors.Is(err, errs.ErrUserNotFound) {

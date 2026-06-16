@@ -30,8 +30,9 @@ type diContainer struct {
 	sessionRepo iamService.SessionRepository
 
 	// Сервисы
-	userSvc userV1API.UserService
-	authSvc authV1API.AuthService
+	iamService *iamService.Service
+	userSvc    userV1API.UserService
+	authSvc    authV1API.AuthService
 
 	// API-обработчики
 	authV1Handler authv1.AuthServiceServer
@@ -103,28 +104,34 @@ func (d *diContainer) SessionRepository() iamService.SessionRepository {
 	return d.sessionRepo
 }
 
-func (d *diContainer) AuthService(ctx context.Context) authV1API.AuthService {
-	if d.authSvc == nil {
-		d.authSvc = iamService.New(
+func (d *diContainer) IamService(ctx context.Context) *iamService.Service {
+	if d.iamService == nil {
+		d.iamService = iamService.New(
 			d.UserRepository(ctx),
 			d.SessionRepository(),
 			config.AppConfig().Redis.SessionTTL(),
 		)
+	}
+	return d.iamService
+}
+
+func (d *diContainer) AuthService(ctx context.Context) authV1API.AuthService {
+	if d.authSvc == nil {
+		d.authSvc = d.IamService(ctx)
 	}
 	return d.authSvc
 }
 
 func (d *diContainer) UserService(ctx context.Context) userV1API.UserService {
 	if d.userSvc == nil {
-		d.userSvc = d.AuthService(ctx) // т.к. для обоих хендлеров используется интерфейс с одинаковым
-		// набором методов. по ТЗ у нас универсальный сервис для user и auth
+		d.userSvc = d.IamService(ctx)
 	}
 	return d.userSvc
 }
 
 func (d *diContainer) AuthV1API(ctx context.Context) authv1.AuthServiceServer {
 	if d.authV1Handler == nil {
-		d.authV1Handler = authV1API.NewAPI(d.UserService(ctx))
+		d.authV1Handler = authV1API.NewAPI(d.AuthService(ctx))
 	}
 	return d.authV1Handler
 }
