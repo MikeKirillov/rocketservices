@@ -15,6 +15,11 @@ import (
 )
 
 func (s *service) Create(ctx context.Context, orderRq input.CreateOrderRq) (input.CreateOrderRs, error) {
+	userUUID, ok := auth.UserUUIDFromContext(ctx)
+	if !ok {
+		return input.CreateOrderRs{}, sharedErrs.NewUnauthorized(errs.ErrUnauthorized)
+	}
+
 	rqParts := orderRq.PartUUIDsAsSlice()
 
 	// 2. Получить детали через InventoryService.ListParts
@@ -72,11 +77,6 @@ func (s *service) Create(ctx context.Context, orderRq input.CreateOrderRq) (inpu
 		default:
 			return input.CreateOrderRs{}, sharedErrs.NewInternal(err)
 		}
-	}
-
-	userUUID, ok := auth.UserUUIDFromContext(ctx)
-	if !ok {
-		return input.CreateOrderRs{}, sharedErrs.NewUnauthorized(errs.ErrUnauthorized)
 	}
 
 	// 5. Сгенерировать order_uuid (UUID v4)
