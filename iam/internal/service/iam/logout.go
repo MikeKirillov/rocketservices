@@ -8,7 +8,7 @@ import (
 	sharedErrs "github.com/MikeKirillov/rocketservices/shared/pkg/errors"
 )
 
-func (s *service) Logout(ctx context.Context, session uuid.UUID) error {
+func (s *Service) Logout(ctx context.Context, session uuid.UUID) error {
 	if err := s.sessionRepository.Delete(ctx, session); err != nil {
 		return sharedErrs.NewInternal(err)
 	}

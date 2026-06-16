@@ -16,7 +16,7 @@ func main() {
 
 	// Загружаем переменные окружения из .env
 	if err := godotenv.Load("../iam.env"); err != nil {
-		slog.Error("ошибка загрузки переменных окружения из inventory.env", "error", err)
+		slog.Error("ошибка загрузки переменных окружения из iam.env", "error", err)
 		os.Exit(1)
 	}
 

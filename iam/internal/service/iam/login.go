@@ -12,7 +12,7 @@ import (
 	sharedErrs "github.com/MikeKirillov/rocketservices/shared/pkg/errors"
 )
 
-func (s *service) Login(ctx context.Context, input input.LoginPassInput) (uuid.UUID, error) {
+func (s *Service) Login(ctx context.Context, input input.LoginPassInput) (uuid.UUID, error) {
 	// Проверка заполненности логина и пароля
 	if input.Login == "" || input.Password == "" {
 		return uuid.Nil, sharedErrs.NewInvalidArgument(errs.ErrEmptyCredential)

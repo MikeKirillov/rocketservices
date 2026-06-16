@@ -9,12 +9,7 @@ import (
 	"github.com/MikeKirillov/rocketservices/iam/internal/service/input"
 )
 
-// для обоих хендлеров используется интерфейс с одинаковым
-// набором методов. по ТЗ у нас универсальный сервис для user и auth.
 type UserService interface {
 	Register(context.Context, input.LoginPassInput) (uuid.UUID, error)
 	GetUser(context.Context, uuid.UUID) (model.User, error)
-	Login(context.Context, input.LoginPassInput) (uuid.UUID, error)
-	Whoami(context.Context, uuid.UUID) (model.User, model.Session, error)
-	Logout(context.Context, uuid.UUID) error
 }
