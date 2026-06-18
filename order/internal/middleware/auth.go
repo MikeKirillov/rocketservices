@@ -33,7 +33,7 @@ func Auth(next http.Handler, authClient *authClientV1.Client) http.Handler {
 			return
 		}
 
-		ctx := auth.WithSessionUUID(r.Context(), sID.String())
+		ctx := auth.WithSessionUUID(r.Context(), sID)
 		ctx = auth.WithUserUUID(ctx, uID)
 
 		next.ServeHTTP(w, r.WithContext(ctx))

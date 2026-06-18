@@ -9,3 +9,10 @@ grpc:
     maxConnAgeGraceSec: 5  # Время на завершение активных RPC
     minPingIntervalMinutes: 5  # Минимальный интервал ping'ов от клиента (защита от DoS)
     shutdownTimeoutSec: 5
+
+otel:
+  endpoint: "localhost:4317"
+  service_name: "payment-service"
+
+logger:
+  level: "info"   # debug | info | warn | error

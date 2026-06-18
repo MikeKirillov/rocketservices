@@ -22,9 +22,6 @@ func LoggerInterceptor() grpc.UnaryServerInterceptor {
 		// Извлекаем имя метода из полного пути
 		method := path.Base(info.FullMethod)
 
-		// Логируем начало вызова метода
-		slog.Info("начало gRPC метода", "method", method)
-
 		// Засекаем время начала выполнения
 		start := time.Now()
 
@@ -34,12 +31,22 @@ func LoggerInterceptor() grpc.UnaryServerInterceptor {
 		// Вычисляем длительность выполнения
 		duration := time.Since(start)
 
+		attrs := []slog.Attr{
+			slog.String("method", method),
+			slog.Duration("duration", duration),
+		}
+
 		// Форматируем сообщение в зависимости от результата
 		if err != nil {
 			st, _ := status.FromError(err)
-			slog.Error("gRPC метод завершён с ошибкой", "method", method, "code", st.Code(), "error", err, "duration", duration)
+			attrs = append(
+				attrs,
+				slog.String("code", st.Code().String()),
+				slog.String("error", err.Error()),
+			)
+			slog.LogAttrs(ctx, slog.LevelError, "gRPC метод завершён с ошибкой", attrs...)
 		} else {
-			slog.Info("gRPC метод завершён успешно", "method", method, "duration", duration)
+			slog.LogAttrs(ctx, slog.LevelInfo, "gRPC метод завершён успешно", attrs...)
 		}
 
 		return resp, err
