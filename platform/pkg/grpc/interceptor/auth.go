@@ -32,7 +32,7 @@ func SessionForwarder(
 	}
 
 	// Устанавливаем его в исходящий контекст
-	ctx = metadata.AppendToOutgoingContext(ctx, auth.SessionUUIDKey, sessionUUID)
+	ctx = metadata.AppendToOutgoingContext(ctx, auth.SessionUUIDKey, sessionUUID.String())
 
 	// Осуществляем вызов RPC
 	err := invoker(ctx, method, req, reply, cc, opts...)
