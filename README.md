@@ -146,7 +146,6 @@ $ grpcurl -plaintext -d '{"session_uuid": "50be5582-8512-43c6-b958-44080c86da6d"
 $ grpcurl -plaintext -d '{"session_uuid": "50be5582-8512-43c6-b958-44080c86da6d"}' localhost:50053 auth.v1.AuthService/Whoami
 ```
 
-
 # goose файл миграции
 
 ```
@@ -163,4 +162,32 @@ $ bin/goose -dir migrations/order create backfill_user_uuid_in_orders sql
 $ bin/goose -dir migrations/order create set_user_uuid_not_null_in_orders sql
 
 $ bin/goose -dir migrations/iam create create_users_table sql
+```
+
+# Kafka UI
+
+```
+http://localhost:8090/
+```
+
+# Kibana - логирование
+
+сначала поднять все окружение `task up-all`, затем выполнить `task es:init`, затем `task kibana:init`
+
+```
+http://localhost:5601/
+```
+
+# Grafana - метрики
+
+login/pass: admin/admin
+
+```
+http://localhost:3000/
+```
+
+# Jaeger - трейсы
+
+```
+http://localhost:16686/
 ```
