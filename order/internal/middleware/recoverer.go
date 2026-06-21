@@ -11,7 +11,12 @@ func Recoverer(next http.Handler) http.Handler {
 		// Описываем обработчик панических ситуаций
 		defer func() {
 			if re := recover(); re != nil {
-				slog.Error("паника в HTTP методе", "method", r.Method, "path", r.URL.Path, "panic", re, "stack", string(debug.Stack()))
+				slog.Error("паника в HTTP методе",
+					slog.String("method", r.Method),
+					slog.String("path", r.URL.Path),
+					slog.Any("panic", re),
+					slog.String("stack", string(debug.Stack())),
+				)
 				http.Error(w, "внутренняя ошибка сервера", http.StatusInternalServerError)
 			}
 		}()

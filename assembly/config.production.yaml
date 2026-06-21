@@ -4,3 +4,10 @@ kafka:
   consumer:
     topic: "order.paid"
     group: "1"
+
+otel:
+  endpoint: "0.0.0.0:4317"
+  service_name: "assembly-service"
+
+logger:
+  level: "warn"   # debug | info | warn | error

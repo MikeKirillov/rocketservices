@@ -74,7 +74,9 @@ func OrderCreateRqToModel(orderRq *orderv1.CreateOrderRequest) (input.CreateOrde
 
 func checkRequiredField(field uuid.UUID, fieldName string) error {
 	if field == uuid.Nil {
-		slog.Error("некорректный запрос", "не передано обязательное поле", fieldName)
+		slog.Error("некорректный запрос",
+			slog.String("не передано обязательное поле", fieldName),
+		)
 		return errs.ErrOmittedRequiredField
 	}
 	return nil

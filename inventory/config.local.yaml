@@ -25,3 +25,10 @@ pg:
   user: "inventory-service-user"
   password: "inventory-service-password"
   sslmode: "disable"
+
+otel:
+  endpoint: "localhost:4317"
+  service_name: "inventory-service"
+
+logger:
+  level: "info"   # debug | info | warn | error

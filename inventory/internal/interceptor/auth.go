@@ -44,11 +44,10 @@ func ServerIncomingInterceptor(authClient *authv1.Client) grpc.UnaryServerInterc
 			return nil, status.Error(codes.Unauthenticated, "ошибка авторизации")
 		}
 
-		slog.Info(
-			"gRPC: пользователь аутентифицирован",
-			"method", info.FullMethod,
-			"sessionUUID", sID,
-			"userUUID", uID,
+		slog.Info("gRPC: пользователь аутентифицирован",
+			slog.String("method", info.FullMethod),
+			slog.String("sessionUUID", sID.String()),
+			slog.String("userUUID", uID.String()),
 		)
 
 		// Передаем обновленный идентификатором пользователя контекст в handler

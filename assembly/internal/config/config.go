@@ -13,6 +13,7 @@ const defaultConfig = "config.local.yaml"
 type config struct {
 	Logger loggerConfig `yaml:"logger"`
 	Kafka  kafkaConfig  `yaml:"kafka"`
+	Otel   otelConfig   `yaml:"otel"`
 }
 
 var appConfig *config

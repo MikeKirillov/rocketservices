@@ -25,3 +25,10 @@ pg:
   user: "MUST_BE_SET_VIA_ENV"
   password: "MUST_BE_SET_VIA_ENV"
   sslmode: "require"
+
+otel:
+  endpoint: "0.0.0.0:4317"
+  service_name: "inventory-service"
+
+logger:
+  level: "warn"   # debug | info | warn | error
