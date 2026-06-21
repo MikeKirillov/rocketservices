@@ -15,6 +15,7 @@ type config struct {
 	Logger loggerConfig `yaml:"logger"`
 	PG     pgConfig     `yaml:"pg"`
 	Redis  redisConfig  `yaml:"redis"`
+	Otel   otelConfig   `yaml:"otel"`
 }
 
 var appConfig *config

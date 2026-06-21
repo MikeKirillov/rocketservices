@@ -43,3 +43,10 @@ kafka:
   consumer:
     topic: "assembly.ship-assembled"
     group: 1
+
+otel:
+  endpoint: "0.0.0.0:4317"
+  service_name: "order-service"
+
+logger:
+  level: "warn"   # debug | info | warn | error

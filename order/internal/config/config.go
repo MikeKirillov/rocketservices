@@ -16,6 +16,7 @@ type config struct {
 	Logger loggerConfig `yaml:"logger"`
 	PG     pgConfig     `yaml:"pg"`
 	Kafka  kafkaConfig  `yaml:"kafka"`
+	Otel   otelConfig   `yaml:"otel"`
 }
 
 var appConfig *config

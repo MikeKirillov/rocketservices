@@ -15,6 +15,7 @@ type config struct {
 	Logger     loggerConfig     `yaml:"logger"`
 	PG         pgConfig         `yaml:"pg"`
 	GRPCClient grpcClientConfig `yaml:"grpcClient"`
+	Otel       otelConfig       `yaml:"otel"`
 }
 
 var appConfig *config

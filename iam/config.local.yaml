@@ -28,5 +28,9 @@ redis:
 session:
   ttl: 24 # hours
 
+otel:
+  endpoint: "localhost:4317"
+  service_name: "iam-service"
+
 logger:
-  level: "info"
+  level: "info"   # debug | info | warn | error
