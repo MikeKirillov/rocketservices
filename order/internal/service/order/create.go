@@ -89,6 +89,9 @@ func (s *service) Create(ctx context.Context, orderRq input.CreateOrderRq) (inpu
 		return input.CreateOrderRs{}, sharedErrs.NewInternal(err)
 	}
 
+	// Фиксируем метрику для отображения в Grafana
+	ordersCreated.Add(ctx, 1)
+
 	// 7. Вернуть order_uuid и total_price
 	return input.CreateOrderRs{OrderUUID: order.OrderUUID, TotalPrice: totalPrice}, nil
 }
