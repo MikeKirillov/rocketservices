@@ -14,7 +14,9 @@ import (
 	"github.com/MikeKirillov/rocketservices/order/internal/middleware"
 	"github.com/MikeKirillov/rocketservices/platform/pkg/closer"
 	"github.com/MikeKirillov/rocketservices/platform/pkg/logger"
+	"github.com/MikeKirillov/rocketservices/platform/pkg/metrics"
 	orderv1 "github.com/MikeKirillov/rocketservices/shared/pkg/openapi/order/v1"
+	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 )
 
 type App struct {
@@ -101,6 +103,7 @@ func (a *App) initDeps(ctx context.Context) {
 		a.initConfig,
 		a.initDi,
 		a.initLogger,
+		a.initMetrics,
 		a.initAuthClient,
 		a.initHTTPServer,
 	}
@@ -137,8 +140,15 @@ func (a *App) initLogger(ctx context.Context) {
 		EnableOTLP:        true,
 		CollectorEndpoint: config.AppConfig().Otel.Endpoint,
 	})
-	closer.Add("логгер", func(_ context.Context) error {
+	closer.Add("logger", func(_ context.Context) error {
 		return logger.Close()
+	})
+}
+
+func (a *App) initMetrics(_ context.Context) {
+	metrics.Init("order-service")
+	closer.Add("metrics provider", func(_ context.Context) error {
+		return metrics.Close()
 	})
 }
 
@@ -170,6 +180,7 @@ func (a *App) initHTTPServer(ctx context.Context) {
 		config.AppConfig().HTTP.TimeoutMiddlware(),
 		"таймаут при обработке запроса к серверу",
 	)
+	handler = otelhttp.NewHandler(handler, "order-service")
 
 	a.httpServer = &http.Server{
 		Addr:              config.AppConfig().HTTP.Address(),

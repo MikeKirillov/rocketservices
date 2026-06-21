@@ -89,22 +89,22 @@ $ go run cmd/main.go
 
 ### создание заказа
 ```
-$ curl -v -X POST http://localhost:8080/api/v1/orders -H "Content-Type: application/json" -H "Authorization: Bearer 5cd40dea-a014-48b9-99a6-ce21975bc9fc" -d '{"hull_uuid": "550e8400-e29b-41d4-a716-446655440001", "engine_uuid": "550e8400-e29b-41d4-a716-446655440003", "shield_uuid": "550e8400-e29b-41d4-a716-446655440005", "weapon_uuid": null}'
+$ curl -v -X POST http://localhost:8080/api/v1/orders -H "Content-Type: application/json" -H "Authorization: Bearer 104bfa6d-60fd-495c-befb-40edc13ef1ed" -d '{"hull_uuid": "550e8400-e29b-41d4-a716-446655440001", "engine_uuid": "550e8400-e29b-41d4-a716-446655440003", "shield_uuid": "550e8400-e29b-41d4-a716-446655440005", "weapon_uuid": null}'
 ```
 
 ### получить заказ
 ```
-$ curl -v http://localhost:8080/api/v1/orders/cdf06168-918e-41af-87b3-a0784d3fada9 -H "Authorization: Bearer 37bde4d1-23de-49ff-85c0-75587407d9f5"
+$ curl -v http://localhost:8080/api/v1/orders/cdf06168-918e-41af-87b3-a0784d3fada9 -H "Authorization: Bearer 104bfa6d-60fd-495c-befb-40edc13ef1ed"
 ```
 
 ### оплата заказа
 ```
-$ curl -v -X POST http://localhost:8080/api/v1/orders/2cf12816-d448-4a96-a638-660cd5794463/pay -H "Content-Type: application/json" -H "Authorization: Bearer e9f75010-ca46-40f7-b981-b75318432143" -d '{"payment_method": "CARD"}'
+$ curl -v -X POST http://localhost:8080/api/v1/orders/9cd53450-5d5a-47a1-b7d1-2c96cdc534ba/pay -H "Content-Type: application/json" -H "Authorization: Bearer 104bfa6d-60fd-495c-befb-40edc13ef1ed" -d '{"payment_method": "CARD"}'
 ```
 
 ### отмена заказа
 ```
-$ curl -v -X POST http://localhost:8080/api/v1/orders/f0068d1b-d126-4b4d-8d0e-5c8b33b530a1/cancel -H "Content-Type: application/json" -H "Authorization: Bearer 37bde4d1-23de-49ff-85c0-75587407d9f5"
+$ curl -v -X POST http://localhost:8080/api/v1/orders/f0068d1b-d126-4b4d-8d0e-5c8b33b530a1/cancel -H "Content-Type: application/json" -H "Authorization: Bearer 104bfa6d-60fd-495c-befb-40edc13ef1ed"
 ```
 
 ## assembly

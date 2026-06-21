@@ -13,6 +13,7 @@ import (
 
 func (s *service) Pay(ctx context.Context, orderRq input.PayOrderRq) (uuid.UUID, error) {
 	var transactionResult uuid.UUID
+	var totalPrice int64
 
 	err := s.txManager.Do(ctx, func(ctx context.Context) error {
 		// Найти заказ в store
@@ -54,10 +55,17 @@ func (s *service) Pay(ctx context.Context, orderRq input.PayOrderRq) (uuid.UUID,
 
 		// Вернуть transaction_uuid
 		transactionResult = transactionUUIDRs
+		// Вернуть totalPrice для передачи метрик
+		totalPrice = order.TotalPrice
 		return nil
 	})
 	if err != nil {
 		return uuid.Nil, err
 	}
+
+	// Фиксируем метрики для отображения в Grafana
+	ordersPaid.Add(ctx, 1)
+	ordersRevenue.Add(ctx, totalPrice)
+
 	return transactionResult, nil
 }
