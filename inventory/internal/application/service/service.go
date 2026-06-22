@@ -1,6 +1,10 @@
 package part
 
-import "context"
+import (
+	"context"
+
+	"github.com/google/uuid"
+)
 
 // TxManager определяет контракт для управления транзакциями.
 type TxManager interface {
@@ -23,4 +27,12 @@ func NewService(
 		compatibilityChecker: compatibilityChecker,
 		txManager:            txManager,
 	}
+}
+
+func uuidsToStringSlice(ids []uuid.UUID) []string {
+	strings := make([]string, 0, len(ids))
+	for _, id := range ids {
+		strings = append(strings, id.String())
+	}
+	return strings
 }

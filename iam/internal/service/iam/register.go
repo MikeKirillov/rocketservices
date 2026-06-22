@@ -5,6 +5,10 @@ import (
 	"errors"
 
 	"github.com/google/uuid"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/codes"
+	"go.opentelemetry.io/otel/trace"
 
 	errs "github.com/MikeKirillov/rocketservices/iam/internal/errors"
 	"github.com/MikeKirillov/rocketservices/iam/internal/model"
@@ -13,8 +17,17 @@ import (
 )
 
 func (s *Service) Register(ctx context.Context, input input.LoginPassInput) (uuid.UUID, error) {
+	// Подключение трейсинга бизнес-логики
+	ctx, span := otel.Tracer("iam-service").Start(ctx, "iam.Register", trace.WithAttributes(
+		attribute.String("user.login", input.Login),
+	))
+	defer span.End()
+
 	user, err := model.NewUser(input.Login, input.Password)
 	if err != nil {
+		span.RecordError(err)
+		span.SetStatus(codes.Error, err.Error())
+
 		if errors.Is(err, errs.ErrInvalidLogin) || errors.Is(err, errs.ErrWeakPassword) {
 			return uuid.Nil, sharedErrs.NewInvalidArgument(err)
 		}
@@ -23,11 +36,16 @@ func (s *Service) Register(ctx context.Context, input input.LoginPassInput) (uui
 
 	err = s.userRepository.InsertUser(ctx, user)
 	if err != nil {
+		span.RecordError(err)
+		span.SetStatus(codes.Error, err.Error())
+
 		if errors.Is(err, errs.ErrUserAlreadyExists) {
 			return uuid.Nil, sharedErrs.NewConflict(err)
 		}
 		return uuid.Nil, sharedErrs.NewInternal(err)
 	}
+
+	span.SetAttributes(attribute.String("user.uuid", user.UUID.String()))
 
 	return user.UUID, nil
 }

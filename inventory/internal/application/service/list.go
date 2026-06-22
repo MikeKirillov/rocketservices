@@ -6,6 +6,11 @@ import (
 	"slices"
 	"strings"
 
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/codes"
+	"go.opentelemetry.io/otel/trace"
+
 	"github.com/MikeKirillov/rocketservices/inventory/internal/application/input"
 	"github.com/MikeKirillov/rocketservices/inventory/internal/domain/model"
 	errs "github.com/MikeKirillov/rocketservices/inventory/internal/errors"
@@ -13,9 +18,19 @@ import (
 )
 
 func (s *service) List(ctx context.Context, filter input.PartFilter) ([]model.Part, error) {
+	// Подключение трейсинга бизнес-логики
+	ctx, span := otel.Tracer("inventory-service").Start(ctx, "inventory.List", trace.WithAttributes(
+		attribute.StringSlice("item.uuids", uuidsToStringSlice(filter.UUIDs)),
+		attribute.String("item.type", string(filter.PartType)),
+	))
+	defer span.End()
+
 	if filter.UUIDs != nil {
 		partsUnordered, err := s.partRepository.ListByUUIDs(ctx, filter.UUIDs)
 		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, err.Error())
+
 			switch {
 			case errors.Is(err, errs.ErrPartNotFound):
 				return nil, sharedErrs.NewNotFound(err)
@@ -38,11 +53,17 @@ func (s *service) List(ctx context.Context, filter input.PartFilter) ([]model.Pa
 	if filter.PartType == "" {
 		parts, err = s.partRepository.List(ctx)
 		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, err.Error())
+
 			return nil, sharedErrs.NewInternal(err)
 		}
 	} else { // Иначе → фильтровать по типу
 		parts, err = s.partRepository.ListByPartType(ctx, filter.PartType)
 		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, err.Error())
+
 			return nil, sharedErrs.NewInternal(err)
 		}
 	}
@@ -53,5 +74,8 @@ func (s *service) List(ctx context.Context, filter input.PartFilter) ([]model.Pa
 			return strings.Compare(a.Name(), b.Name())
 		})
 	}
+
+	span.SetAttributes(attribute.Int("items.count", len(parts)))
+
 	return parts, nil
 }

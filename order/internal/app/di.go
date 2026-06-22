@@ -10,6 +10,7 @@ import (
 	trmpgx "github.com/avito-tech/go-transaction-manager/drivers/pgxv5/v2"
 	"github.com/avito-tech/go-transaction-manager/trm/v2/manager"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/keepalive"
@@ -128,6 +129,7 @@ func (d *diContainer) InventoryClient(ctx context.Context) orderService.Inventor
 				PermitWithoutStream: true,             // Пинговать даже без активных RPC
 			}),
 			grpc.WithUnaryInterceptor(interceptor.SessionForwarder),
+			grpc.WithStatsHandler(otelgrpc.NewClientHandler()),
 		)
 		if err != nil {
 			slog.Error("не удалось подключиться к gRPC: InventoryService", "error", err)
@@ -211,6 +213,7 @@ func newGRPCClient(address string, time, timeout time.Duration) (conn *grpc.Clie
 			Timeout:             timeout, // Таймаут ожидания pong
 			PermitWithoutStream: true,    // Пинговать даже без активных RPC
 		}),
+		grpc.WithStatsHandler(otelgrpc.NewClientHandler()),
 	)
 }
 

@@ -89,22 +89,22 @@ $ go run cmd/main.go
 
 ### создание заказа
 ```
-$ curl -v -X POST http://localhost:8080/api/v1/orders -H "Content-Type: application/json" -H "Authorization: Bearer 104bfa6d-60fd-495c-befb-40edc13ef1ed" -d '{"hull_uuid": "550e8400-e29b-41d4-a716-446655440001", "engine_uuid": "550e8400-e29b-41d4-a716-446655440003", "shield_uuid": "550e8400-e29b-41d4-a716-446655440005", "weapon_uuid": null}'
+$ curl -v -X POST http://localhost:8080/api/v1/orders -H "Content-Type: application/json" -H "Authorization: Bearer 49440503-cda1-4470-abc4-e2b300ea83d4" -d '{"hull_uuid": "550e8400-e29b-41d4-a716-446655440001", "engine_uuid": "550e8400-e29b-41d4-a716-446655440003", "shield_uuid": "550e8400-e29b-41d4-a716-446655440005", "weapon_uuid": null}'
 ```
 
 ### получить заказ
 ```
-$ curl -v http://localhost:8080/api/v1/orders/cdf06168-918e-41af-87b3-a0784d3fada9 -H "Authorization: Bearer 104bfa6d-60fd-495c-befb-40edc13ef1ed"
+$ curl -v http://localhost:8080/api/v1/orders/0d65283a-f1d2-4a37-a32b-c3b53374be76 -H "Authorization: Bearer 49440503-cda1-4470-abc4-e2b300ea83d4"
 ```
 
 ### оплата заказа
 ```
-$ curl -v -X POST http://localhost:8080/api/v1/orders/9cd53450-5d5a-47a1-b7d1-2c96cdc534ba/pay -H "Content-Type: application/json" -H "Authorization: Bearer 104bfa6d-60fd-495c-befb-40edc13ef1ed" -d '{"payment_method": "CARD"}'
+$ curl -v -X POST http://localhost:8080/api/v1/orders/0d65283a-f1d2-4a37-a32b-c3b53374be76/pay -H "Content-Type: application/json" -H "Authorization: Bearer 49440503-cda1-4470-abc4-e2b300ea83d4" -d '{"payment_method": "CARD"}'
 ```
 
 ### отмена заказа
 ```
-$ curl -v -X POST http://localhost:8080/api/v1/orders/f0068d1b-d126-4b4d-8d0e-5c8b33b530a1/cancel -H "Content-Type: application/json" -H "Authorization: Bearer 104bfa6d-60fd-495c-befb-40edc13ef1ed"
+$ curl -v -X POST http://localhost:8080/api/v1/orders/0d65283a-f1d2-4a37-a32b-c3b53374be76/cancel -H "Content-Type: application/json" -H "Authorization: Bearer 49440503-cda1-4470-abc4-e2b300ea83d4"
 ```
 
 ## assembly
@@ -172,7 +172,7 @@ http://localhost:8090/
 
 # Kibana - логирование
 
-сначала поднять все окружение `task up-all`, затем выполнить `task es:init`, затем `task kibana:init`
+сначала поднять все окружение `task up-all` + миграции `task migrate-all-up`, затем выполнить `task kibana:init`
 
 ```
 http://localhost:5601/

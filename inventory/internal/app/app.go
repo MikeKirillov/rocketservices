@@ -8,6 +8,7 @@ import (
 	"os/signal"
 	"syscall"
 
+	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/keepalive"
 	"google.golang.org/grpc/reflection"
@@ -17,6 +18,7 @@ import (
 	"github.com/MikeKirillov/rocketservices/platform/pkg/closer"
 	"github.com/MikeKirillov/rocketservices/platform/pkg/grpc/interceptor"
 	"github.com/MikeKirillov/rocketservices/platform/pkg/logger"
+	"github.com/MikeKirillov/rocketservices/platform/pkg/tracing"
 	sharedErrs "github.com/MikeKirillov/rocketservices/shared/pkg/errors"
 	inventoryv1 "github.com/MikeKirillov/rocketservices/shared/pkg/proto/inventory/v1"
 )
@@ -71,6 +73,7 @@ func (a *App) initDeps(ctx context.Context) {
 		a.initConfig,
 		a.initDi,
 		a.initLogger,
+		a.initTracer,
 		a.initListener,
 		a.initAuthClient,
 		a.initGRPCServer,
@@ -113,6 +116,26 @@ func (a *App) initLogger(ctx context.Context) {
 	})
 }
 
+func (a *App) initTracer(ctx context.Context) {
+	shutdownTracer, err := tracing.InitTracer(
+		ctx,
+		tracing.Config{
+			CollectorEndpoint: config.AppConfig().GRPC.Address(),
+			ServiceName:       "inventory-service",
+			Environment:       "development",
+			ServiceVersion:    "1.0.0",
+			SamplingRatio:     1.0,
+		},
+	)
+	if err != nil {
+		slog.Error("не удалось инициализировать трейсинг", "error", err)
+		os.Exit(1)
+	}
+	closer.Add("tracing", func(ctx context.Context) error {
+		return shutdownTracer(ctx)
+	})
+}
+
 func (a *App) initListener(ctx context.Context) {
 	lis, err := net.Listen("tcp", config.AppConfig().GRPC.Address()) //nolint:noctx // Контекст здесь не нужен: GracefulStop() сам закроет listener и прервёт Accept()
 	if err != nil {
@@ -144,7 +167,9 @@ func (a *App) initGRPCServer(ctx context.Context) {
 			interceptor.LoggerInterceptor(),
 			innerceptor.ServerIncomingInterceptor(a.diContainer.authClient),
 			sharedErrs.UnaryErrorInterceptor(slog.Default()),
+			tracing.TraceIDUnaryServerInterceptor(),
 		),
+		grpc.StatsHandler(otelgrpc.NewServerHandler()),
 	)
 	api := a.diContainer.InventoryV1API(ctx)
 
