@@ -106,11 +106,11 @@ func (a *App) initLogger(ctx context.Context) {
 	logger.Init(logger.Config{
 		Level:             config.AppConfig().Logger.Level,
 		ServiceName:       config.AppConfig().Otel.ServiceName,
-		Environment:       "development",
-		EnableOTLP:        true,
+		Environment:       config.AppConfig().Otel.Environment,
+		EnableOTLP:        config.AppConfig().Otel.OTLP,
 		CollectorEndpoint: config.AppConfig().Otel.Endpoint,
 	})
-	closer.Add("логгер", func(_ context.Context) error {
+	closer.Add("logger", func(_ context.Context) error {
 		return logger.Close()
 	})
 }
@@ -119,11 +119,11 @@ func (a *App) initTracer(ctx context.Context) {
 	shutdownTracer, err := tracing.InitTracer(
 		ctx,
 		tracing.Config{
-			CollectorEndpoint: config.AppConfig().GRPC.Address(),
-			ServiceName:       "iam-service",
-			Environment:       "development",
-			ServiceVersion:    "1.0.0",
-			SamplingRatio:     1.0,
+			CollectorEndpoint: config.AppConfig().Otel.Endpoint,
+			ServiceName:       config.AppConfig().Otel.ServiceName,
+			Environment:       config.AppConfig().Otel.Environment,
+			ServiceVersion:    config.AppConfig().Otel.ServiceVersion,
+			SamplingRatio:     config.AppConfig().Otel.SamplingRatio,
 		},
 	)
 	if err != nil {

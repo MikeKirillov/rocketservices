@@ -90,11 +90,11 @@ func (a *App) initLogger(ctx context.Context) {
 	logger.Init(logger.Config{
 		Level:             config.AppConfig().Logger.Level,
 		ServiceName:       config.AppConfig().Otel.ServiceName,
-		Environment:       "development",
-		EnableOTLP:        true,
+		Environment:       config.AppConfig().Otel.Environment,
+		EnableOTLP:        config.AppConfig().Otel.OTLP,
 		CollectorEndpoint: config.AppConfig().Otel.Endpoint,
 	})
-	closer.Add("логгер", func(_ context.Context) error {
+	closer.Add("logger", func(_ context.Context) error {
 		return logger.Close()
 	})
 }

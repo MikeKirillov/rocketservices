@@ -13,6 +13,10 @@ grpc:
 otel:
   endpoint: "0.0.0.0:4317"
   service_name: "payment-service"
+  environment: "development"
+  service_version: "1.0.0"
+  service_ration: 1.0
+  otlp: true
 
 logger:
   level: "warn"   # debug | info | warn | error

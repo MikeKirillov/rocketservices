@@ -99,7 +99,7 @@ $ curl -v http://localhost:8080/api/v1/orders/0d65283a-f1d2-4a37-a32b-c3b53374be
 
 ### оплата заказа
 ```
-$ curl -v -X POST http://localhost:8080/api/v1/orders/0d65283a-f1d2-4a37-a32b-c3b53374be76/pay -H "Content-Type: application/json" -H "Authorization: Bearer 49440503-cda1-4470-abc4-e2b300ea83d4" -d '{"payment_method": "CARD"}'
+$ curl -v -X POST http://localhost:8080/api/v1/orders/ab482de3-ddd4-48cd-a838-281b97fa121b/pay -H "Content-Type: application/json" -H "Authorization: Bearer 49440503-cda1-4470-abc4-e2b300ea83d4" -d '{"payment_method": "CARD"}'
 ```
 
 ### отмена заказа
