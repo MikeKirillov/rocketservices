@@ -139,8 +139,8 @@ func (a *App) initLogger(ctx context.Context) {
 	logger.Init(logger.Config{
 		Level:             config.AppConfig().Logger.Level,
 		ServiceName:       config.AppConfig().Otel.ServiceName,
-		Environment:       "development",
-		EnableOTLP:        true,
+		Environment:       config.AppConfig().Otel.Environment,
+		EnableOTLP:        config.AppConfig().Otel.OTLP,
 		CollectorEndpoint: config.AppConfig().Otel.Endpoint,
 	})
 	closer.Add("logger", func(_ context.Context) error {
@@ -149,7 +149,7 @@ func (a *App) initLogger(ctx context.Context) {
 }
 
 func (a *App) initMetrics(_ context.Context) {
-	metrics.Init("order-service")
+	metrics.Init(config.AppConfig().Otel.ServiceName)
 	closer.Add("metrics provider", func(_ context.Context) error {
 		return metrics.Close()
 	})
@@ -159,11 +159,11 @@ func (a *App) initTracer(ctx context.Context) {
 	shutdownTracer, err := tracing.InitTracer(
 		ctx,
 		tracing.Config{
-			CollectorEndpoint: config.AppConfig().HTTP.Address(),
-			ServiceName:       "order-service",
-			Environment:       "development",
-			ServiceVersion:    "1.0.0",
-			SamplingRatio:     1.0,
+			CollectorEndpoint: config.AppConfig().Otel.Endpoint,
+			ServiceName:       config.AppConfig().Otel.ServiceName,
+			Environment:       config.AppConfig().Otel.Environment,
+			ServiceVersion:    config.AppConfig().Otel.ServiceVersion,
+			SamplingRatio:     config.AppConfig().Otel.SamplingRatio,
 		},
 	)
 	if err != nil {
@@ -203,7 +203,7 @@ func (a *App) initHTTPServer(ctx context.Context) {
 		config.AppConfig().HTTP.TimeoutMiddlware(),
 		"таймаут при обработке запроса к серверу",
 	)
-	handler = otelhttp.NewHandler(handler, "order-service")
+	handler = otelhttp.NewHandler(handler, config.AppConfig().Otel.ServiceName)
 
 	a.httpServer = &http.Server{
 		Addr:              config.AppConfig().HTTP.Address(),

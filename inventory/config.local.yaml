@@ -29,6 +29,10 @@ pg:
 otel:
   endpoint: "localhost:4317"
   service_name: "inventory-service"
+  environment: "development"
+  service_version: "1.0.0"
+  service_ration: 1.0
+  otlp: true
 
 logger:
   level: "info"   # debug | info | warn | error
