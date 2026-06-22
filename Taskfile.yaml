@@ -477,6 +477,7 @@ tasks:
   kibana:init:
     desc: "Ожидает Kibana и создает Data View для просмотра логов"
     cmds:
+      - task: es:init
       - task: kibana:wait
       - task: kibana:create-view
   

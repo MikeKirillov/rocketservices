@@ -8,6 +8,7 @@ import (
 	"os/signal"
 	"syscall"
 
+	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/keepalive"
@@ -18,6 +19,7 @@ import (
 	"github.com/MikeKirillov/rocketservices/platform/pkg/grpc/health"
 	"github.com/MikeKirillov/rocketservices/platform/pkg/grpc/interceptor"
 	"github.com/MikeKirillov/rocketservices/platform/pkg/logger"
+	"github.com/MikeKirillov/rocketservices/platform/pkg/tracing"
 	sharedErrs "github.com/MikeKirillov/rocketservices/shared/pkg/errors"
 	paymentv1 "github.com/MikeKirillov/rocketservices/shared/pkg/proto/payment/v1"
 )
@@ -91,6 +93,7 @@ func (a *App) initDeps(ctx context.Context) {
 		a.initConfig,
 		a.initDi,
 		a.initLogger,
+		a.initTracer,
 		a.initListener,
 		a.initGRPCServer,
 	}
@@ -134,6 +137,26 @@ func (a *App) initLogger(ctx context.Context) {
 	})
 }
 
+func (a *App) initTracer(ctx context.Context) {
+	shutdownTracer, err := tracing.InitTracer(
+		ctx,
+		tracing.Config{
+			CollectorEndpoint: config.AppConfig().GRPC.Address(),
+			ServiceName:       "payment-service",
+			Environment:       "development",
+			ServiceVersion:    "1.0.0",
+			SamplingRatio:     1.0,
+		},
+	)
+	if err != nil {
+		slog.Error("не удалось инициализировать трейсинг", "error", err)
+		os.Exit(1)
+	}
+	closer.Add("tracing", func(ctx context.Context) error {
+		return shutdownTracer(ctx)
+	})
+}
+
 // initListener создаёт TCP-листенер для gRPC-сервера.
 func (a *App) initListener(ctx context.Context) {
 	lis, err := net.Listen("tcp", config.AppConfig().GRPC.Address()) //nolint:noctx // Контекст здесь не нужен: GracefulStop() сам закроет listener и прервёт Accept()
@@ -167,7 +190,9 @@ func (a *App) initGRPCServer(ctx context.Context) {
 			interceptor.RecoveryInterceptor(),
 			interceptor.LoggerInterceptor(),
 			sharedErrs.UnaryErrorInterceptor(slog.Default()),
+			tracing.TraceIDUnaryServerInterceptor(),
 		),
+		grpc.StatsHandler(otelgrpc.NewServerHandler()),
 	)
 
 	// Регистрируем наш сервис

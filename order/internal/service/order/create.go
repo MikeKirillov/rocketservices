@@ -6,6 +6,9 @@ import (
 	"fmt"
 
 	"github.com/google/uuid"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/codes"
 
 	"github.com/MikeKirillov/rocketservices/order/internal/api/input"
 	errs "github.com/MikeKirillov/rocketservices/order/internal/errors"
@@ -15,6 +18,17 @@ import (
 )
 
 func (s *service) Create(ctx context.Context, orderRq input.CreateOrderRq) (input.CreateOrderRs, error) {
+	// Подключение трейсинга бизнес-логики
+	ctx, span := otel.Tracer("order-service").Start(ctx, "order.Create")
+	defer span.End()
+
+	for _, i := range orderRq.Items {
+		span.SetAttributes(
+			attribute.String("item.type", string(i.Type)),
+			attribute.String("item.uuid", i.Uuid.String()),
+		)
+	}
+
 	userUUID, ok := auth.UserUUIDFromContext(ctx)
 	if !ok {
 		return input.CreateOrderRs{}, sharedErrs.NewUnauthorized(errs.ErrUnauthorized)
@@ -25,12 +39,18 @@ func (s *service) Create(ctx context.Context, orderRq input.CreateOrderRq) (inpu
 	// 2. Получить детали через InventoryService.ListParts
 	parts, err := s.inventoryClient.ListParts(ctx, rqParts)
 	if err != nil {
+		span.RecordError(err)
+		span.SetStatus(codes.Error, err.Error())
+
 		return input.CreateOrderRs{}, sharedErrs.NewNotFound(err) // клиент уже завернул в BusinessError у себя
 	}
 
 	// Запретите использование одного UUID в разных слотах → тоже ErrPartTypeMismatch.
 	err = resolvedShipSlots(parts, orderRq)
 	if err != nil {
+		span.RecordError(err)
+		span.SetStatus(codes.Error, err.Error())
+
 		return input.CreateOrderRs{}, sharedErrs.NewInvalidArgument(err)
 	}
 
@@ -44,7 +64,12 @@ func (s *service) Create(ctx context.Context, orderRq input.CreateOrderRq) (inpu
 	var totalPrice int64
 	for _, p := range parts {
 		if p.StockQuantity <= 0 {
-			return input.CreateOrderRs{}, sharedErrs.NewConflict(fmt.Errorf("деталь %s: %w", *p.Name, errs.ErrOutOfStock))
+			err := fmt.Errorf("деталь %s: %w", *p.Name, errs.ErrOutOfStock)
+
+			span.RecordError(err)
+			span.SetStatus(codes.Error, err.Error())
+
+			return input.CreateOrderRs{}, sharedErrs.NewConflict(err)
 		}
 		totalPrice += p.Price
 	}
@@ -52,31 +77,19 @@ func (s *service) Create(ctx context.Context, orderRq input.CreateOrderRq) (inpu
 	// Запросить проверку на валидацию совместимости деталей между собой
 	err = s.inventoryClient.ValidateCompatibility(ctx, parts)
 	if err != nil {
-		switch {
-		case errors.Is(err, errs.ErrGrpcNotFound):
-			return input.CreateOrderRs{}, sharedErrs.NewNotFound(err)
-		case errors.Is(err, errs.ErrGrpcInvalidArgument):
-			return input.CreateOrderRs{}, sharedErrs.NewInvalidArgument(err)
-		case errors.Is(err, errs.ErrGrpcCancelledOperation):
-			return input.CreateOrderRs{}, sharedErrs.NewFailedPrecondition(err)
-		default:
-			return input.CreateOrderRs{}, sharedErrs.NewInternal(err)
-		}
+		span.RecordError(err)
+		span.SetStatus(codes.Error, err.Error())
+
+		return input.CreateOrderRs{}, processGRPCError(err)
 	}
 
 	// Зарезервировать детали на складе
 	err = s.inventoryClient.ReserveParts(ctx, rqParts)
 	if err != nil {
-		switch {
-		case errors.Is(err, errs.ErrGrpcNotFound):
-			return input.CreateOrderRs{}, sharedErrs.NewNotFound(err)
-		case errors.Is(err, errs.ErrGrpcInvalidArgument):
-			return input.CreateOrderRs{}, sharedErrs.NewInvalidArgument(err)
-		case errors.Is(err, errs.ErrGrpcCancelledOperation):
-			return input.CreateOrderRs{}, sharedErrs.NewFailedPrecondition(err)
-		default:
-			return input.CreateOrderRs{}, sharedErrs.NewInternal(err)
-		}
+		span.RecordError(err)
+		span.SetStatus(codes.Error, err.Error())
+
+		return input.CreateOrderRs{}, processGRPCError(err)
 	}
 
 	// 5. Сгенерировать order_uuid (UUID v4)
@@ -86,11 +99,20 @@ func (s *service) Create(ctx context.Context, orderRq input.CreateOrderRq) (inpu
 	// 6. Сохранить в store
 	err = s.orderRepository.Create(ctx, order)
 	if err != nil {
+		span.RecordError(err)
+		span.SetStatus(codes.Error, err.Error())
+
 		return input.CreateOrderRs{}, sharedErrs.NewInternal(err)
 	}
 
 	// Фиксируем метрику для отображения в Grafana
 	ordersCreated.Add(ctx, 1)
+
+	span.SetAttributes(
+		attribute.String("order.uuid", order.OrderUUID.String()),
+		attribute.Int("order.items_count", len(order.Items)),
+		attribute.Int64("order.total_price", order.TotalPrice),
+	)
 
 	// 7. Вернуть order_uuid и total_price
 	return input.CreateOrderRs{OrderUUID: order.OrderUUID, TotalPrice: totalPrice}, nil
@@ -111,4 +133,17 @@ func resolvedShipSlots(parts []model.OrderItem, orderRq input.CreateOrderRq) err
 	}
 
 	return nil
+}
+
+func processGRPCError(err error) error {
+	switch {
+	case errors.Is(err, errs.ErrGrpcNotFound):
+		return sharedErrs.NewNotFound(err)
+	case errors.Is(err, errs.ErrGrpcInvalidArgument):
+		return sharedErrs.NewInvalidArgument(err)
+	case errors.Is(err, errs.ErrGrpcCancelledOperation):
+		return sharedErrs.NewFailedPrecondition(err)
+	default:
+		return sharedErrs.NewInternal(err)
+	}
 }

@@ -75,7 +75,7 @@ func (a *App) initConfig(ctx context.Context) {
 		os.Exit(1)
 	}
 
-	slog.Info(
+	slog.InfoContext(ctx,
 		"конфигурация загружена",
 		"config_path", a.configPath,
 		"kafka_brokers", cfg.Kafka.Brokers,

@@ -10,13 +10,15 @@ import (
 	"os/signal"
 	"syscall"
 
+	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
+
 	"github.com/MikeKirillov/rocketservices/order/internal/config"
 	"github.com/MikeKirillov/rocketservices/order/internal/middleware"
 	"github.com/MikeKirillov/rocketservices/platform/pkg/closer"
 	"github.com/MikeKirillov/rocketservices/platform/pkg/logger"
 	"github.com/MikeKirillov/rocketservices/platform/pkg/metrics"
+	"github.com/MikeKirillov/rocketservices/platform/pkg/tracing"
 	orderv1 "github.com/MikeKirillov/rocketservices/shared/pkg/openapi/order/v1"
-	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 )
 
 type App struct {
@@ -104,6 +106,7 @@ func (a *App) initDeps(ctx context.Context) {
 		a.initDi,
 		a.initLogger,
 		a.initMetrics,
+		a.initTracer,
 		a.initAuthClient,
 		a.initHTTPServer,
 	}
@@ -149,6 +152,26 @@ func (a *App) initMetrics(_ context.Context) {
 	metrics.Init("order-service")
 	closer.Add("metrics provider", func(_ context.Context) error {
 		return metrics.Close()
+	})
+}
+
+func (a *App) initTracer(ctx context.Context) {
+	shutdownTracer, err := tracing.InitTracer(
+		ctx,
+		tracing.Config{
+			CollectorEndpoint: config.AppConfig().HTTP.Address(),
+			ServiceName:       "order-service",
+			Environment:       "development",
+			ServiceVersion:    "1.0.0",
+			SamplingRatio:     1.0,
+		},
+	)
+	if err != nil {
+		slog.Error("не удалось инициализировать трейсинг", "error", err)
+		os.Exit(1)
+	}
+	closer.Add("tracing", func(ctx context.Context) error {
+		return shutdownTracer(ctx)
 	})
 }
 
