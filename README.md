@@ -178,6 +178,8 @@ http://localhost:8090/
 http://localhost:5601/
 ```
 
+![elastic](screenshots/logger.png)
+
 # Grafana - метрики
 
 login/pass: admin/admin
@@ -186,8 +188,14 @@ login/pass: admin/admin
 http://localhost:3000/
 ```
 
+![grafana](screenshots/metrics.png)
+
 # Jaeger - трейсы
 
 ```
 http://localhost:16686/
 ```
+
+![jaeger](screenshots/tracing_01.png)
+
+![jaeger](screenshots/tracing_02.png)
