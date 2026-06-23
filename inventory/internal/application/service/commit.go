@@ -1,4 +1,4 @@
-package part
+package part //nolint:dupl // дублем не является
 
 import (
 	"context"

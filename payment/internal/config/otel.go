@@ -9,5 +9,5 @@ type otelConfig struct {
 	Environment    string  `yaml:"environment"`
 	ServiceVersion string  `yaml:"service_version"`
 	SamplingRatio  float64 `yaml:"service_ration"`
-	OTLP           bool    `yaml:"otlp`
+	OTLP           bool    `yaml:"otlp"`
 }

@@ -21,7 +21,7 @@ func NewService() *service {
 
 func (s *service) Pay(ctx context.Context, order model.Payment) (uuid.UUID, error) {
 	// Подключение трейсинга бизнес-логики
-	ctx, span := otel.Tracer("payment-service").Start(ctx, "payment.Pay", trace.WithAttributes(
+	_, span := otel.Tracer("payment-service").Start(ctx, "payment.Pay", trace.WithAttributes(
 		attribute.String("order.uuid", order.Uuid.String()),
 		attribute.String("payment.type", string(order.PaymentMethod)),
 	))
