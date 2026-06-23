@@ -89,7 +89,7 @@ func TestValidate(t *testing.T) {
 			args: args{slots: slots},
 			setupMock: func(r *mocks.PartRepository, c *mocks.CompatibilityChecker) {
 				r.EXPECT().
-					ListByUUIDs(ctx, mock.MatchedBy(func(ids []uuid.UUID) bool { // тк последовательность id при
+					ListByUUIDs(mock.Anything, mock.MatchedBy(func(ids []uuid.UUID) bool { // тк последовательность id при
 						// вызове метода ListByUUIDs() может быть изменена после работы с мапой, используем mock.MatchedBy(),
 						// в которй мы провряем каждый id, что он равен хотя бы одном из id запроса
 						for _, id := range ids {
@@ -120,7 +120,7 @@ func TestValidate(t *testing.T) {
 			args: args{slots: slots},
 			setupMock: func(r *mocks.PartRepository, c *mocks.CompatibilityChecker) {
 				r.EXPECT().
-					ListByUUIDs(ctx, mock.MatchedBy(func(ids []uuid.UUID) bool {
+					ListByUUIDs(mock.Anything, mock.MatchedBy(func(ids []uuid.UUID) bool {
 						for _, id := range ids {
 							return id == slots.HullUUID || id == slots.EngineUUID ||
 								id == slots.ShieldUUID || id == slots.WeaponUUID
@@ -142,7 +142,7 @@ func TestValidate(t *testing.T) {
 			args: args{slots: slots},
 			setupMock: func(r *mocks.PartRepository, c *mocks.CompatibilityChecker) {
 				r.EXPECT().
-					ListByUUIDs(ctx, mock.MatchedBy(func(ids []uuid.UUID) bool {
+					ListByUUIDs(mock.Anything, mock.MatchedBy(func(ids []uuid.UUID) bool {
 						for _, id := range ids {
 							return id == slots.HullUUID || id == slots.EngineUUID ||
 								id == slots.ShieldUUID || id == slots.WeaponUUID
@@ -164,7 +164,7 @@ func TestValidate(t *testing.T) {
 			args: args{slots: slots},
 			setupMock: func(r *mocks.PartRepository, c *mocks.CompatibilityChecker) {
 				r.EXPECT().
-					ListByUUIDs(ctx, mock.MatchedBy(func(ids []uuid.UUID) bool {
+					ListByUUIDs(mock.Anything, mock.MatchedBy(func(ids []uuid.UUID) bool {
 						for _, id := range ids {
 							return id == slots.HullUUID || id == slots.EngineUUID ||
 								id == slots.ShieldUUID || id == slots.WeaponUUID
@@ -194,7 +194,7 @@ func TestValidate(t *testing.T) {
 			args: args{slots: slots},
 			setupMock: func(r *mocks.PartRepository, c *mocks.CompatibilityChecker) {
 				r.EXPECT().
-					ListByUUIDs(ctx, mock.MatchedBy(func(ids []uuid.UUID) bool {
+					ListByUUIDs(mock.Anything, mock.MatchedBy(func(ids []uuid.UUID) bool {
 						for _, id := range ids {
 							return id == slots.HullUUID || id == slots.EngineUUID ||
 								id == slots.ShieldUUID || id == slots.WeaponUUID

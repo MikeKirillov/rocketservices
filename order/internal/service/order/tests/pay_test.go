@@ -91,16 +91,16 @@ func TestPay(t *testing.T) {
 			name: "успешная оплата - ошибок нет",
 			args: args{req: req},
 			setupMock: func(r *mocks.OrderRepository, p *mocks.PaymentServiceClient, m *mocks.TxManager, o *mocks.OrderProducerService) {
-				r.EXPECT().GetForUpdate(ctx, id).Return(modelToGet, nil)
-				p.EXPECT().PayOrder(ctx, req).Return(tranId, nil)
-				r.EXPECT().Update(ctx, mock.MatchedBy(func(o model.Order) bool {
+				r.EXPECT().GetForUpdate(mock.Anything, id).Return(modelToGet, nil)
+				p.EXPECT().PayOrder(mock.Anything, req).Return(tranId, nil)
+				r.EXPECT().Update(mock.Anything, mock.MatchedBy(func(o model.Order) bool {
 					return !o.UpdatedAt.IsZero() &&
 						o.Status == model.OrderStatusPaid &&
 						o.PaymentMethod != nil &&
 						o.TransactionUUID != nil &&
 						*o.TransactionUUID == tranId
 				})).Return(nil)
-				o.EXPECT().ProduceOrderPaid(ctx, mock.MatchedBy(func(o model.Order) bool {
+				o.EXPECT().ProduceOrderPaid(mock.Anything, mock.MatchedBy(func(o model.Order) bool {
 					return !o.UpdatedAt.IsZero() &&
 						o.Status == model.OrderStatusPaid &&
 						o.PaymentMethod != nil &&
@@ -108,7 +108,7 @@ func TestPay(t *testing.T) {
 						*o.TransactionUUID == tranId
 				})).Return(nil)
 				m.EXPECT().
-					Do(ctx, mock.Anything).
+					Do(mock.Anything, mock.Anything).
 					Run(func(ctx context.Context, fn func(context.Context) error) {
 						_ = fn(ctx) // запускает выполнение функции, содержащей бизнес-шаги
 					}).
@@ -125,9 +125,9 @@ func TestPay(t *testing.T) {
 			name: "заказ не найден - errs.ErrOrderConflict",
 			args: args{req: req},
 			setupMock: func(r *mocks.OrderRepository, p *mocks.PaymentServiceClient, m *mocks.TxManager, o *mocks.OrderProducerService) {
-				r.EXPECT().GetForUpdate(ctx, id).Return(model.Order{}, errs.ErrOrderConflict)
+				r.EXPECT().GetForUpdate(mock.Anything, id).Return(model.Order{}, errs.ErrOrderConflict)
 				m.EXPECT().
-					Do(ctx, mock.Anything).
+					Do(mock.Anything, mock.Anything).
 					Run(func(ctx context.Context, fn func(context.Context) error) {
 						_ = fn(ctx) // запускает выполнение функции, содержащей бизнес-шаги
 					}).
@@ -145,9 +145,9 @@ func TestPay(t *testing.T) {
 			name: "заказ уже оплачен - errs.ErrOrderAlreadyPaid",
 			args: args{req: req},
 			setupMock: func(r *mocks.OrderRepository, p *mocks.PaymentServiceClient, m *mocks.TxManager, o *mocks.OrderProducerService) {
-				r.EXPECT().GetForUpdate(ctx, id).Return(modelPaid, nil)
+				r.EXPECT().GetForUpdate(mock.Anything, id).Return(modelPaid, nil)
 				m.EXPECT().
-					Do(ctx, mock.Anything).
+					Do(mock.Anything, mock.Anything).
 					Run(func(ctx context.Context, fn func(context.Context) error) {
 						_ = fn(ctx) // запускает выполнение функции, содержащей бизнес-шаги
 					}).
@@ -165,9 +165,9 @@ func TestPay(t *testing.T) {
 			name: "заказ отменен - errs.ErrOrderAlreadyCancelled",
 			args: args{req: req},
 			setupMock: func(r *mocks.OrderRepository, p *mocks.PaymentServiceClient, m *mocks.TxManager, o *mocks.OrderProducerService) {
-				r.EXPECT().GetForUpdate(ctx, id).Return(modelCancelled, nil)
+				r.EXPECT().GetForUpdate(mock.Anything, id).Return(modelCancelled, nil)
 				m.EXPECT().
-					Do(ctx, mock.Anything).
+					Do(mock.Anything, mock.Anything).
 					Run(func(ctx context.Context, fn func(context.Context) error) {
 						_ = fn(ctx) // запускает выполнение функции, содержащей бизнес-шаги
 					}).
@@ -185,10 +185,10 @@ func TestPay(t *testing.T) {
 			name: "ошибка PaymentService - errInternal",
 			args: args{req: req},
 			setupMock: func(r *mocks.OrderRepository, p *mocks.PaymentServiceClient, m *mocks.TxManager, o *mocks.OrderProducerService) {
-				r.EXPECT().GetForUpdate(ctx, id).Return(modelToGet, nil)
-				p.EXPECT().PayOrder(ctx, req).Return(uuid.Nil, errInternal)
+				r.EXPECT().GetForUpdate(mock.Anything, id).Return(modelToGet, nil)
+				p.EXPECT().PayOrder(mock.Anything, req).Return(uuid.Nil, errInternal)
 				m.EXPECT().
-					Do(ctx, mock.Anything).
+					Do(mock.Anything, mock.Anything).
 					Run(func(ctx context.Context, fn func(context.Context) error) {
 						_ = fn(ctx) // запускает выполнение функции, содержащей бизнес-шаги
 					}).
@@ -206,16 +206,16 @@ func TestPay(t *testing.T) {
 			name: "ошибка репозитория - errInternal",
 			args: args{req: req},
 			setupMock: func(r *mocks.OrderRepository, p *mocks.PaymentServiceClient, m *mocks.TxManager, o *mocks.OrderProducerService) {
-				r.EXPECT().GetForUpdate(ctx, id).Return(modelToGet, nil)
-				p.EXPECT().PayOrder(ctx, req).Return(tranId, nil)
-				r.EXPECT().Update(ctx, mock.MatchedBy(func(o model.Order) bool {
+				r.EXPECT().GetForUpdate(mock.Anything, id).Return(modelToGet, nil)
+				p.EXPECT().PayOrder(mock.Anything, req).Return(tranId, nil)
+				r.EXPECT().Update(mock.Anything, mock.MatchedBy(func(o model.Order) bool {
 					return !o.UpdatedAt.IsZero() &&
 						o.Status == model.OrderStatusPaid &&
 						o.PaymentMethod != nil &&
 						o.TransactionUUID != nil
 				})).Return(errInternal)
 				m.EXPECT().
-					Do(ctx, mock.Anything).
+					Do(mock.Anything, mock.Anything).
 					Run(func(ctx context.Context, fn func(context.Context) error) {
 						_ = fn(ctx) // запускает выполнение функции, содержащей бизнес-шаги
 					}).

@@ -9,6 +9,7 @@ import (
 	"github.com/brianvoe/gofakeit/v7"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 
 	errs "github.com/MikeKirillov/rocketservices/order/internal/errors"
@@ -62,7 +63,7 @@ func TestGet(t *testing.T) {
 			name: "заказ найден - ошибок нет",
 			args: args{id: uuid},
 			setupMock: func(r *mocks.OrderRepository) {
-				r.EXPECT().Get(ctx, uuid).Return(expModel, nil)
+				r.EXPECT().Get(mock.Anything, uuid).Return(expModel, nil)
 			},
 			expected: expected{
 				res:    expModel,
@@ -76,7 +77,7 @@ func TestGet(t *testing.T) {
 			name: "заказ не найден - errs.ErrOrderNotFound",
 			args: args{id: uuid},
 			setupMock: func(r *mocks.OrderRepository) {
-				r.EXPECT().Get(ctx, uuid).Return(model.Order{}, errs.ErrOrderNotFound)
+				r.EXPECT().Get(mock.Anything, uuid).Return(model.Order{}, errs.ErrOrderNotFound)
 			},
 			expected: expected{
 				res:    model.Order{},
@@ -91,7 +92,7 @@ func TestGet(t *testing.T) {
 			name: "ошибка репозитория - errInternal",
 			args: args{id: uuid},
 			setupMock: func(r *mocks.OrderRepository) {
-				r.EXPECT().Get(ctx, uuid).Return(model.Order{}, errInternal)
+				r.EXPECT().Get(mock.Anything, uuid).Return(model.Order{}, errInternal)
 			},
 			expected: expected{
 				res:    model.Order{},

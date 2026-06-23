@@ -9,6 +9,7 @@ import (
 	"github.com/brianvoe/gofakeit/v7"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 
 	"github.com/MikeKirillov/rocketservices/inventory/internal/application/input"
@@ -80,7 +81,7 @@ func TestList(t *testing.T) {
 			name: "без фильтра (все детали) - ошибок нет",
 			args: args{filter: filter},
 			setupMock: func(r *mocks.PartRepository) {
-				r.EXPECT().List(ctx).Return(expModelSlice, nil)
+				r.EXPECT().List(mock.Anything).Return(expModelSlice, nil)
 			},
 			expected: expected{
 				res: expModelSlice,
@@ -93,7 +94,7 @@ func TestList(t *testing.T) {
 			name: "фильтр по типу HULL - все детали с типом HULL",
 			args: args{filter: filterHull},
 			setupMock: func(s *mocks.PartRepository) {
-				s.EXPECT().ListByPartType(ctx, model.PartTypeHull).Return(expModelSlice, nil)
+				s.EXPECT().ListByPartType(mock.Anything, model.PartTypeHull).Return(expModelSlice, nil)
 			},
 			expected: expected{
 				res: expModelSlice,
@@ -106,7 +107,7 @@ func TestList(t *testing.T) {
 			name: "фильтр по конкретным UUID - детали в порядке запрошенных",
 			args: args{filter: filterUuid},
 			setupMock: func(s *mocks.PartRepository) {
-				s.EXPECT().ListByUUIDs(ctx, []uuid.UUID{id}).Return(expModelSlice, nil)
+				s.EXPECT().ListByUUIDs(mock.Anything, []uuid.UUID{id}).Return(expModelSlice, nil)
 			},
 			expected: expected{
 				res: expModelSlice,
@@ -120,7 +121,7 @@ func TestList(t *testing.T) {
 			args: args{filter: filterUuids},
 			setupMock: func(s *mocks.PartRepository) {
 				s.EXPECT().
-					ListByUUIDs(ctx, []uuid.UUID{id, id2}).
+					ListByUUIDs(mock.Anything, []uuid.UUID{id, id2}).
 					Return(nil, errs.ErrPartNotFound)
 			},
 			expected: expected{
@@ -136,7 +137,7 @@ func TestList(t *testing.T) {
 			args: args{filter: filterHull},
 			setupMock: func(s *mocks.PartRepository) {
 				s.EXPECT().
-					ListByPartType(ctx, model.PartTypeHull).
+					ListByPartType(mock.Anything, model.PartTypeHull).
 					Return(nil, errInternal)
 			},
 			expected: expected{
