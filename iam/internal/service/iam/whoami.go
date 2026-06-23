@@ -17,14 +17,21 @@ func (s *Service) Whoami(ctx context.Context, sessionUUID uuid.UUID) (model.User
 	ctx, span := otel.Tracer("iam-service").Start(ctx, "iam.Whoami", trace.WithAttributes(
 		attribute.String("session.uuid", sessionUUID.String()),
 	))
-	defer span.End()
+	var resultErr error
+	defer func() {
+		if resultErr != nil {
+			span.RecordError(resultErr)
+			span.SetStatus(codes.Error, resultErr.Error())
+		} else {
+			span.SetStatus(codes.Ok, "iam.Whoami.Ok")
+		}
+		span.End()
+	}()
 
 	session, user, err := s.sessionRepository.Get(ctx, sessionUUID)
 	if err != nil {
-		span.RecordError(err)
-		span.SetStatus(codes.Error, err.Error())
-
-		return model.User{}, model.Session{}, err
+		resultErr = err
+		return model.User{}, model.Session{}, resultErr
 	}
 
 	span.SetAttributes(

@@ -19,55 +19,69 @@ func (s *service) Cancel(ctx context.Context, id uuid.UUID) error {
 	ctx, span := otel.Tracer("order-service").Start(ctx, "order.Cancel", trace.WithAttributes(
 		attribute.String("order.uuid", id.String()),
 	))
-	defer span.End()
+	var resultErr error
+	defer func() {
+		if resultErr != nil {
+			span.RecordError(resultErr)
+			span.SetStatus(codes.Error, resultErr.Error())
+		} else {
+			span.SetStatus(codes.Ok, "order.Cancel.Ok")
+		}
+		span.End()
+	}()
 
 	return s.txManager.Do(ctx, func(ctx context.Context) error {
 		// Найти заказ в store
 		order, err := s.orderRepository.GetForUpdate(ctx, id)
 		if err != nil {
-			span.RecordError(err)
-			span.SetStatus(codes.Error, err.Error())
-
 			if errors.Is(err, errs.ErrOrderNotFound) {
-				return sharedErrs.NewNotFound(err)
+				resultErr = sharedErrs.NewNotFound(err)
+				return resultErr
 			}
-			return sharedErrs.NewInternal(err)
+			resultErr = sharedErrs.NewInternal(err)
+			return resultErr
 		}
 
 		// Отменить резерв деталей на складе
 		err = s.inventoryClient.ReleaseParts(ctx, order)
 		if err != nil {
-			span.RecordError(err)
-			span.SetStatus(codes.Error, err.Error())
-
 			switch {
 			case errors.Is(err, errs.ErrGrpcNotFound):
-				return sharedErrs.NewNotFound(err)
+				{
+					resultErr = sharedErrs.NewNotFound(err)
+					return resultErr
+				}
 			case errors.Is(err, errs.ErrGrpcInvalidArgument):
-				return sharedErrs.NewInvalidArgument(err)
+				{
+					resultErr = sharedErrs.NewInvalidArgument(err)
+					return resultErr
+				}
 			case errors.Is(err, errs.ErrGrpcCancelledOperation):
-				return sharedErrs.NewFailedPrecondition(err)
+				{
+					resultErr = sharedErrs.NewFailedPrecondition(err)
+					return resultErr
+				}
 			default:
-				return sharedErrs.NewInternal(err)
+				{
+					resultErr = sharedErrs.NewInternal(err)
+					return resultErr
+				}
 			}
 		}
 
 		// Обновить статус на CANELLED
 		err = order.Cancel()
 		if err != nil {
-			span.RecordError(err)
-			span.SetStatus(codes.Error, err.Error())
-
-			return sharedErrs.NewConflict(err)
+			resultErr = sharedErrs.NewConflict(err)
+			return resultErr
 		}
 		if err = s.orderRepository.Update(ctx, order); err != nil {
-			span.RecordError(err)
-			span.SetStatus(codes.Error, err.Error())
-
 			if errors.Is(err, errs.ErrOrderConflict) {
-				return sharedErrs.NewConflict(err)
+				resultErr = sharedErrs.NewConflict(err)
+				return resultErr
 			}
-			return sharedErrs.NewInternal(err)
+			resultErr = sharedErrs.NewInternal(err)
+			return resultErr
 		}
 		return nil
 	})

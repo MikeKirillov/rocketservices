@@ -21,41 +21,43 @@ func (s *Service) Login(ctx context.Context, input input.LoginPassInput) (uuid.U
 	ctx, span := otel.Tracer("iam-service").Start(ctx, "iam.Login", trace.WithAttributes(
 		attribute.String("user.login", input.Login)),
 	)
-	defer span.End()
+	var resultErr error
+	defer func() {
+		if resultErr != nil {
+			span.RecordError(resultErr)
+			span.SetStatus(codes.Error, resultErr.Error())
+		} else {
+			span.SetStatus(codes.Ok, "iam.Login.Ok")
+		}
+		span.End()
+	}()
 
 	// Проверка заполненности логина и пароля
 	if input.Login == "" || input.Password == "" {
-		span.RecordError(errs.ErrEmptyCredential)
-		span.SetStatus(codes.Error, errs.ErrEmptyCredential.Error())
-
-		return uuid.Nil, sharedErrs.NewInvalidArgument(errs.ErrEmptyCredential)
+		resultErr = sharedErrs.NewInvalidArgument(errs.ErrEmptyCredential)
+		return uuid.Nil, resultErr
 	}
 
 	user, err := s.userRepository.GetUserByLogin(ctx, input.Login)
 	if err != nil {
-		span.RecordError(err)
-		span.SetStatus(codes.Error, err.Error())
-
 		if errors.Is(err, errs.ErrUserNotFound) {
-			return uuid.Nil, sharedErrs.NewUnauthorized(errs.ErrInvalidCredentials)
+			resultErr = sharedErrs.NewUnauthorized(errs.ErrInvalidCredentials)
+			return uuid.Nil, resultErr
 		}
-		return uuid.Nil, sharedErrs.NewInternal(err)
+		resultErr = sharedErrs.NewInternal(err)
+		return uuid.Nil, resultErr
 	}
 
 	// Проверка корректности пароля
 	if err := user.Password.Verify(input.Password); err != nil {
-		span.RecordError(err)
-		span.SetStatus(codes.Error, err.Error())
-
-		return uuid.Nil, sharedErrs.NewUnauthorized(errs.ErrInvalidCredentials)
+		resultErr = sharedErrs.NewUnauthorized(errs.ErrInvalidCredentials)
+		return uuid.Nil, resultErr
 	}
 
 	session := model.NewSession(s.ttl)
 	if err := s.sessionRepository.Set(ctx, session, user, s.ttl); err != nil {
-		span.RecordError(err)
-		span.SetStatus(codes.Error, err.Error())
-
-		return uuid.Nil, sharedErrs.NewInternal(err)
+		resultErr = sharedErrs.NewInternal(err)
+		return uuid.Nil, resultErr
 	}
 
 	span.SetAttributes(

@@ -387,13 +387,13 @@ func TestMain(m *testing.M) {
 // authCtx добавляет session-uuid в outgoing metadata — нужно для прямых gRPC-вызовов
 // в InventoryService, чей сервер требует metadata.session-uuid (auth-interceptor).
 func authCtx(ctx context.Context) context.Context {
-	return auth.WithSessionUUID(ctx, defaultSessionUUID)
+	return auth.WithSessionUUID(ctx, uuid.MustParse(defaultSessionUUID))
 }
 
 // authCtxWith — то же, что authCtx, но с произвольной сессией. Используется
 // в тестах, где явно нужно проверить поведение interceptor'а с заданным значением.
 func authCtxWith(ctx context.Context, sessionUUID string) context.Context {
-	return auth.WithSessionUUID(ctx, sessionUUID)
+	return auth.WithSessionUUID(ctx, uuid.MustParse(sessionUUID))
 }
 
 // registerAndLogin регистрирует нового пользователя и сразу логинится —

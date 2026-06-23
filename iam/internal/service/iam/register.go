@@ -21,28 +21,35 @@ func (s *Service) Register(ctx context.Context, input input.LoginPassInput) (uui
 	ctx, span := otel.Tracer("iam-service").Start(ctx, "iam.Register", trace.WithAttributes(
 		attribute.String("user.login", input.Login),
 	))
-	defer span.End()
+	var resultErr error
+	defer func() {
+		if resultErr != nil {
+			span.RecordError(resultErr)
+			span.SetStatus(codes.Error, resultErr.Error())
+		} else {
+			span.SetStatus(codes.Ok, "iam.Register.Ok")
+		}
+		span.End()
+	}()
 
 	user, err := model.NewUser(input.Login, input.Password)
 	if err != nil {
-		span.RecordError(err)
-		span.SetStatus(codes.Error, err.Error())
-
 		if errors.Is(err, errs.ErrInvalidLogin) || errors.Is(err, errs.ErrWeakPassword) {
-			return uuid.Nil, sharedErrs.NewInvalidArgument(err)
+			resultErr = sharedErrs.NewInvalidArgument(err)
+			return uuid.Nil, resultErr
 		}
-		return uuid.Nil, sharedErrs.NewInternal(err)
+		resultErr = sharedErrs.NewInternal(err)
+		return uuid.Nil, resultErr
 	}
 
 	err = s.userRepository.InsertUser(ctx, user)
 	if err != nil {
-		span.RecordError(err)
-		span.SetStatus(codes.Error, err.Error())
-
 		if errors.Is(err, errs.ErrUserAlreadyExists) {
-			return uuid.Nil, sharedErrs.NewConflict(err)
+			resultErr = sharedErrs.NewConflict(err)
+			return uuid.Nil, resultErr
 		}
-		return uuid.Nil, sharedErrs.NewInternal(err)
+		resultErr = sharedErrs.NewInternal(err)
+		return uuid.Nil, resultErr
 	}
 
 	span.SetAttributes(attribute.String("user.uuid", user.UUID.String()))

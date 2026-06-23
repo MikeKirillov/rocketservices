@@ -20,7 +20,16 @@ func (s *service) Get(ctx context.Context, id uuid.UUID) (model.Part, error) {
 	ctx, span := otel.Tracer("inventory-service").Start(ctx, "inventory.Get", trace.WithAttributes(
 		attribute.String("item.uuid", id.String()),
 	))
-	defer span.End()
+	var resultErr error
+	defer func() {
+		if resultErr != nil {
+			span.RecordError(resultErr)
+			span.SetStatus(codes.Error, resultErr.Error())
+		} else {
+			span.SetStatus(codes.Ok, "inventory.Get.Ok")
+		}
+		span.End()
+	}()
 
 	// Проверить, что uuid не пустой → INVALID_ARGUMENT
 	if id == uuid.Nil {
@@ -28,13 +37,12 @@ func (s *service) Get(ctx context.Context, id uuid.UUID) (model.Part, error) {
 	}
 	part, err := s.partRepository.Get(ctx, id)
 	if err != nil {
-		span.RecordError(err)
-		span.SetStatus(codes.Error, err.Error())
-
 		if errors.Is(err, errs.ErrPartNotFound) {
-			return model.Part{}, sharedErrs.NewNotFound(err)
+			resultErr = sharedErrs.NewNotFound(err)
+			return model.Part{}, resultErr
 		}
-		return model.Part{}, sharedErrs.NewInternal(err)
+		resultErr = sharedErrs.NewInternal(err)
+		return model.Part{}, resultErr
 	}
 
 	span.SetAttributes(

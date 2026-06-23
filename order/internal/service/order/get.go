@@ -20,17 +20,25 @@ func (s *service) Get(ctx context.Context, id uuid.UUID) (model.Order, error) {
 	ctx, span := otel.Tracer("order-service").Start(ctx, "order.Get", trace.WithAttributes(
 		attribute.String("order.uuid", id.String()),
 	))
-	defer span.End()
+	var resultErr error
+	defer func() {
+		if resultErr != nil {
+			span.RecordError(resultErr)
+			span.SetStatus(codes.Error, resultErr.Error())
+		} else {
+			span.SetStatus(codes.Ok, "order.Get.Ok")
+		}
+		span.End()
+	}()
 
 	order, err := s.orderRepository.Get(ctx, id)
 	if err != nil {
-		span.RecordError(err)
-		span.SetStatus(codes.Error, err.Error())
-
 		if errors.Is(err, errs.ErrOrderNotFound) {
-			return model.Order{}, sharedErrs.NewNotFound(err)
+			resultErr = sharedErrs.NewNotFound(err)
+			return model.Order{}, resultErr
 		}
-		return model.Order{}, sharedErrs.NewInternal(err)
+		resultErr = sharedErrs.NewInternal(err)
+		return model.Order{}, resultErr
 	}
 
 	span.SetAttributes(

@@ -20,7 +20,16 @@ import (
 func (s *service) Create(ctx context.Context, orderRq input.CreateOrderRq) (input.CreateOrderRs, error) {
 	// Подключение трейсинга бизнес-логики
 	ctx, span := otel.Tracer("order-service").Start(ctx, "order.Create")
-	defer span.End()
+	var resultErr error
+	defer func() {
+		if resultErr != nil {
+			span.RecordError(resultErr)
+			span.SetStatus(codes.Error, resultErr.Error())
+		} else {
+			span.SetStatus(codes.Ok, "order.Create.Ok")
+		}
+		span.End()
+	}()
 
 	for _, i := range orderRq.Items {
 		span.SetAttributes(
@@ -39,19 +48,15 @@ func (s *service) Create(ctx context.Context, orderRq input.CreateOrderRq) (inpu
 	// 2. Получить детали через InventoryService.ListParts
 	parts, err := s.inventoryClient.ListParts(ctx, rqParts)
 	if err != nil {
-		span.RecordError(err)
-		span.SetStatus(codes.Error, err.Error())
-
-		return input.CreateOrderRs{}, sharedErrs.NewNotFound(err) // клиент уже завернул в BusinessError у себя
+		resultErr = sharedErrs.NewNotFound(err) // клиент уже завернул в BusinessError у себя
+		return input.CreateOrderRs{}, resultErr
 	}
 
 	// Запретите использование одного UUID в разных слотах → тоже ErrPartTypeMismatch.
 	err = resolvedShipSlots(parts, orderRq)
 	if err != nil {
-		span.RecordError(err)
-		span.SetStatus(codes.Error, err.Error())
-
-		return input.CreateOrderRs{}, sharedErrs.NewInvalidArgument(err)
+		resultErr = sharedErrs.NewInvalidArgument(err)
+		return input.CreateOrderRs{}, resultErr
 	}
 
 	// Проверяет, что все детали существуют (иначе 404)
@@ -65,11 +70,8 @@ func (s *service) Create(ctx context.Context, orderRq input.CreateOrderRq) (inpu
 	for _, p := range parts {
 		if p.StockQuantity <= 0 {
 			err := fmt.Errorf("деталь %s: %w", *p.Name, errs.ErrOutOfStock)
-
-			span.RecordError(err)
-			span.SetStatus(codes.Error, err.Error())
-
-			return input.CreateOrderRs{}, sharedErrs.NewConflict(err)
+			resultErr = sharedErrs.NewConflict(err)
+			return input.CreateOrderRs{}, resultErr
 		}
 		totalPrice += p.Price
 	}
@@ -77,19 +79,15 @@ func (s *service) Create(ctx context.Context, orderRq input.CreateOrderRq) (inpu
 	// Запросить проверку на валидацию совместимости деталей между собой
 	err = s.inventoryClient.ValidateCompatibility(ctx, parts)
 	if err != nil {
-		span.RecordError(err)
-		span.SetStatus(codes.Error, err.Error())
-
-		return input.CreateOrderRs{}, processGRPCError(err)
+		resultErr = processGRPCError(err)
+		return input.CreateOrderRs{}, resultErr
 	}
 
 	// Зарезервировать детали на складе
 	err = s.inventoryClient.ReserveParts(ctx, rqParts)
 	if err != nil {
-		span.RecordError(err)
-		span.SetStatus(codes.Error, err.Error())
-
-		return input.CreateOrderRs{}, processGRPCError(err)
+		resultErr = processGRPCError(err)
+		return input.CreateOrderRs{}, resultErr
 	}
 
 	// 5. Сгенерировать order_uuid (UUID v4)
@@ -99,10 +97,8 @@ func (s *service) Create(ctx context.Context, orderRq input.CreateOrderRq) (inpu
 	// 6. Сохранить в store
 	err = s.orderRepository.Create(ctx, order)
 	if err != nil {
-		span.RecordError(err)
-		span.SetStatus(codes.Error, err.Error())
-
-		return input.CreateOrderRs{}, sharedErrs.NewInternal(err)
+		resultErr = sharedErrs.NewInternal(err)
+		return input.CreateOrderRs{}, resultErr
 	}
 
 	// Фиксируем метрику для отображения в Grafana
