@@ -7,6 +7,7 @@ import (
 	"github.com/google/uuid"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/codes"
 	"go.opentelemetry.io/otel/trace"
 
 	"github.com/MikeKirillov/rocketservices/payment/internal/model"
@@ -24,7 +25,10 @@ func (s *service) Pay(ctx context.Context, order model.Payment) (uuid.UUID, erro
 		attribute.String("order.uuid", order.Uuid.String()),
 		attribute.String("payment.type", string(order.PaymentMethod)),
 	))
-	defer span.End()
+	defer func() {
+		span.SetStatus(codes.Ok, "payment.Pay.Ok")
+		span.End()
+	}()
 
 	// Сгенерировать transaction_uuid (UUID v4)
 	newUUID := uuid.New()

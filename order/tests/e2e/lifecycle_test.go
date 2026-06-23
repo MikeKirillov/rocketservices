@@ -74,7 +74,7 @@ func TestE2E_OrderFullLifecycle_Assembled(t *testing.T) {
 	// Снимок stock_quantity ДО заказа — для проверки CommitParts позже.
 	// Прокидываем session_uuid через ctx — bufconn-клиент Inventory снабжён
 	// SessionForwarder'ом, который положит его в исходящие gRPC metadata
-	authCtx := auth.WithSessionUUID(ctx, sessionUUID)
+	authCtx := auth.WithSessionUUID(ctx, uuid.MustParse(sessionUUID))
 	stockBefore := getStock(authCtx, t, []string{HullAluminumUUID, EngineIonCUUID})
 
 	// 2. Create

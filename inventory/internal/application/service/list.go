@@ -23,21 +23,36 @@ func (s *service) List(ctx context.Context, filter input.PartFilter) ([]model.Pa
 		attribute.StringSlice("item.uuids", uuidsToStringSlice(filter.UUIDs)),
 		attribute.String("item.type", string(filter.PartType)),
 	))
-	defer span.End()
+	var resultErr error
+	defer func() {
+		if resultErr != nil {
+			span.RecordError(resultErr)
+			span.SetStatus(codes.Error, resultErr.Error())
+		} else {
+			span.SetStatus(codes.Ok, "inventory.List.Ok")
+		}
+		span.End()
+	}()
 
 	if filter.UUIDs != nil {
 		partsUnordered, err := s.partRepository.ListByUUIDs(ctx, filter.UUIDs)
 		if err != nil {
-			span.RecordError(err)
-			span.SetStatus(codes.Error, err.Error())
-
 			switch {
 			case errors.Is(err, errs.ErrPartNotFound):
-				return nil, sharedErrs.NewNotFound(err)
+				{
+					resultErr = sharedErrs.NewNotFound(err)
+					return nil, resultErr
+				}
 			case errors.Is(err, errs.ErrWrongPartType):
-				return nil, sharedErrs.NewConflict(err)
+				{
+					resultErr = sharedErrs.NewConflict(err)
+					return nil, resultErr
+				}
 			default:
-				return nil, sharedErrs.NewInternal(err)
+				{
+					resultErr = sharedErrs.NewInternal(err)
+					return nil, resultErr
+				}
 			}
 		}
 
@@ -53,18 +68,14 @@ func (s *service) List(ctx context.Context, filter input.PartFilter) ([]model.Pa
 	if filter.PartType == "" {
 		parts, err = s.partRepository.List(ctx)
 		if err != nil {
-			span.RecordError(err)
-			span.SetStatus(codes.Error, err.Error())
-
-			return nil, sharedErrs.NewInternal(err)
+			resultErr = sharedErrs.NewInternal(err)
+			return nil, resultErr
 		}
 	} else { // Иначе → фильтровать по типу
 		parts, err = s.partRepository.ListByPartType(ctx, filter.PartType)
 		if err != nil {
-			span.RecordError(err)
-			span.SetStatus(codes.Error, err.Error())
-
-			return nil, sharedErrs.NewInternal(err)
+			resultErr = sharedErrs.NewInternal(err)
+			return nil, resultErr
 		}
 	}
 

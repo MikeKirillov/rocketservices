@@ -16,41 +16,52 @@ import (
 
 func (s *service) Commit(ctx context.Context, ids []uuid.UUID) error {
 	// Подключение трейсинга бизнес-логики
-	ctx, span := otel.Tracer("iam-service").Start(ctx, "iam.Whoami", trace.WithAttributes(
+	ctx, span := otel.Tracer("inventory-service").Start(ctx, "inventory.Commit", trace.WithAttributes(
 		attribute.StringSlice("item.uuids", uuidsToStringSlice(ids)),
 	))
-	defer span.End()
+	var resultErr error
+	defer func() {
+		if resultErr != nil {
+			span.RecordError(resultErr)
+			span.SetStatus(codes.Error, resultErr.Error())
+		} else {
+			span.SetStatus(codes.Ok, "inventory.Commit.Ok")
+		}
+		span.End()
+	}()
 
 	return s.txManager.Do(ctx, func(ctx context.Context) error {
 		parts, err := s.partRepository.ListByUUIDsForUpdate(ctx, ids)
 		if err != nil {
-			span.RecordError(err)
-			span.SetStatus(codes.Error, err.Error())
-
 			switch {
 			case errors.Is(err, errs.ErrPartNotFound):
-				return sharedErrs.NewNotFound(err)
+				{
+					resultErr = sharedErrs.NewNotFound(err)
+					return resultErr
+				}
 			case errors.Is(err, errs.ErrWrongPartType):
-				return sharedErrs.NewConflict(err)
+				{
+					resultErr = sharedErrs.NewConflict(err)
+					return resultErr
+				}
 			default:
-				return sharedErrs.NewInternal(err)
+				{
+					resultErr = sharedErrs.NewInternal(err)
+					return resultErr
+				}
 			}
 		}
 
 		for i := range parts {
 			if err = parts[i].Commit(); err != nil {
-				span.RecordError(err)
-				span.SetStatus(codes.Error, err.Error())
-
-				return sharedErrs.NewFailedPrecondition(err)
+				resultErr = sharedErrs.NewFailedPrecondition(err)
+				return resultErr
 			}
 		}
 
 		if err = s.partRepository.UpdateCommitBatch(ctx, parts); err != nil {
-			span.RecordError(err)
-			span.SetStatus(codes.Error, err.Error())
-
-			return sharedErrs.NewInternal(err)
+			resultErr = sharedErrs.NewInternal(err)
+			return resultErr
 		}
 		return nil
 	})

@@ -17,13 +17,20 @@ func (s *Service) Logout(ctx context.Context, session uuid.UUID) error {
 	ctx, span := otel.Tracer("iam-service").Start(ctx, "iam.Logout", trace.WithAttributes(
 		attribute.String("session.uuid", session.String()),
 	))
-	defer span.End()
+	var resultErr error
+	defer func() {
+		if resultErr != nil {
+			span.RecordError(resultErr)
+			span.SetStatus(codes.Error, resultErr.Error())
+		} else {
+			span.SetStatus(codes.Ok, "iam.Logout.Ok")
+		}
+		span.End()
+	}()
 
 	if err := s.sessionRepository.Delete(ctx, session); err != nil {
-		span.RecordError(err)
-		span.SetStatus(codes.Error, err.Error())
-
-		return sharedErrs.NewInternal(err)
+		resultErr = sharedErrs.NewInternal(err)
+		return resultErr
 	}
 	return nil
 }

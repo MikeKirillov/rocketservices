@@ -24,7 +24,16 @@ func (s *service) Validate(ctx context.Context, slots input.ShipSlots) error {
 		attribute.String("shield.uuid", slots.ShieldUUID.String()),
 		attribute.String("weapon.uuid", slots.WeaponUUID.String()),
 	))
-	defer span.End()
+	var resultErr error
+	defer func() {
+		if resultErr != nil {
+			span.RecordError(resultErr)
+			span.SetStatus(codes.Error, resultErr.Error())
+		} else {
+			span.SetStatus(codes.Ok, "inventory.Validate.Ok")
+		}
+		span.End()
+	}()
 
 	// Запретите использование одного UUID в разных слотах → тоже ErrPartTypeMismatch.
 	seen := make(map[uuid.UUID]bool)
@@ -46,16 +55,22 @@ func (s *service) Validate(ctx context.Context, slots input.ShipSlots) error {
 
 	parts, err := s.partRepository.ListByUUIDs(ctx, ids)
 	if err != nil {
-		span.RecordError(err)
-		span.SetStatus(codes.Error, err.Error())
-
 		switch {
 		case errors.Is(err, errs.ErrPartNotFound):
-			return sharedErrs.NewNotFound(err)
+			{
+				resultErr = sharedErrs.NewNotFound(err)
+				return resultErr
+			}
 		case errors.Is(err, errs.ErrWrongPartType):
-			return sharedErrs.NewConflict(err)
+			{
+				resultErr = sharedErrs.NewConflict(err)
+				return resultErr
+			}
 		default:
-			return sharedErrs.NewInternal(err)
+			{
+				resultErr = sharedErrs.NewInternal(err)
+				return resultErr
+			}
 		}
 	}
 
@@ -67,19 +82,15 @@ func (s *service) Validate(ctx context.Context, slots input.ShipSlots) error {
 
 	resolved, err := resolvedShipSlots(pMap, slots)
 	if err != nil {
-		span.RecordError(err)
-		span.SetStatus(codes.Error, err.Error())
-
-		return sharedErrs.NewInvalidArgument(err)
+		resultErr = sharedErrs.NewInvalidArgument(err)
+		return resultErr
 	}
 
 	// Соберите проверенные детали в model.ResolvedShipSlots и передайте в domain service.
 	err = s.compatibilityChecker.Check(resolved)
 	if err != nil {
-		span.RecordError(err)
-		span.SetStatus(codes.Error, err.Error())
-
-		return sharedErrs.NewFailedPrecondition(err)
+		resultErr = sharedErrs.NewFailedPrecondition(err)
+		return resultErr
 	}
 	return nil
 }
