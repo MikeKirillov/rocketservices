@@ -393,7 +393,13 @@ func authCtx(ctx context.Context) context.Context {
 // authCtxWith — то же, что authCtx, но с произвольной сессией. Используется
 // в тестах, где явно нужно проверить поведение interceptor'а с заданным значением.
 func authCtxWith(ctx context.Context, sessionUUID string) context.Context {
-	return auth.WithSessionUUID(ctx, uuid.MustParse(sessionUUID))
+	var sessionId uuid.UUID
+	if sessionUUID == "" {
+		sessionId = uuid.Nil
+	} else {
+		sessionId = uuid.MustParse(sessionUUID)
+	}
+	return auth.WithSessionUUID(ctx, sessionId)
 }
 
 // registerAndLogin регистрирует нового пользователя и сразу логинится —

@@ -67,10 +67,10 @@ func TestRelease(t *testing.T) {
 			name: "резерв отменен - ошибок нет",
 			args: args{ids: ids},
 			setupMock: func(m *mocks.TxManager, r *mocks.PartRepository) {
-				r.EXPECT().ListByUUIDsForUpdate(ctx, ids).Return(expModelSlice, nil)
-				r.EXPECT().UpdateReservedBatch(ctx, expModelSlice).Return(nil)
+				r.EXPECT().ListByUUIDsForUpdate(mock.Anything, ids).Return(expModelSlice, nil)
+				r.EXPECT().UpdateReservedBatch(mock.Anything, expModelSlice).Return(nil)
 				m.EXPECT().
-					Do(ctx, mock.Anything).
+					Do(mock.Anything, mock.Anything).
 					Run(func(ctx context.Context, fn func(context.Context) error) {
 						_ = fn(ctx) // запускает выполнение функции, содержащей бизнес-шаги
 					}).
@@ -87,9 +87,9 @@ func TestRelease(t *testing.T) {
 			name: "один из UUID не найден - errs.ErrPartNotFound",
 			args: args{ids: ids},
 			setupMock: func(m *mocks.TxManager, r *mocks.PartRepository) {
-				r.EXPECT().ListByUUIDsForUpdate(ctx, ids).Return(nil, errs.ErrPartNotFound)
+				r.EXPECT().ListByUUIDsForUpdate(mock.Anything, ids).Return(nil, errs.ErrPartNotFound)
 				m.EXPECT().
-					Do(ctx, mock.Anything).
+					Do(mock.Anything, mock.Anything).
 					Run(func(ctx context.Context, fn func(context.Context) error) {
 						_ = fn(ctx) // запускает выполнение функции, содержащей бизнес-шаги
 					}).
@@ -107,10 +107,10 @@ func TestRelease(t *testing.T) {
 			name: "ошибка репозитория - errInternal",
 			args: args{ids: ids},
 			setupMock: func(m *mocks.TxManager, r *mocks.PartRepository) {
-				r.EXPECT().ListByUUIDsForUpdate(ctx, ids).Return(expModelSlice, nil)
-				r.EXPECT().UpdateReservedBatch(ctx, expModelSlice).Return(errInternal)
+				r.EXPECT().ListByUUIDsForUpdate(mock.Anything, ids).Return(expModelSlice, nil)
+				r.EXPECT().UpdateReservedBatch(mock.Anything, expModelSlice).Return(errInternal)
 				m.EXPECT().
-					Do(ctx, mock.Anything).
+					Do(mock.Anything, mock.Anything).
 					Run(func(ctx context.Context, fn func(context.Context) error) {
 						_ = fn(ctx) // запускает выполнение функции, содержащей бизнес-шаги
 					}).
@@ -128,9 +128,9 @@ func TestRelease(t *testing.T) {
 			name: "ошибка при отмене резерва - errs.ErrNothingToRelease",
 			args: args{ids: ids},
 			setupMock: func(m *mocks.TxManager, r *mocks.PartRepository) {
-				r.EXPECT().ListByUUIDsForUpdate(ctx, ids).Return(expModelSliceOutStock, nil)
+				r.EXPECT().ListByUUIDsForUpdate(mock.Anything, ids).Return(expModelSliceOutStock, nil)
 				m.EXPECT().
-					Do(ctx, mock.Anything).
+					Do(mock.Anything, mock.Anything).
 					Run(func(ctx context.Context, fn func(context.Context) error) {
 						_ = fn(ctx) // запускает выполнение функции, содержащей бизнес-шаги
 					}).

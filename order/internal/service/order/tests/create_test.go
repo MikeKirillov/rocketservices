@@ -138,10 +138,10 @@ func TestCreate(t *testing.T) {
 			name: "успешное создание hull+engine - ошибок нет",
 			args: args{req: req},
 			setupMock: func(r *mocks.OrderRepository, i *mocks.InventoryServiceClient) {
-				i.EXPECT().ListParts(ctx, rqItems).Return(rsItems, nil)
-				i.EXPECT().ValidateCompatibility(ctx, rsItems).Return(nil)
-				i.EXPECT().ReserveParts(ctx, rqItems).Return(nil)
-				r.EXPECT().Create(ctx, mock.MatchedBy(func(o model.Order) bool {
+				i.EXPECT().ListParts(mock.Anything, rqItems).Return(rsItems, nil)
+				i.EXPECT().ValidateCompatibility(mock.Anything, rsItems).Return(nil)
+				i.EXPECT().ReserveParts(mock.Anything, rqItems).Return(nil)
+				r.EXPECT().Create(mock.Anything, mock.MatchedBy(func(o model.Order) bool {
 					return o.OrderUUID != uuid.Nil &&
 						o.Items != nil &&
 						len(o.Items) > 0 &&
@@ -165,10 +165,10 @@ func TestCreate(t *testing.T) {
 			name: "успешное создание shield+weapon - ошибок нет",
 			args: args{req: reqOpt},
 			setupMock: func(r *mocks.OrderRepository, i *mocks.InventoryServiceClient) {
-				i.EXPECT().ListParts(ctx, rqItemsOpt).Return(rsPartsOpt, nil)
-				i.EXPECT().ValidateCompatibility(ctx, rsPartsOpt).Return(nil)
-				i.EXPECT().ReserveParts(ctx, rqItemsOpt).Return(nil)
-				r.EXPECT().Create(ctx, mock.MatchedBy(func(o model.Order) bool {
+				i.EXPECT().ListParts(mock.Anything, rqItemsOpt).Return(rsPartsOpt, nil)
+				i.EXPECT().ValidateCompatibility(mock.Anything, rsPartsOpt).Return(nil)
+				i.EXPECT().ReserveParts(mock.Anything, rqItemsOpt).Return(nil)
+				r.EXPECT().Create(mock.Anything, mock.MatchedBy(func(o model.Order) bool {
 					return o.OrderUUID != uuid.Nil &&
 						o.Items != nil &&
 						len(o.Items) > 0 &&
@@ -192,7 +192,7 @@ func TestCreate(t *testing.T) {
 			name: "одна из деталей не найдена - errs.ErrPartNotFound",
 			args: args{req: reqOpt},
 			setupMock: func(r *mocks.OrderRepository, i *mocks.InventoryServiceClient) {
-				i.EXPECT().ListParts(ctx, rqItemsOpt).Return(rsItems, nil) // rqPartsOpt = 4 записи, rsParts = 2 записи:
+				i.EXPECT().ListParts(mock.Anything, rqItemsOpt).Return(rsItems, nil) // rqPartsOpt = 4 записи, rsParts = 2 записи:
 				// тк в сервисе сделана проверка на длину слайса в запросе и в ответе ListParts(),
 				// если значение в ответе меньше, чем в запросе, то будет выброшена соответствующая ошибка
 			},
@@ -209,7 +209,7 @@ func TestCreate(t *testing.T) {
 			name: "деталь закончилась на складе	- errs.ErrOutOfStock",
 			args: args{req: req},
 			setupMock: func(r *mocks.OrderRepository, i *mocks.InventoryServiceClient) {
-				i.EXPECT().ListParts(ctx, rqItems).Return(rsPartsOut, nil)
+				i.EXPECT().ListParts(mock.Anything, rqItems).Return(rsPartsOut, nil)
 			},
 			expected: expected{
 				res:    input.CreateOrderRs{},
@@ -224,7 +224,7 @@ func TestCreate(t *testing.T) {
 			name: "ошибка InventoryService - errInternal",
 			args: args{req: req},
 			setupMock: func(r *mocks.OrderRepository, i *mocks.InventoryServiceClient) {
-				i.EXPECT().ListParts(ctx, rqItems).Return(nil, errInternal)
+				i.EXPECT().ListParts(mock.Anything, rqItems).Return(nil, errInternal)
 			},
 			expected: expected{
 				res:    input.CreateOrderRs{},
@@ -239,10 +239,10 @@ func TestCreate(t *testing.T) {
 			name: "ошибка при сохранении - errInternal",
 			args: args{req: req},
 			setupMock: func(r *mocks.OrderRepository, i *mocks.InventoryServiceClient) {
-				i.EXPECT().ListParts(ctx, rqItems).Return(rsItems, nil)
-				i.EXPECT().ValidateCompatibility(ctx, rsItems).Return(nil)
-				i.EXPECT().ReserveParts(ctx, rqItems).Return(nil)
-				r.EXPECT().Create(ctx, mock.MatchedBy(func(o model.Order) bool {
+				i.EXPECT().ListParts(mock.Anything, rqItems).Return(rsItems, nil)
+				i.EXPECT().ValidateCompatibility(mock.Anything, rsItems).Return(nil)
+				i.EXPECT().ReserveParts(mock.Anything, rqItems).Return(nil)
+				r.EXPECT().Create(mock.Anything, mock.MatchedBy(func(o model.Order) bool {
 					return o.OrderUUID != uuid.Nil &&
 						o.Items != nil &&
 						len(o.Items) > 0 &&

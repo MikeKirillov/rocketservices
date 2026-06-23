@@ -9,6 +9,7 @@ import (
 	"github.com/brianvoe/gofakeit/v7"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 
 	part "github.com/MikeKirillov/rocketservices/inventory/internal/application/service"
@@ -64,7 +65,7 @@ func TestGet(t *testing.T) {
 			name: "деталь найдена - ошибок нет",
 			args: args{id: uuid},
 			setupMock: func(r *mocks.PartRepository) {
-				r.EXPECT().Get(ctx, uuid).Return(expModel, nil)
+				r.EXPECT().Get(mock.Anything, uuid).Return(expModel, nil)
 			},
 			expected: expected{
 				res:    expModel,
@@ -78,7 +79,7 @@ func TestGet(t *testing.T) {
 			name: "деталь не найдена - errs.ErrPartNotFound",
 			args: args{id: uuid},
 			setupMock: func(r *mocks.PartRepository) {
-				r.EXPECT().Get(ctx, uuid).Return(model.Part{}, errs.ErrPartNotFound)
+				r.EXPECT().Get(mock.Anything, uuid).Return(model.Part{}, errs.ErrPartNotFound)
 			},
 			expected: expected{
 				res:    model.Part{},
@@ -93,7 +94,7 @@ func TestGet(t *testing.T) {
 			name: "ошибка репозитория - errInternal",
 			args: args{id: uuid},
 			setupMock: func(r *mocks.PartRepository) {
-				r.EXPECT().Get(ctx, uuid).Return(model.Part{}, errInternal)
+				r.EXPECT().Get(mock.Anything, uuid).Return(model.Part{}, errInternal)
 			},
 			expected: expected{
 				res:    model.Part{},

@@ -63,14 +63,14 @@ func TestCancel(t *testing.T) {
 			name: "успешная отмена - ошибок нет",
 			args: args{id: id},
 			setupMock: func(i *mocks.InventoryServiceClient, r *mocks.OrderRepository, m *mocks.TxManager) {
-				r.EXPECT().GetForUpdate(ctx, id).Return(modelToSave, nil)
-				i.EXPECT().ReleaseParts(ctx, modelToSave).Return(nil)
-				r.EXPECT().Update(ctx, mock.MatchedBy(func(o model.Order) bool {
+				r.EXPECT().GetForUpdate(mock.Anything, id).Return(modelToSave, nil)
+				i.EXPECT().ReleaseParts(mock.Anything, modelToSave).Return(nil)
+				r.EXPECT().Update(mock.Anything, mock.MatchedBy(func(o model.Order) bool {
 					return o.Status == model.OrderStatusCancelled &&
 						!o.UpdatedAt.IsZero()
 				})).Return(nil)
 				m.EXPECT().
-					Do(ctx, mock.Anything).
+					Do(mock.Anything, mock.Anything).
 					Run(func(ctx context.Context, fn func(context.Context) error) {
 						_ = fn(ctx) // запускает выполнение функции, содержащей бизнес-шаги
 					}).
@@ -86,9 +86,9 @@ func TestCancel(t *testing.T) {
 			name: "заказ не найден - errs.ErrOrderConflict",
 			args: args{id: id},
 			setupMock: func(i *mocks.InventoryServiceClient, r *mocks.OrderRepository, m *mocks.TxManager) {
-				r.EXPECT().GetForUpdate(ctx, id).Return(model.Order{}, errs.ErrOrderConflict)
+				r.EXPECT().GetForUpdate(mock.Anything, id).Return(model.Order{}, errs.ErrOrderConflict)
 				m.EXPECT().
-					Do(ctx, mock.Anything).
+					Do(mock.Anything, mock.Anything).
 					Run(func(ctx context.Context, fn func(context.Context) error) {
 						_ = fn(ctx) // запускает выполнение функции, содержащей бизнес-шаги
 					}).
@@ -105,14 +105,14 @@ func TestCancel(t *testing.T) {
 			name: "ошибка репозитория - errInternal",
 			args: args{id: id},
 			setupMock: func(i *mocks.InventoryServiceClient, r *mocks.OrderRepository, m *mocks.TxManager) {
-				r.EXPECT().GetForUpdate(ctx, id).Return(modelToSave, nil)
-				i.EXPECT().ReleaseParts(ctx, modelToSave).Return(nil)
-				r.EXPECT().Update(ctx, mock.MatchedBy(func(o model.Order) bool {
+				r.EXPECT().GetForUpdate(mock.Anything, id).Return(modelToSave, nil)
+				i.EXPECT().ReleaseParts(mock.Anything, modelToSave).Return(nil)
+				r.EXPECT().Update(mock.Anything, mock.MatchedBy(func(o model.Order) bool {
 					return o.Status == model.OrderStatusCancelled &&
 						!o.UpdatedAt.IsZero()
 				})).Return(errInternal)
 				m.EXPECT().
-					Do(ctx, mock.Anything).
+					Do(mock.Anything, mock.Anything).
 					Run(func(ctx context.Context, fn func(context.Context) error) {
 						_ = fn(ctx) // запускает выполнение функции, содержащей бизнес-шаги
 					}).
