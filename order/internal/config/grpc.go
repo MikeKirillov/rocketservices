@@ -1,7 +1,6 @@
 package config
 
 import (
-	"net"
 	"time"
 )
 
@@ -11,19 +10,14 @@ type keepaliveGRPCConfig struct {
 }
 
 type grpcConfig struct {
-	InventoryGRPCConfig inventoryGRPCConfig `yaml:"inventory"`
-	PaymentGRPCConfig   paymentGRPCConfig   `yaml:"payment"`
-	AuthGRPCConfig      authGRPCConfig      `yaml:"auth"`
+	InventoryGRPCConfig inventoryGRPCConfig `yaml:"inventory_client"`
+	PaymentGRPCConfig   paymentGRPCConfig   `yaml:"payment_client"`
+	AuthGRPCConfig      authGRPCConfig      `yaml:"iam_client"`
 }
 
 type inventoryGRPCConfig struct {
-	Host      string              `yaml:"host" env:"GRPC_INVENTORY_HOST" env-default:"localhost"`
-	Port      string              `yaml:"port" env:"GRPC_INVENTORY_PORT" env-default:"50051"`
+	Address   string              `yaml:"address" env:"GRPC_INVENTORY_ADDRESS" env-default:"localhost:50051"`
 	Keepalive keepaliveGRPCConfig `yaml:"keepalive"`
-}
-
-func (c *inventoryGRPCConfig) Address() string {
-	return net.JoinHostPort(c.Host, c.Port)
 }
 
 func (c *inventoryGRPCConfig) Time() time.Duration {
@@ -35,13 +29,8 @@ func (c *inventoryGRPCConfig) Timeout() time.Duration {
 }
 
 type paymentGRPCConfig struct {
-	Host      string              `yaml:"host" env:"GRPC_PAYMENT_HOST" env-default:"localhost"`
-	Port      string              `yaml:"port" env:"GRPC_PAYMENT_PORT" env-default:"50052"`
+	Address   string              `yaml:"address" env:"GRPC_PAYMENT_ADDRESS" env-default:"localhost:50052"`
 	Keepalive keepaliveGRPCConfig `yaml:"keepalive"`
-}
-
-func (c *paymentGRPCConfig) Address() string {
-	return net.JoinHostPort(c.Host, c.Port)
 }
 
 func (c *paymentGRPCConfig) Time() time.Duration {
@@ -53,13 +42,8 @@ func (c *paymentGRPCConfig) Timeout() time.Duration {
 }
 
 type authGRPCConfig struct {
-	Host      string              `yaml:"host" env:"GRPC_PAYMENT_HOST" env-default:"localhost"`
-	Port      string              `yaml:"port" env:"GRPC_PAYMENT_PORT" env-default:"50053"`
+	Address   string              `yaml:"address" env:"GRPC_AUTH_ADDRESS" env-default:"localhost:50053"`
 	Keepalive keepaliveGRPCConfig `yaml:"keepalive"`
-}
-
-func (c *authGRPCConfig) Address() string {
-	return net.JoinHostPort(c.Host, c.Port)
 }
 
 func (c *authGRPCConfig) Time() time.Duration {

@@ -1,17 +1,17 @@
 kafka:
-  producer:
-    topic: "assembly.ship-assembled"
-  consumer:
-    topic: "order.paid"
-    group: "1"
+  ship_assembled_producer:
+    topic_name: "assembly.ship-assembled"
+  order_paid_consumer:
+    topic_name: "order.paid"
+    group_id: "1"
 
 otel:
-  endpoint: "0.0.0.0:4317"
+  collector_endpoint: "0.0.0.0:4317"
   service_name: "assembly-service"
   environment: "development"
   service_version: "1.0.0"
-  service_ration: 1.0
-  otlp: true
+  sampling_ratio: 1.0
+  enable_otlp: true
 
 logger:
   level: "warn"   # debug | info | warn | error

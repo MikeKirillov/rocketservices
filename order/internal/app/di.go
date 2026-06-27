@@ -121,7 +121,7 @@ func (d *diContainer) InventoryClient(ctx context.Context) orderService.Inventor
 
 	if d.inventoryClient == nil {
 		conn, err := grpc.NewClient(
-			config.Address(),
+			config.Address,
 			grpc.WithTransportCredentials(insecure.NewCredentials()),
 			grpc.WithKeepaliveParams(keepalive.ClientParameters{
 				Time:                config.Time(),    // Интервал ping'ов
@@ -147,7 +147,7 @@ func (d *diContainer) InventoryClient(ctx context.Context) orderService.Inventor
 		grpcClient := inventoryv1.NewInventoryServiceClient(conn)
 		d.inventoryClient = inventoryClientV1.New(grpcClient)
 	}
-	slog.Info("установлено подключение к gRPC: InventoryService", "host", config.Host, "port", config.Port)
+	slog.Info("установлено подключение к gRPC: InventoryService", "address", config.Address)
 
 	return d.inventoryClient
 }
@@ -156,7 +156,7 @@ func (d *diContainer) PaymentClient(ctx context.Context) orderService.PaymentSer
 	config := orderConfig.AppConfig().GRPC.PaymentGRPCConfig
 
 	if d.paymentClient == nil {
-		conn, err := newGRPCClient(config.Address(), config.Time(), config.Timeout())
+		conn, err := newGRPCClient(config.Address, config.Time(), config.Timeout())
 		if err != nil {
 			slog.Error("не удалось подключиться к gRPC: PaymentService", "error", err)
 			os.Exit(1)
@@ -173,7 +173,7 @@ func (d *diContainer) PaymentClient(ctx context.Context) orderService.PaymentSer
 		grpcClient := paymentv1.NewPaymentServiceClient(conn)
 		d.paymentClient = paymentClientV1.New(grpcClient)
 	}
-	slog.Info("установлено подключение к gRPC: PaymentService", "host", config.Host, "port", config.Port)
+	slog.Info("установлено подключение к gRPC: PaymentService", "address", config.Address)
 
 	return d.paymentClient
 }
@@ -182,7 +182,7 @@ func (d *diContainer) AuthClient() *authClientV1.Client {
 	config := orderConfig.AppConfig().GRPC.AuthGRPCConfig
 
 	if d.authClient == nil {
-		conn, err := newGRPCClient(config.Address(), config.Time(), config.Timeout())
+		conn, err := newGRPCClient(config.Address, config.Time(), config.Timeout())
 		if err != nil {
 			slog.Error("не удалось подключиться к gRPC: AuthService", "error", err)
 			os.Exit(1)
@@ -199,7 +199,7 @@ func (d *diContainer) AuthClient() *authClientV1.Client {
 		grpcClient := authv1.NewAuthServiceClient(conn)
 		d.authClient = authClientV1.New(grpcClient)
 	}
-	slog.Info("установлено подключение к gRPC: AuthService", "host", config.Host, "port", config.Port)
+	slog.Info("установлено подключение к gRPC: AuthService", "address", config.Address)
 
 	return d.authClient
 }

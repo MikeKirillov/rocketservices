@@ -113,11 +113,11 @@ func (d *diContainer) InventoryV1API(ctx context.Context) inventoryv1.InventoryS
 }
 
 func (d *diContainer) AuthClient() *authClientV1.Client {
-	conf := config.AppConfig().GRPCClient.AuthGRPCConfig
+	conf := config.AppConfig().GRPCClient
 
 	if d.authClient == nil {
 		conn, err := grpc.NewClient(
-			conf.Address(),
+			conf.Address,
 			grpc.WithTransportCredentials(insecure.NewCredentials()),
 			grpc.WithKeepaliveParams(keepalive.ClientParameters{
 				Time:                conf.Time(),    // Интервал ping'ов
@@ -141,7 +141,7 @@ func (d *diContainer) AuthClient() *authClientV1.Client {
 		grpcClient := authv1.NewAuthServiceClient(conn)
 		d.authClient = authClientV1.New(grpcClient)
 	}
-	slog.Info("установлено подключение к gRPC: AuthService", "host", conf.Host, "port", conf.Port)
+	slog.Info("установлено подключение к gRPC: AuthService", "address", conf.Address)
 
 	return d.authClient
 }

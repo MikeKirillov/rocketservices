@@ -13,7 +13,7 @@ const defaultConfigPath = "config.local.yaml"
 type config struct {
 	GRPC   grpcConfig   `yaml:"grpc"`
 	Logger loggerConfig `yaml:"logger"`
-	PG     pgConfig     `yaml:"pg"`
+	PG     pgConfig     `yaml:"postgres"`
 	Redis  redisConfig  `yaml:"redis"`
 	Otel   otelConfig   `yaml:"otel"`
 }
