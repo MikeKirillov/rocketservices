@@ -11,11 +11,11 @@ import (
 const defaultConfigPath = "config.local.yaml"
 
 type config struct {
-	GRPC       grpcConfig       `yaml:"grpc"`
-	Logger     loggerConfig     `yaml:"logger"`
-	PG         pgConfig         `yaml:"pg"`
-	GRPCClient grpcClientConfig `yaml:"grpcClient"`
-	Otel       otelConfig       `yaml:"otel"`
+	GRPC       grpcConfig     `yaml:"grpc"`
+	Logger     loggerConfig   `yaml:"logger"`
+	PG         pgConfig       `yaml:"pg"`
+	GRPCClient authGRPCConfig `yaml:"iam_client"`
+	Otel       otelConfig     `yaml:"otel"`
 }
 
 var appConfig *config

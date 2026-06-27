@@ -3,14 +3,14 @@ package config
 import "github.com/IBM/sarama"
 
 type kafkaConfig struct {
-	Brokers                       []string                            `env:"KAFKA_BROKERS" env-default:"localhost:9092" env-separator:","`
-	OrderPaidConsumer             orderPaidConsumerConfig             `yaml:"consumer"`
-	AssemblyShipAssembledProducer assemblyShipAssembledProducerConfig `yaml:"producer"`
+	Brokers                       []string                            `yaml:"brokers" env:"KAFKA_BROKERS" env-default:"localhost:9092" env-separator:","`
+	OrderPaidConsumer             orderPaidConsumerConfig             `yaml:"order_paid_consumer"`
+	AssemblyShipAssembledProducer assemblyShipAssembledProducerConfig `yaml:"ship_assembled_producer"`
 }
 
 type orderPaidConsumerConfig struct {
-	TopicName string `yaml:"topic" env:"ORDER_PAID_TOPIC_NAME" env-default:"order.paid"`
-	Group     string `yaml:"group" env:"ORDER_PAID_CONSUMER_GROUP_ID" env-default:"1"`
+	TopicName string `yaml:"topic_name" env:"ORDER_PAID_TOPIC_NAME" env-default:"order.paid"`
+	Group     string `yaml:"group_id" env:"ORDER_PAID_CONSUMER_GROUP_ID" env-default:"1"`
 }
 
 func (c *orderPaidConsumerConfig) Topic() string   { return c.TopicName }
@@ -25,7 +25,7 @@ func (c *orderPaidConsumerConfig) SaramaConfig() *sarama.Config {
 }
 
 type assemblyShipAssembledProducerConfig struct {
-	TopicName string `yaml:"topic" env:"ASSEMBLY_SHIP_ASSEMBLED_TOPIC_NAME" env-default:"assembly.ship-assembled"`
+	TopicName string `yaml:"topic_name" env:"ASSEMBLY_SHIP_ASSEMBLED_TOPIC_NAME" env-default:"assembly.ship-assembled"`
 }
 
 func (c *assemblyShipAssembledProducerConfig) Topic() string { return c.TopicName }

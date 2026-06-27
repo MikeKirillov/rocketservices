@@ -140,7 +140,7 @@ func (a *App) initLogger(ctx context.Context) {
 		Level:             config.AppConfig().Logger.Level,
 		ServiceName:       config.AppConfig().Otel.ServiceName,
 		Environment:       config.AppConfig().Otel.Environment,
-		EnableOTLP:        config.AppConfig().Otel.OTLP,
+		EnableOTLP:        config.AppConfig().Otel.EnableOTLP,
 		CollectorEndpoint: config.AppConfig().Otel.Endpoint,
 	})
 	closer.Add("logger", func(_ context.Context) error {

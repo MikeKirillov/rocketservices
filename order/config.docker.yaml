@@ -21,25 +21,22 @@ pg:
   password: "order-service-password"
   sslmode: "disable"
 
-inventory_client:
-  address: "inventory-service:50051"
-
-payment_client:
-  address: "payment-service:50052"
-
-iam_client:
-  address: "iam-service:50053"
+grpc:
+  inventory_client:
+    address: "inventory-service:50051"
+  payment_client:
+    address: "payment-service:50052"
+  iam_client:
+    address: "iam-service:50053"
 
 kafka:
   brokers:
     - "kafka:29092"
-
-order_paid_producer:
-  topic_name: "order.paid"
-
-ship_assembled_consumer:
-  topic_name: "assembly.ship-assembled"
-  group_id: "order-service"
+  order_paid_producer:
+    topic_name: "order.paid"
+  ship_assembled_consumer:
+    topic_name: "assembly.ship-assembled"
+    group_id: "order-service"
 
 rate_limit:
   redis_address: "redis-ratelimit:6379"

@@ -10,7 +10,7 @@ grpc:
     minPingIntervalMinutes: 5  # Минимальный интервал ping'ов от клиента (защита от DoS)
     shutdownTimeoutSec: 5
 
-pg:
+postgres:
   host: "postgres-production"
   port: "5434"
   database: "iam-service"
@@ -29,12 +29,12 @@ session:
   ttl: 24h
 
 otel:
-  endpoint: "0.0.0.0:4317"
+  collector_endpoint: "0.0.0.0:4317"
   service_name: "iam-service"
   environment: "development"
   service_version: "1.0.0"
-  service_ration: 1.0
-  otlp: true
+  sampling_ratio: 1.0
+  enable_otlp: true
 
 logger:
   level: "warn"   # debug | info | warn | error

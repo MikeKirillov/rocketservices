@@ -10,13 +10,11 @@ grpc:
     minPingIntervalMinutes: 5  # Минимальный интервал ping'ов от клиента (защита от DoS)
     shutdownTimeoutSec: 5
 
-grpcClient:
-  auth:
-    host: "localhost"
-    port: "50053"
-    keepalive:
-      timeMin: 5 # Интервал ping'ов для обнаружения мёртвого сервера
-      timeoutSec: 1 # Таймаут ожидания pong
+iam_client:
+  address: "localhost:50053"
+  keepalive:
+    timeMin: 5 # Интервал ping'ов для обнаружения мёртвого сервера
+    timeoutSec: 1 # Таймаут ожидания pong
 
 pg:
   host: "localhost"
@@ -27,12 +25,12 @@ pg:
   sslmode: "disable"
 
 otel:
-  endpoint: "localhost:4317"
+  collector_endpoint: "localhost:4317"
   service_name: "inventory-service"
   environment: "development"
   service_version: "1.0.0"
-  service_ration: 1.0
-  otlp: true
+  sampling_ratio: 1.0
+  enable_otlp: true
 
 logger:
   level: "info"   # debug | info | warn | error

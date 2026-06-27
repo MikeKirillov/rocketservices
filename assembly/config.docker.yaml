@@ -12,10 +12,8 @@ otel:
 kafka:
   brokers:
     - "kafka:29092"
-
-order_paid_consumer:
-  topic_name: "order.paid"
-  group_id: "assembly-service"
-
-ship_assembled_producer:
-  topic_name: "assembly.ship-assembled"
+  order_paid_consumer:
+    topic_name: "order.paid"
+    group_id: "assembly-service"
+  ship_assembled_producer:
+    topic_name: "assembly.ship-assembled"
