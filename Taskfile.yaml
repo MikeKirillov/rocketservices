@@ -294,22 +294,6 @@ tasks:
       - echo "[task] 🛑 Останавливаем Inventory с зависимостями"
       - docker compose --env-file ../../../inventory.env down --volumes
 
-  up-all:
-    desc: Поднять все сервисы по очереди вместе с зависимостями
-    cmds:
-      - task up-core
-      - task up-inventory
-      - task up-order
-      - task up-iam
-
-  down-all:
-    desc: Остановить и удалить все сервисы по очереди вместе с зависимостями
-    cmds:
-      - task down-order
-      - task down-inventory
-      - task down-core
-      - task down-iam
-
   migrate-all-up:
     desc: Выполнить миграции для всех сервисов
     cmds:
@@ -518,6 +502,22 @@ tasks:
       - GOBIN={{.BIN_DIR}} go install github.com/tsenart/vegeta/v12@{{.VEGETA_VERSION}}
     status:
       - test -x {{.VEGETA}}
+
+  # up-all:
+  #   desc: Поднять все сервисы по очереди вместе с зависимостями
+  #   cmds:
+  #     - task up-core
+  #     - task up-inventory
+  #     - task up-order
+  #     - task up-iam
+
+  # down-all:
+  #   desc: Остановить и удалить все сервисы по очереди вместе с зависимостями
+  #   cmds:
+  #     - task down-order
+  #     - task down-inventory
+  #     - task down-core
+  #     - task down-iam
 
   # Замените существующий up-all на эту версию.
   # --scale order-service=3 поднимает 3 инстанса OrderService за Nginx.

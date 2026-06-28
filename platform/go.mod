@@ -4,6 +4,7 @@ go 1.26.3
 
 require (
 	github.com/IBM/sarama v1.49.0
+	github.com/go-redis/redis_rate/v10 v10.0.1
 	github.com/google/uuid v1.6.0
 	github.com/redis/go-redis/v9 v9.20.0
 	github.com/samber/slog-multi v1.8.0

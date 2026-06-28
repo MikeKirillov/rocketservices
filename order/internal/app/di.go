@@ -10,6 +10,7 @@ import (
 	trmpgx "github.com/avito-tech/go-transaction-manager/drivers/pgxv5/v2"
 	"github.com/avito-tech/go-transaction-manager/trm/v2/manager"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/redis/go-redis/v9"
 	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
@@ -19,6 +20,7 @@ import (
 	authClientV1 "github.com/MikeKirillov/rocketservices/order/internal/client/grpc/auth/v1"
 	inventoryClientV1 "github.com/MikeKirillov/rocketservices/order/internal/client/grpc/inventory/v1"
 	paymentClientV1 "github.com/MikeKirillov/rocketservices/order/internal/client/grpc/payment/v1"
+	"github.com/MikeKirillov/rocketservices/order/internal/config"
 	orderConfig "github.com/MikeKirillov/rocketservices/order/internal/config"
 	assemblyConsumer "github.com/MikeKirillov/rocketservices/order/internal/consumer/assembly"
 	producer "github.com/MikeKirillov/rocketservices/order/internal/producer/order"
@@ -29,6 +31,7 @@ import (
 	wrappedKafkaConsumer "github.com/MikeKirillov/rocketservices/platform/pkg/kafka/consumer"
 	kafkaMiddleware "github.com/MikeKirillov/rocketservices/platform/pkg/kafka/middleware"
 	wrappedKafkaProducer "github.com/MikeKirillov/rocketservices/platform/pkg/kafka/producer"
+	platformRedis "github.com/MikeKirillov/rocketservices/platform/pkg/redis"
 	orderv1 "github.com/MikeKirillov/rocketservices/shared/pkg/openapi/order/v1"
 	authv1 "github.com/MikeKirillov/rocketservices/shared/pkg/proto/auth/v1"
 	inventoryv1 "github.com/MikeKirillov/rocketservices/shared/pkg/proto/inventory/v1"
@@ -46,6 +49,7 @@ type diContainer struct {
 	txManager     *manager.Manager
 	syncProducer  sarama.SyncProducer
 	consumerGroup sarama.ConsumerGroup
+	redisClient   *redis.Client
 
 	// Kafka-обёртки
 	orderPaidProducer    *wrappedKafkaProducer.Producer
@@ -330,4 +334,26 @@ func (d *diContainer) AssemblyConsumerService(ctx context.Context) ConsumerServi
 		)
 	}
 	return d.assemblyConsumerSvc
+}
+
+func (d *diContainer) RedisClient() *redis.Client {
+	if d.redisClient == nil {
+		rdb, err := platformRedis.NewClient(
+			&redis.Options{
+				Addr: config.AppConfig().Redis.Address,
+			},
+			slog.Default(),
+		)
+		if err != nil {
+			slog.Error("не удалось создать Redis клиент", "error", err)
+			os.Exit(1)
+		}
+
+		closer.Add("Redis", func(_ context.Context) error {
+			return rdb.Close()
+		})
+
+		d.redisClient = rdb
+	}
+	return d.redisClient
 }

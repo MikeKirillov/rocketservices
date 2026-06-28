@@ -1,4 +1,24 @@
 services: # Здесь описываются контейнеры, необходимые для Inventory-сервиса
+  migrator: # Мигратор
+    build:
+      context: ../../../
+      dockerfile: deploy/dockerfiles/migrator.Dockerfile
+      args:
+        MIGRATIONS_DIR: ${MIGRATIONS_DIR:?MIGRATIONS_DIR is required}
+    env_file:
+      - ../../../inventory.env
+    depends_on:
+      postgres-inventory:
+        condition: service_healthy
+    networks:
+      - microservices-net
+    command:
+      - -dir
+      - ./db/migrations
+      - postgres
+      - host=postgres-inventory port=5432 dbname=${POSTGRES_DB} user=${POSTGRES_USER} password=${POSTGRES_PASSWORD} sslmode=disable
+      - up
+      - -v
 
   postgres-inventory: # Контейнер с PostgreSQL — используется для хранения данных об инвентаре (детали, компоненты)
     image: ${POSTGRES_IMAGE}
