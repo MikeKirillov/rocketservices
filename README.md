@@ -7,7 +7,7 @@
 
 ### server start
 ```
-$ go run cmd/grpc_server/main.go
+$ go run cmd/main.go
 ```
 если файл `.env` (в данном случае `payment.env`) отсутствует, то по умолчанию будет определяться значение пути 
 к файлу с конфигом по умолчанию - в коде. если установлен, то будет браться из него, если не переданы дополнительные
@@ -37,7 +37,7 @@ $ grpcurl -plaintext -d '{
 
 ### server start
 ```
-$ go run cmd/grpc_server/main.go
+$ go run cmd/main.go
 ```
 
 ### получить все детали
