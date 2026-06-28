@@ -51,3 +51,8 @@ otel:
 
 logger:
   level: "warn"   # debug | info | warn | error
+
+rate_limit:
+  redis_address: "0.0.0.0:6379"
+  rate: 100
+  burst: 200

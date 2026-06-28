@@ -10,6 +10,7 @@ import (
 	"os/signal"
 	"syscall"
 
+	"github.com/go-redis/redis_rate/v10"
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 
 	"github.com/MikeKirillov/rocketservices/order/internal/config"
@@ -17,6 +18,7 @@ import (
 	"github.com/MikeKirillov/rocketservices/platform/pkg/closer"
 	"github.com/MikeKirillov/rocketservices/platform/pkg/logger"
 	"github.com/MikeKirillov/rocketservices/platform/pkg/metrics"
+	"github.com/MikeKirillov/rocketservices/platform/pkg/ratelimit"
 	"github.com/MikeKirillov/rocketservices/platform/pkg/tracing"
 	orderv1 "github.com/MikeKirillov/rocketservices/shared/pkg/openapi/order/v1"
 )
@@ -203,7 +205,18 @@ func (a *App) initHTTPServer(ctx context.Context) {
 		config.AppConfig().HTTP.TimeoutMiddlware(),
 		"таймаут при обработке запроса к серверу",
 	)
+	// middleware для передачи телеметрии
 	handler = otelhttp.NewHandler(handler, config.AppConfig().Otel.ServiceName)
+	// middleware для подключения rate limit
+	handler = ratelimit.RateLimit(
+		ctx,
+		handler,
+		redis_rate.NewLimiter(a.diContainer.RedisClient()), // используем Redis для хранения данных о лимитах
+		redis_rate.Limit{
+			Rate:  config.AppConfig().Redis.Rate,
+			Burst: config.AppConfig().Redis.Burst,
+		},
+	)
 
 	a.httpServer = &http.Server{
 		Addr:              config.AppConfig().HTTP.Address(),

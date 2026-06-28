@@ -1,4 +1,24 @@
 services: # Раздел, в котором описываются все контейнеры, необходимые для IAM-сервиса
+  migrator: # Мигратор
+    build:
+      context: ../../../
+      dockerfile: deploy/dockerfiles/migrator.Dockerfile
+      args:
+        MIGRATIONS_DIR: ${MIGRATIONS_DIR:?MIGRATIONS_DIR is required}
+    env_file:
+      - ../../../iam.env
+    depends_on:
+      postgres-inventory:
+        condition: service_healthy
+    networks:
+      - microservices-net
+    command:
+      - -dir
+      - ./db/migrations
+      - postgres
+      - host=postgres-iam port=5432 dbname=${POSTGRES_DB} user=${POSTGRES_USER} password=${POSTGRES_PASSWORD} sslmode=disable
+      - up
+      - -v
 
   postgres-iam: # Сервис с PostgreSQL, используемый IAM-сервисом для хранения данных пользователей
     image: ${POSTGRES_IMAGE} # Используем официальный образ PostgreSQL на базе Alpine — он лёгкий и быстрый

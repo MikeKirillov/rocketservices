@@ -1,4 +1,24 @@
 services: # Раздел, описывающий контейнеры, которые требуются для работы Order-сервиса
+  migrator: # Мигратор
+    build:
+      context: ../../../
+      dockerfile: deploy/dockerfiles/migrator.Dockerfile
+      args:
+        MIGRATIONS_DIR: ${MIGRATIONS_DIR:?MIGRATIONS_DIR is required}
+    env_file:
+      - ../../../order.env
+    depends_on:
+      postgres-inventory:
+        condition: service_healthy
+    networks:
+      - microservices-net
+    command:
+      - -dir
+      - ./db/migrations
+      - postgres
+      - host=postgres-order port=5432 dbname=${POSTGRES_DB} user=${POSTGRES_USER} password=${POSTGRES_PASSWORD} sslmode=disable
+      - up
+      - -v
 
   postgres-order: # Контейнер с PostgreSQL, используемый для хранения данных заказов
     image: ${POSTGRES_IMAGE}

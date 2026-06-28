@@ -17,6 +17,7 @@ type config struct {
 	PG     pgConfig     `yaml:"pg"`
 	Kafka  kafkaConfig  `yaml:"kafka"`
 	Otel   otelConfig   `yaml:"otel"`
+	Redis  redisConfig  `yaml:"rate_limit"`
 }
 
 var appConfig *config
