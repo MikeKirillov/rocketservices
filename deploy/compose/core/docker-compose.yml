@@ -129,7 +129,7 @@ services: # Раздел, в котором описываются все кон
     image: ${REDIS_RATELIMIT_IMAGE}
     container_name: redis-ratelimit
     ports:
-      - "${REDIS_RATELIMIT_PORT:-6379}:6379"
+      - "${REDIS_RATELIMIT_PORT:-6380}:6379"
       # Пробрасываем порт Redis наружу — нужно, чтобы локальные сервисы (config.local.yaml)
       # могли подключаться к rate limiter по localhost:${REDIS_RATELIMIT_PORT}.
     healthcheck:
