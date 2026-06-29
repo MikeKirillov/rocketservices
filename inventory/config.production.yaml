@@ -21,7 +21,7 @@ iam_client:
 
 pg:
   host: "postgres-production"
-  port: "5432"
+  port: "5433"
   database: "inventory-service"
   user: "MUST_BE_SET_VIA_ENV"
   password: "MUST_BE_SET_VIA_ENV"

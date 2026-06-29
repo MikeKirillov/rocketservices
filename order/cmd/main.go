@@ -17,7 +17,7 @@ func main() {
 	// Загружаем переменные окружения из .env
 	if err := godotenv.Load("../order.env"); err != nil {
 		slog.Error("ошибка загрузки переменных окружения из order.env", "error", err)
-		os.Exit(1)
+		// os.Exit(1)
 	}
 
 	configPath := config.ResolveConfigPath()

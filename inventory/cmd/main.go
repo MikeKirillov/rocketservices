@@ -17,7 +17,7 @@ func main() {
 	// Загружаем переменные окружения из .env
 	if err := godotenv.Load("../inventory.env"); err != nil {
 		slog.Error("ошибка загрузки переменных окружения из inventory.env", "error", err)
-		os.Exit(1)
+		// os.Exit(1)
 	}
 
 	configPath := config.ResolveConfigPath()

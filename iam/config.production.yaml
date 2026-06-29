@@ -23,10 +23,10 @@ redis:
   port: "6379"
   password: ""
   db: 0
-  connection_timeout: 5s
+  connection_timeout: 5
 
 session:
-  ttl: 24h
+  ttl: 24
 
 otel:
   collector_endpoint: "0.0.0.0:4317"

@@ -21,7 +21,7 @@ vars:
   PROTOC_GEN_GO_GRPC: '{{.BIN_DIR}}/protoc-gen-go-grpc'
   OGEN: '{{.BIN_DIR}}/ogen'
 
-  MODULES: order inventory payment shared
+  MODULES: order inventory payment shared assembly platform iam
 
   MOCKERY_VERSION: 'v3.7.0'
   MOCKERY: '{{.BIN_DIR}}/mockery'
@@ -110,7 +110,7 @@ tasks:
     desc: "Запускает golangci-lint"
     deps: [golangci-lint:install]
     cmds:
-      - '{{.GOLANGCI_LINT}} run --allow-parallel-runners order/... inventory/... payment/... shared/... --config=.golangci.yml'
+      - '{{.GOLANGCI_LINT}} run --allow-parallel-runners order/... inventory/... payment/... assembly/... platform/... shared/... iam/... --config=.golangci.yml'
 
   proto:lint:
     desc: "Проверяет .proto-файлы линтером"
@@ -253,19 +253,6 @@ tasks:
     status:
       - test -x {{.GOOSE}}
 
-  up-core:
-    desc: "Создать общую сеть для микросервисов"
-    cmds:
-      - echo '[task] 🌐 Создаём общую сеть microservices-net'
-      - docker network rm microservices-net 2>/dev/null || true
-      - docker network create microservices-net 2>/dev/null || true
-
-  down-core:
-    desc: "Удалить общую сеть микросервисов"
-    cmds:
-      - echo '[task] 🛑 Удаляем общую сеть microservices-net'
-      - docker network rm microservices-net 2>/dev/null || true
-
   up-order:
     desc: Поднять Order сервис и все его зависимости
     dir: deploy/compose/order
@@ -349,23 +336,6 @@ tasks:
     dotenv: ['inventory.env']
     cmds:
       - '{{.GOOSE}} -dir $MIGRATIONS_DIR postgres "$DB_URI" status'
-
-  up-core:
-    desc: "Создать общую сеть и поднять core контейнеры (Kafka)"
-    cmds:
-      - echo '[task] 🌐 Создаём общую сеть microservices-net'
-      - docker network rm microservices-net 2>/dev/null || true
-      - docker network create microservices-net 2>/dev/null || true
-      - echo '[task] 🚀 Поднимаем core контейнеры (Kafka)'
-      - docker compose -f deploy/compose/core/docker-compose.yml --env-file core.env up --build --detach
-
-  down-core:
-    desc: "Остановить core контейнеры (Kafka) и удалить сеть"
-    cmds:
-      - echo '[task] 🛑 Останавливаем core контейнеры (Kafka)'
-      - docker compose -f deploy/compose/core/docker-compose.yml --env-file core.env down --volumes
-      - echo '[task] 🛑 Удаляем общую сеть microservices-net'
-      - docker network rm microservices-net 2>/dev/null || true
 
   test:e2e:
     desc: "Запускает e2e-тесты order с реальной Kafka (Redpanda) через testcontainers"
@@ -503,35 +473,20 @@ tasks:
     status:
       - test -x {{.VEGETA}}
 
-  # up-all:
-  #   desc: Поднять все сервисы по очереди вместе с зависимостями
-  #   cmds:
-  #     - task up-core
-  #     - task up-inventory
-  #     - task up-order
-  #     - task up-iam
-
-  # down-all:
-  #   desc: Остановить и удалить все сервисы по очереди вместе с зависимостями
-  #   cmds:
-  #     - task down-order
-  #     - task down-inventory
-  #     - task down-core
-  #     - task down-iam
-
-  # Замените существующий up-all на эту версию.
   # --scale order-service=3 поднимает 3 инстанса OrderService за Nginx.
   up-all:
     desc: "Поднять инфраструктуру + сервисы (3 инстанса OrderService)"
     cmds:
-      - task: up-core
+      - task up-core
+      - task up-inventory
+      - task up-order
+      - task up-iam
       - >-
         docker compose
         --env-file core.env
         -f deploy/compose/services/docker-compose.yml
         up -d --build --scale order-service=3
 
-  # Замените существующий down-all на эту версию.
   down-all:
     desc: "Остановить всё"
     cmds:
@@ -539,7 +494,10 @@ tasks:
         docker compose
         -f deploy/compose/services/docker-compose.yml
         down
-      - task: down-core
+      - task down-core
+      - task down-inventory
+      - task down-order
+      - task down-iam
 
   # Нагрузочный тест HTTP: ступенчатый рост 50 → 500 RPS за 2.5 минуты.
   # Запуск: task up-all (в одном терминале), task load:http (в другом).
