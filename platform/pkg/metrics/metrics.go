@@ -46,7 +46,7 @@ var (
 //
 // После вызова Init все Meter'ы, созданные через otel.Meter(), используют этот провайдер —
 // включая платформенные библиотеки (например, platform/redis).
-func Init(serviceName string, opts ...Option) {
+func Init(serviceName, endpoint string, opts ...Option) {
 	initOnce.Do(func() {
 		ctx := context.Background()
 
@@ -68,6 +68,7 @@ func Init(serviceName string, opts ...Option) {
 		// доступен по http://localhost:4317 без сертификатов
 		exporter, err := otlpmetricgrpc.New(
 			ctx,
+			otlpmetricgrpc.WithEndpoint(endpoint),
 			otlpmetricgrpc.WithInsecure(),
 		)
 		if err != nil {

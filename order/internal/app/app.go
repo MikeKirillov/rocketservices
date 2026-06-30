@@ -151,7 +151,10 @@ func (a *App) initLogger(ctx context.Context) {
 }
 
 func (a *App) initMetrics(_ context.Context) {
-	metrics.Init(config.AppConfig().Otel.ServiceName)
+	metrics.Init(
+		config.AppConfig().Otel.ServiceName,
+		config.AppConfig().Otel.Endpoint,
+	)
 	closer.Add("metrics provider", func(_ context.Context) error {
 		return metrics.Close()
 	})
