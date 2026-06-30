@@ -1,10 +1,8 @@
-//go:build apitest
-
 // Package tests содержит интеграционный API-тест distributed rate limiter
 //
 // Под одним рабочим Redis-контейнером (testcontainers) проверяем,
 // что при превышении лимита middleware возвращает 429, и что при
-// недоступности Redis работает fail-open (запрос проходит дальше)
+// недоступности Redis работает fail-open (запрос проходит дальше).
 package tests
 
 import (
@@ -69,7 +67,7 @@ func TestRateLimit_429AfterBurstExceeded(t *testing.T) {
 	const rate = 2
 	const burst = 2
 
-	ts := httptest.NewServer(ratelimit.Middleware(limiter, rate, burst)(okHandler()))
+	ts := httptest.NewServer(ratelimit.Middleware(context.Background(), limiter, rate, burst, okHandler()))
 	t.Cleanup(ts.Close)
 
 	// Делаем 10 запросов на один путь подряд — первые burst пройдут,
@@ -110,7 +108,7 @@ func TestRateLimit_FailOpen_OnRedisUnavailable(t *testing.T) {
 
 	limiter := redis_rate.NewLimiter(rdb)
 
-	ts := httptest.NewServer(ratelimit.Middleware(limiter, 100, 200)(okHandler()))
+	ts := httptest.NewServer(ratelimit.Middleware(context.Background(), limiter, 100, 200, okHandler()))
 	t.Cleanup(ts.Close)
 
 	resp, err := http.Get(ts.URL + "/whatever")
@@ -144,7 +142,7 @@ func TestRateLimit_Distributed_LimitSharedBetweenInstances(t *testing.T) {
 		// КАЖДЫЙ инстанс получает СВОЙ redis_rate.NewLimiter — но они работают через
 		// общий Redis-клиент и общий ключ (path), поэтому лимит расходуется суммарно.
 		limiter := redis_rate.NewLimiter(rdb)
-		servers[i] = httptest.NewServer(ratelimit.Middleware(limiter, rate, burst)(okHandler()))
+		servers[i] = httptest.NewServer(ratelimit.Middleware(context.Background(), limiter, rate, burst, okHandler()))
 	}
 	t.Cleanup(func() {
 		for _, s := range servers {
@@ -205,7 +203,7 @@ func TestRateLimit_PerPath_IndependentLimits(t *testing.T) {
 	const rate = 1
 	const burst = 1
 
-	ts := httptest.NewServer(ratelimit.Middleware(limiter, rate, burst)(okHandler()))
+	ts := httptest.NewServer(ratelimit.Middleware(context.Background(), limiter, rate, burst, okHandler()))
 	t.Cleanup(ts.Close)
 
 	// /foo: bомбим до 429.
@@ -237,7 +235,7 @@ func TestRateLimit_Concurrency_AtomicGCRA(t *testing.T) {
 	const rate = 3
 	const burst = 3
 
-	ts := httptest.NewServer(ratelimit.Middleware(limiter, rate, burst)(okHandler()))
+	ts := httptest.NewServer(ratelimit.Middleware(context.Background(), limiter, rate, burst, okHandler()))
 	t.Cleanup(ts.Close)
 
 	const goroutines = 50

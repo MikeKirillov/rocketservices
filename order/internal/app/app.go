@@ -208,14 +208,12 @@ func (a *App) initHTTPServer(ctx context.Context) {
 	// middleware для передачи телеметрии
 	handler = otelhttp.NewHandler(handler, config.AppConfig().Otel.ServiceName)
 	// middleware для подключения rate limit
-	handler = ratelimit.RateLimit(
+	handler = ratelimit.Middleware(
 		ctx,
-		handler,
 		redis_rate.NewLimiter(a.diContainer.RedisClient()), // используем Redis для хранения данных о лимитах
-		redis_rate.Limit{
-			Rate:  config.AppConfig().Redis.Rate,
-			Burst: config.AppConfig().Redis.Burst,
-		},
+		config.AppConfig().Redis.Rate,
+		config.AppConfig().Redis.Burst,
+		handler,
 	)
 
 	a.httpServer = &http.Server{
