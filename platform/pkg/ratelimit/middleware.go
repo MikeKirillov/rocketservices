@@ -13,19 +13,18 @@ const (
 	declined_error = "запрос отклонен rate limiter"
 )
 
-func RateLimit(
+func Middleware(
 	ctx context.Context,
-	next http.Handler,
 	limiter *redis_rate.Limiter,
-	limit redis_rate.Limit,
+	rate, burst int,
+	next http.Handler,
 ) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// В качестве ключа — путь запроса (r.URL.Path).
 		// Библиотека redis_rate сама добавляет префикс "rate:" к ключу (константа redisPrefix),
 		// поэтому дополнительный префикс не нужен
 		key := r.URL.Path
-
-		res, err := limiter.Allow(ctx, key, limit)
+		res, err := limiter.Allow(ctx, key, redis_rate.Limit{Rate: rate, Burst: burst})
 		if err != nil {
 			slog.Error(check_error, "path", key, "error", err)
 			http.Error(w, check_error, http.StatusInternalServerError)

@@ -39,7 +39,7 @@ kafka:
     topic_name: "order.paid"
   ship_assembled_consumer:
     topic_name: "assembly.ship-assembled"
-    group_id: 1
+    group_id: "1"
 
 otel:
   collector_endpoint: "0.0.0.0:4317"
