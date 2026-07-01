@@ -88,7 +88,7 @@ exporters:
     endpoints: ["http://elasticsearch:9200"]
     tls:
       insecure: true
-    logs_index: "otel-logs"   # имя индекса в Elasticsearch для логов
+    # logs_index: "otel-logs"   # имя индекса в Elasticsearch для логов
 
 # Секция extensions — дополнительные возможности коллектора, не связанные с пайплайнами.
 extensions:
