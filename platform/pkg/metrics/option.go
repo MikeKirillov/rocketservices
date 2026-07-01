@@ -23,7 +23,7 @@ type Option func(*options)
 
 // WithInterval задаёт интервал экспорта метрик
 // По умолчанию 10 секунд — подходит для локальной разработки
-// В production рекомендуется 15–60 секунд
+// В production рекомендуется 15–60 секунд.
 func WithInterval(d time.Duration) Option {
 	return func(o *options) {
 		if d > 0 {
@@ -43,7 +43,7 @@ func WithInterval(d time.Duration) Option {
 //	            Boundaries: []float64{0.0001, 0.001, 0.01, 0.1, 0.5, 1, 5},
 //	        },
 //	    },
-//	))
+//	)).
 func WithView(v sdkmetric.View) Option {
 	return func(o *options) {
 		o.views = append(o.views, v)

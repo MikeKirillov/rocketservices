@@ -26,7 +26,7 @@ import (
 )
 
 // startRateLimitRedis поднимает Redis в testcontainer и возвращает host:port.
-// Контейнер останавливается через t.Cleanup
+// Контейнер останавливается через t.Cleanup.
 func startRateLimitRedis(t *testing.T) string {
 	t.Helper()
 	ctx := context.Background()
@@ -47,7 +47,7 @@ func startRateLimitRedis(t *testing.T) string {
 	return addr
 }
 
-// okHandler — простой stub-обработчик: всегда возвращает 200
+// okHandler — простой stub-обработчик: всегда возвращает 200.
 func okHandler() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusOK)
