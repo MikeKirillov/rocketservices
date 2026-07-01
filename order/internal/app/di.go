@@ -21,7 +21,6 @@ import (
 	inventoryClientV1 "github.com/MikeKirillov/rocketservices/order/internal/client/grpc/inventory/v1"
 	paymentClientV1 "github.com/MikeKirillov/rocketservices/order/internal/client/grpc/payment/v1"
 	"github.com/MikeKirillov/rocketservices/order/internal/config"
-	orderConfig "github.com/MikeKirillov/rocketservices/order/internal/config"
 	assemblyConsumer "github.com/MikeKirillov/rocketservices/order/internal/consumer/assembly"
 	producer "github.com/MikeKirillov/rocketservices/order/internal/producer/order"
 	orderRepository "github.com/MikeKirillov/rocketservices/order/internal/repository/order"
@@ -74,7 +73,7 @@ type diContainer struct {
 
 func (d *diContainer) PGPool(ctx context.Context) *pgxpool.Pool {
 	if d.pgPool == nil {
-		pool, err := pgxpool.New(ctx, orderConfig.AppConfig().PG.DSN())
+		pool, err := pgxpool.New(ctx, config.AppConfig().PG.DSN())
 		if err != nil {
 			slog.Error("ошибка подключения к БД", "error", err)
 			os.Exit(1)
@@ -121,7 +120,7 @@ func (d *diContainer) OrderRepository(ctx context.Context) orderService.OrderRep
 }
 
 func (d *diContainer) InventoryClient(ctx context.Context) orderService.InventoryServiceClient {
-	config := orderConfig.AppConfig().GRPC.InventoryGRPCConfig
+	config := config.AppConfig().GRPC.InventoryGRPCConfig
 
 	if d.inventoryClient == nil {
 		conn, err := grpc.NewClient(
@@ -157,7 +156,7 @@ func (d *diContainer) InventoryClient(ctx context.Context) orderService.Inventor
 }
 
 func (d *diContainer) PaymentClient(ctx context.Context) orderService.PaymentServiceClient {
-	config := orderConfig.AppConfig().GRPC.PaymentGRPCConfig
+	config := config.AppConfig().GRPC.PaymentGRPCConfig
 
 	if d.paymentClient == nil {
 		conn, err := newGRPCClient(config.Address, config.Time(), config.Timeout())
@@ -183,7 +182,7 @@ func (d *diContainer) PaymentClient(ctx context.Context) orderService.PaymentSer
 }
 
 func (d *diContainer) AuthClient() *authClientV1.Client {
-	config := orderConfig.AppConfig().GRPC.AuthGRPCConfig
+	config := config.AppConfig().GRPC.AuthGRPCConfig
 
 	if d.authClient == nil {
 		conn, err := newGRPCClient(config.Address, config.Time(), config.Timeout())
@@ -226,8 +225,8 @@ func newGRPCClient(address string, time, timeout time.Duration) (conn *grpc.Clie
 func (d *diContainer) SyncProducer() sarama.SyncProducer {
 	if d.syncProducer == nil {
 		p, err := sarama.NewSyncProducer(
-			orderConfig.AppConfig().Kafka.Brokers,
-			orderConfig.AppConfig().Kafka.OrderPaidProducer.SaramaConfig(),
+			config.AppConfig().Kafka.Brokers,
+			config.AppConfig().Kafka.OrderPaidProducer.SaramaConfig(),
 		)
 		if err != nil {
 			slog.Error("не удалось создать sync producer", "error", err)
@@ -248,7 +247,7 @@ func (d *diContainer) OrderPaidProducer() *wrappedKafkaProducer.Producer {
 	if d.orderPaidProducer == nil {
 		d.orderPaidProducer = wrappedKafkaProducer.NewProducer(
 			d.SyncProducer(),
-			orderConfig.AppConfig().Kafka.OrderPaidProducer.Topic(),
+			config.AppConfig().Kafka.OrderPaidProducer.Topic(),
 		)
 	}
 	return d.orderPaidProducer
@@ -287,9 +286,9 @@ func (d *diContainer) OrderV1API(ctx context.Context) orderv1.Handler {
 func (d *diContainer) ConsumerGroup() sarama.ConsumerGroup {
 	if d.consumerGroup == nil {
 		consumerGroup, err := sarama.NewConsumerGroup(
-			orderConfig.AppConfig().Kafka.Brokers,
-			orderConfig.AppConfig().Kafka.AssemblyShipAssembledConsumer.GroupID(),
-			orderConfig.AppConfig().Kafka.AssemblyShipAssembledConsumer.SaramaConfig(),
+			config.AppConfig().Kafka.Brokers,
+			config.AppConfig().Kafka.AssemblyShipAssembledConsumer.GroupID(),
+			config.AppConfig().Kafka.AssemblyShipAssembledConsumer.SaramaConfig(),
 		)
 		if err != nil {
 			slog.Error("не удалось создать consumer group", "error", err)
@@ -311,7 +310,7 @@ func (d *diContainer) ShipAssembledConsumer() *wrappedKafkaConsumer.Consumer {
 		d.shipAssemblyConsumer = wrappedKafkaConsumer.NewConsumer(
 			d.ConsumerGroup(),
 			[]string{
-				orderConfig.AppConfig().Kafka.AssemblyShipAssembledConsumer.Topic(),
+				config.AppConfig().Kafka.AssemblyShipAssembledConsumer.Topic(),
 			},
 			wrappedKafkaConsumer.WithMiddlewares(
 				kafkaMiddleware.RecoveryMiddleware(),

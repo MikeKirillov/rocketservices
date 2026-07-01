@@ -1,7 +1,7 @@
 // Package tests содержит интеграционные API-тесты IAM-сервиса
 //
 // Поднимает PostgreSQL и Redis через testcontainers-go и запускает gRPC-сервер
-// IAM в bufconn — без реальных портов и Docker Compose
+// IAM в bufconn — без реальных портов и Docker Compose.
 package tests
 
 import (
@@ -185,6 +185,7 @@ func findMigrationsDir() string {
 		panic(err)
 	}
 
+	//nolint:intrange // test
 	for i := 0; i < 5; i++ {
 		candidate := filepath.Join(dir, "migrations", "iam")
 		if info, statErr := os.Stat(candidate); statErr == nil && info.IsDir() {
@@ -310,7 +311,7 @@ func TestWhoami_EmptySession(t *testing.T) {
 // TestWhoami_NotFound отдельно проверяет поведение, когда сессия не существует
 // в Redis (никогда не было / истекла по TTL / была удалена). Этот код-путь
 // один и тот же независимо от причины отсутствия ключа — главное, что Whoami
-// должен вернуть Unauthenticated, а не Internal или OK
+// должен вернуть Unauthenticated, а не Internal или OK.
 func TestWhoami_NotFound(t *testing.T) {
 	ctx := context.Background()
 
@@ -322,7 +323,7 @@ func TestWhoami_NotFound(t *testing.T) {
 
 // TestWhoami_AfterLogout проверяет, что после явного Logout сессия недоступна
 // и Whoami возвращает Unauthenticated. Это то же поведение, что и при истечении TTL,
-// но триггер другой — Logout идёт через IAMService.Logout → SessionRepository.Delete
+// но триггер другой — Logout идёт через IAMService.Logout → SessionRepository.Delete.
 func TestWhoami_AfterLogout(t *testing.T) {
 	ctx := context.Background()
 

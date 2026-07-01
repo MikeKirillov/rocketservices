@@ -11,7 +11,7 @@
 //	        └── Instrument — конкретная метрика (Counter, UpDownCounter, Histogram и др.)
 //
 // Аналогия: MeterProvider — это электростанция, Meter — щиток в квартире,
-// Instrument — конкретный счётчик (воды, света, газа)
+// Instrument — конкретный счётчик (воды, света, газа).
 package metrics
 
 import (
