@@ -4,6 +4,7 @@ import (
 	"context"
 	"log/slog"
 	"net/http"
+	"time"
 
 	"github.com/go-redis/redis_rate/v10"
 )
@@ -24,10 +25,9 @@ func Middleware(
 		// Библиотека redis_rate сама добавляет префикс "rate:" к ключу (константа redisPrefix),
 		// поэтому дополнительный префикс не нужен
 		key := r.URL.Path
-		res, err := limiter.Allow(ctx, key, redis_rate.Limit{Rate: rate, Burst: burst})
+		res, err := limiter.Allow(ctx, key, redis_rate.Limit{Rate: rate, Burst: burst, Period: time.Second})
 		if err != nil {
 			slog.Error(check_error, "path", key, "error", err)
-			http.Error(w, check_error, http.StatusInternalServerError)
 			return
 		}
 
