@@ -502,6 +502,9 @@ tasks:
   # Нагрузочный тест HTTP: ступенчатый рост 50 → 500 RPS за 2.5 минуты.
   # Запуск: task up-all (в одном терминале), task load:http (в другом).
   # Результаты смотреть в Grafana (localhost:3000).
+  # P.S.:
+  # - для работы теста необходимо "залогинить" пользователя (сгенерировать идентификатор сессии)
+  # - для получения 200х кодов - обновить в БД количество требуемых деталей во избежаний ошибок HTTP code 409
   load:http:
     desc: "Нагрузочный тест HTTP: POST с нарастающей нагрузкой (50 → 500 RPS за 2.5 мин)"
     deps: [vegeta:install]
@@ -510,14 +513,16 @@ tasks:
         VEGETA="{{.VEGETA}}"
         RESULTS_DIR=$(mktemp -d)
         BODY_FILE="$RESULTS_DIR/body.json"
-        echo '{"hull_uuid":"test-hull","engine_uuid":"test-engine"}' > "$BODY_FILE"
+        echo '{"hull_uuid":"550e8400-e29b-41d4-a716-446655440001","engine_uuid":"550e8400-e29b-41d4-a716-446655440003"}' > "$BODY_FILE"
         trap 'rm -rf "$RESULTS_DIR"' EXIT
 
         for rate in 50 100 150 200 250 300 350 400 450 500; do
           echo "⏱️  ступень: ${rate} RPS (15 сек)"
           echo "POST http://localhost:8080/api/v1/orders" | \
             $VEGETA attack -rate="${rate}/s" -duration=15s \
-              -body="$BODY_FILE" -header="Content-Type: application/json" | \
+              -body="$BODY_FILE" \
+              -header="Content-Type: application/json" \
+              -header="Authorization: Bearer a99f80f1-e333-4d94-b8fa-20891f386073" |
             $VEGETA encode --to json >> "$RESULTS_DIR/results.json"
         done
 
