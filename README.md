@@ -190,6 +190,12 @@ http://localhost:3000/
 
 ![grafana](screenshots/metrics.png)
 
+Пример результатов нагрузочного тестирования
+
+![grafana](screenshots/load_test_01.png)
+
+![grafana](screenshots/load_test_02.png)
+
 # Jaeger - трейсы
 
 ```
