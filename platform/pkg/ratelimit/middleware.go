@@ -1,21 +1,24 @@
 package ratelimit
 
 import (
-	"context"
 	"log/slog"
 	"net/http"
+	"regexp"
 	"time"
 
 	"github.com/go-redis/redis_rate/v10"
 )
 
 const (
-	check_error    = "ошибка проверки rate limit"
-	declined_error = "запрос отклонен rate limiter"
+	normalizedError = "ошибка нормализации r.URL.Path"
+	checkError      = "ошибка проверки rate limit"
+	declinedError   = "запрос отклонен rate limiter"
+	regexUuid       = `[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}`
 )
 
+var uuidRegex = regexp.MustCompile(regexUuid)
+
 func Middleware(
-	ctx context.Context,
 	limiter *redis_rate.Limiter,
 	rate, burst int,
 	next http.Handler,
@@ -24,24 +27,39 @@ func Middleware(
 		// В качестве ключа — путь запроса (r.URL.Path).
 		// Библиотека redis_rate сама добавляет префикс "rate:" к ключу (константа redisPrefix),
 		// поэтому дополнительный префикс не нужен
-		key := r.URL.Path
-		res, err := limiter.Allow(ctx, key, redis_rate.Limit{Rate: rate, Burst: burst, Period: time.Second})
+		path := r.URL.Path
+
+		// нормализация запросов с указанием идентификаторов для приведения к типу "/api/v1/orders/{uuid}",
+		// что дает избежать использования уникального заказа отдельным ключом в редисе
+		key := uuidRegex.ReplaceAllString(path, "{uuid}")
+		res, err := limiter.Allow(
+			r.Context(),
+			key,
+			redis_rate.Limit{
+				Rate:   rate,
+				Burst:  burst,
+				Period: time.Second,
+			},
+		)
 		if err != nil {
-			slog.Error(check_error, "path", key, "error", err)
+			// Fail-open стратегия: если Redis недоступен (ошибка от limiter.Allow) — пропускаем запрос дальше
+			slog.Error(checkError, "path", key, "error", err)
+			next.ServeHTTP(w, r)
 			return
 		}
 
 		// Если лимит превышен (res.Allowed == 0) — возвращайте http.StatusTooManyRequests (429)
 		if res.Allowed == 0 {
 			slog.Warn(
-				declined_error,
+				declinedError,
 				"path", key,
 				"retry_after", res.RetryAfter,
 			)
-			http.Error(w, declined_error, http.StatusTooManyRequests)
+			w.Header().Set("Retry-After", time.Now().Add(res.RetryAfter).Format(time.RFC1123))
+			http.Error(w, declinedError, http.StatusTooManyRequests)
+			return
 		}
 
-		// Fail-open стратегия: если Redis недоступен (ошибка от limiter.Allow) — пропускаем запрос дальше
 		next.ServeHTTP(w, r)
 	})
 }
